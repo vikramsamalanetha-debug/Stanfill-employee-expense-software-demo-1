@@ -201,10 +201,51 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .upc b{display:block;color:var(--ink);font:750 20px var(--display);font-variant-numeric:tabular-nums}
 .delta{font-size:12px;font-weight:800;margin-left:6px}
 .hidden{display:none!important}
+
+/* auth gate */
+.gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
+.gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
+.gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
+.gate-panel p{color:var(--muted);margin:0 0 18px}
+.gate-tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:18px}
+.gate-tabs button{flex:1;border:0;background:transparent;padding:8px 0;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted)}
+.gate-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
+.gate-form{display:flex;flex-direction:column;gap:10px}
+.gate-msg{font-size:13px;color:var(--danger);min-height:16px}
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<div id="gate" class="gate-wrap hidden">
+  <div class="gate-panel">
+    <h1>Stanfill Crew Board</h1>
+    <p>Sign in with your crew account to see the board.</p>
+    <div class="gate-tabs">
+      <button id="gateLoginTab" aria-selected="true">Sign In</button>
+      <button id="gateRegisterTab" aria-selected="false">Register</button>
+    </div>
+    <div id="gateLoginPanel" class="gate-form">
+      <label class="f">Email<input id="gateLoginEmail" type="email" autocomplete="username"></label>
+      <label class="f">Password<input id="gateLoginPassword" type="password" autocomplete="current-password"></label>
+      <button class="btn primary" id="gateLoginBtn">Sign in</button>
+    </div>
+    <div id="gateRegisterPanel" class="gate-form hidden">
+      <label class="f">Your name<input id="gateRegName" type="text" autocomplete="name"></label>
+      <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
+      <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
+      <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
+      <button class="btn primary" id="gateRegBtn">Create account</button>
+    </div>
+    <div class="gate-msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<div class="wrap" id="mainApp" hidden>
   <header class="top">
     <div class="brand">
       <h1>Stanfill Elite Clean Pros<span class="sparkle" aria-hidden="true"></span></h1>
@@ -214,6 +255,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   </header>
   <div id="banners"></div>
   <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="requests" aria-selected="false">Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
     <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
@@ -275,7 +317,7 @@ function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-
 let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses"];
+const COLLS = ["employees","jobs","locations","expenses","bookings"];
 const Store = {
   mode:"loading", db:null, local:null, listeners:{},
   useLocal(){
@@ -316,8 +358,8 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
-  month: today().slice(0,7), myUserId:null, isOwner:false, dutyErr:null, watching:false, downloads:null };
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
+  month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
 const empById = id => S.employees.find(e=>e.id===id);
 const locFor = id => S.locations.find(l=>l.id===id);
@@ -329,7 +371,8 @@ function draw(){
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
-  if (S.tab==="board") v.append(viewBoard());
+  if (S.tab==="requests") v.append(viewRequests());
+  else if (S.tab==="board") v.append(viewBoard());
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="insights") v.append(viewInsights());
   else v.append(viewBooks());
@@ -343,8 +386,11 @@ function drawWho(){
     w.append(el("span",{class:"kv"},"Signed in as ", el("b",{},m.name)));
     w.append(on ? el("button",{class:"btn",onclick:stopDuty},"End shift")
                 : el("button",{class:"btn lemon",onclick:startDuty},"Start shift"));
+  } else if (S.myEmail){
+    w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  w.append(el("button",{class:"btn ghost",onclick:()=>{ auth.signOut(); }},"Sign out"));
 }
 
 function drawBanners(){
@@ -369,6 +415,59 @@ function drawBanners(){
     b.append(el("div",{class:"banner info"}, el("span",{class:"grow"},"Are you on the crew? Link your name so you can see your jobs and start shifts."),
       el("button",{class:"btn small",onclick:()=>{S.tab="team";render();}},"Link my name")));
   }
+}
+
+/* ---- booking requests (from the public website) ---- */
+function viewRequests(){
+  const frag=document.createDocumentFragment();
+  const showAll = S.reqShowAll;
+  const list = S.bookings
+    .filter(b => showAll || (b.status||"pending")==="pending")
+    .sort((a,b)=>(a.requestedDate||"").localeCompare(b.requestedDate||""));
+
+  frag.append(el("div",{class:"toolbar"},
+    el("span",{class:"kv grow"}, el("b",{},String(S.bookings.filter(b=>(b.status||"pending")==="pending").length)), " pending request(s) from the website"),
+    el("div",{class:"chips"},
+      el("button",{class:"chip","aria-pressed":String(!showAll),onclick:()=>{S.reqShowAll=false;render();}},"Pending"),
+      el("button",{class:"chip","aria-pressed":String(!!showAll),onclick:()=>{S.reqShowAll=true;render();}},"All"))));
+
+  if (!list.length){
+    frag.append(el("div",{class:"panel"},el("div",{class:"empty"},showAll?"No booking requests yet.":"No pending requests right now.")));
+    return frag;
+  }
+
+  const board=el("div",{});
+  list.forEach(b=>{
+    const dateStr = (b.requestedDate||"").slice(0,10);
+    const status = b.status||"pending";
+    const card=el("article",{class:"card",style:"margin-bottom:12px;max-width:640px;"});
+    card.append(el("div",{class:"svc"},b.service||"Cleaning"));
+    card.append(el("h3",{},b.name||"Unknown"));
+    card.append(el("div",{class:"meta"},
+      el("span",{},niceDate(dateStr)),
+      el("span",{class:"paid "+(status==="pending"?"no":"yes")}, status)));
+    if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
+    if (b.details) card.append(el("div",{class:"notes"},b.details));
+    if (b.wantsRewards) card.append(el("div",{class:"kv"},"Wants Clean Rewards"));
+    if (status==="pending"){
+      const acts=el("div",{class:"acts"});
+      acts.append(el("button",{class:"btn small primary",onclick:()=>convertBookingToJob(b)},"Convert to job"));
+      acts.append(el("button",{class:"btn small ghost danger",onclick:()=>{ if(confirm("Decline this request?")) write(()=>Store.update("bookings",b.id,{status:"declined"}),"Request declined"); }},"Decline"));
+      card.append(acts);
+    }
+    board.append(card);
+  });
+  frag.append(board);
+  return frag;
+}
+function convertBookingToJob(b){
+  const dateStr = (b.requestedDate||"").slice(0,10);
+  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], price:0, date:dateStr, time:"",
+    phone:b.phone||"", notes:b.details||"", assigneeId:null, status:"new", paid:false, createdAt:Date.now(), fromBookingId:b.id };
+  write(async()=>{
+    await Store.set("jobs",newId(),jobData);
+    await Store.update("bookings",b.id,{status:"confirmed"});
+  }, "Added to the job board");
 }
 
 /* ---- board ---- */
@@ -617,7 +716,7 @@ function viewBooks(){
   frag.append(el("div",{class:"toolbar"},
     el("label",{class:"f"},"Month",el("input",{type:"month",value:S.month,onchange:e=>{ if(e.target.value){S.month=e.target.value;render();} }})),
     el("span",{class:"grow"}),
-    S.downloads ? el("button",{class:"btn",onclick:exportCsv},"Export month as CSV") : null));
+    el("button",{class:"btn",onclick:exportCsv},"Export month as CSV")));
 
   frag.append(el("div",{class:"sum"},
     el("div",{class:"stat"},el("div",{class:"l"},"Money in (finished jobs)"),el("div",{class:"v"},money(inc))),
@@ -672,8 +771,13 @@ async function exportCsv(){
   const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
   const lines=[["Date","Type","Category","Details","Amount"].join(",")];
   [...income,...exp].sort((a,b)=>(a.date||"").localeCompare(b.date||"")).forEach(r=>lines.push([r.date,r.kind==="income"?"Income":"Expense",r.cat,r.desc,(r.kind==="income"?"":"-")+r.amount.toFixed(2)].map(q).join(",")));
-  try { await S.downloads.save({filename:"stanfill-books-"+S.month+".csv", data:lines.join("\n")}); }
-  catch(e){ if(!(e&&(e.code==="cancelled"||e.code==="declined"))) toast("The download didn’t start."); }
+  try {
+    const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download="stanfill-books-"+S.month+".csv";
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  } catch(e){ toast("The download didn’t start."); }
 }
 
 /* ---- insights ---- */
@@ -939,21 +1043,61 @@ window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale s
 
 function subscribeAll(){ COLLS.forEach(c=>Store.subscribe(c, arr=>{ S[c]=arr; render(); })); }
 
-render();
-(async function boot(){
-  const c = window.claude;
-  let db=null, user=null, dl=null;
-  if (c && typeof c.use==="function"){
-    [db,user,dl] = await Promise.all([c.use("db").catch(()=>null), c.use("user").catch(()=>null), c.use("downloads").catch(()=>null)]);
+/* ---------- Firebase Auth gate ---------- */
+const ADMIN_EMAILS = ['samala_netha@yahoo.com','stanfillelitecleanpros@gmail.com'];
+let booted=false;
+function gateMsg(text){ $("#gateMsg").textContent=text||""; }
+function switchGateTab(which){
+  $("#gateLoginTab").setAttribute("aria-selected",String(which==="login"));
+  $("#gateRegisterTab").setAttribute("aria-selected",String(which==="register"));
+  $("#gateLoginPanel").classList.toggle("hidden",which!=="login");
+  $("#gateRegisterPanel").classList.toggle("hidden",which!=="register");
+  gateMsg("");
+}
+function wireGate(){
+  $("#gateLoginTab").addEventListener("click",()=>switchGateTab("login"));
+  $("#gateRegisterTab").addEventListener("click",()=>switchGateTab("register"));
+  $("#gateLoginBtn").addEventListener("click", async ()=>{
+    const email=$("#gateLoginEmail").value.trim(), password=$("#gateLoginPassword").value;
+    if (!email||!password) return gateMsg("Enter your email and password.");
+    try { await auth.signInWithEmailAndPassword(email,password); }
+    catch(e){ gateMsg(e.message); }
+  });
+  $("#gateRegBtn").addEventListener("click", async ()=>{
+    const name=$("#gateRegName").value.trim(), email=$("#gateRegEmail").value.trim(),
+      phone=$("#gateRegPhone").value.trim(), password=$("#gateRegPassword").value;
+    if (!name||!email||!password) return gateMsg("Fill in your name, email, and a password.");
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(email,password);
+      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set({name,email,phone,createdAt:Date.now()});
+    } catch(e){ gateMsg(e.message); }
+  });
+}
+
+function showGate(){ $("#gate").classList.remove("hidden"); $("#mainApp").hidden=true; }
+function showApp(){ $("#gate").classList.add("hidden"); $("#mainApp").hidden=false; }
+
+wireGate();
+switchGateTab("login");
+showGate();
+
+auth.onAuthStateChanged(function(user){
+  if (user){
+    S.myUserId = user.uid;
+    S.myEmail = user.email;
+    S.isOwner = ADMIN_EMAILS.includes(user.email);
+    if (!booted){
+      booted=true;
+      Store.mode="db"; Store.db=firebase.firestore();
+      subscribeAll();
+    }
+    showApp();
+    render();
+  } else {
+    S.myUserId=null; S.myEmail=null; S.isOwner=false;
+    showGate();
   }
-  S.downloads=dl;
-  if (db){ Store.mode="db"; Store.db=db; }
-  else Store.useLocal();
-  if (user){ S.myUserId = await user.id(); S.isOwner = await user.isOwner(); }
-  else if (Store.mode==="local"){ S.myUserId="local-owner"; S.isOwner=true; }
-  subscribeAll();
-  render();
-})();
+});
 })();
 </script>
 </body>
