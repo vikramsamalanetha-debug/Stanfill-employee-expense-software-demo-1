@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Dashboard | Stanfill Elite Clean Pros</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  :root{
+    --cream:#FFFFFF; --sage:#14B8A6; --sage-deep:#0D9488; --sage-pale:#CCFBF1;
+    --honey:#FFB020; --honey-deep:#F59E0B; --ink:#1F2937; --ink-soft:#5B6B72; --line:#D9F2EE;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Work Sans',sans-serif; background:var(--cream); color:var(--ink); }
+  h1,h2,h3{ font-family:'Fraunces',serif; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:32px 24px; }
+
+  /* --- Gate screen (owner login) --- */
+  #gate{ max-width:400px; margin:80px auto; padding:32px; border:1px solid var(--line); border-radius:14px; }
+  #gate h1{ font-size:1.5rem; margin-bottom:16px; }
+  #gate .field{ margin-bottom:14px; }
+  #gate label{ display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px; }
+  #gate input{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:0.95rem; }
+  #gate button{ width:100%; padding:12px; background:var(--sage); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.95rem; }
+  #gate button:hover{ background:var(--sage-deep); }
+  #gateMsg{ font-size:0.85rem; color:#B91C1C; margin-top:10px; min-height:18px; }
+
+  /* --- Dashboard --- */
+  #dashboard{ display:none; }
+  .dash-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+  .dash-header h1{ font-size:1.6rem; }
+  .dash-header button{ background:none; border:1px solid var(--line); border-radius:8px; padding:8px 16px; cursor:pointer; font-size:0.88rem; }
+
+  .cal-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .cal-nav button{ background:var(--sage-pale); border:none; border-radius:8px; width:36px; height:36px; cursor:pointer; font-size:1rem; color:var(--sage-deep); }
+  .cal-nav .label{ font-family:'Fraunces',serif; font-size:1.2rem; }
+
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:32px; }
+  .cal-dow{ text-align:center; font-size:0.75rem; font-weight:700; color:var(--ink-soft); padding-bottom:6px; }
+  .cal-day{
+    aspect-ratio:1; border:1px solid var(--line); border-radius:8px; padding:6px;
+    font-size:0.85rem; cursor:pointer; position:relative; background:#fff;
+  }
+  .cal-day.empty{ border:none; cursor:default; }
+  .cal-day.has-bookings{ background:var(--sage-pale); border-color:var(--sage); font-weight:700; }
+  .cal-day.selected{ outline:2px solid var(--sage-deep); }
+  .cal-day .dot{ position:absolute; bottom:6px; right:6px; width:7px; height:7px; border-radius:50%; background:var(--honey-deep); }
+
+  .booking-list h2{ font-size:1.15rem; margin-bottom:14px; }
+  .booking-card{
+    border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:12px;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;
+  }
+  .booking-card .info strong{ display:block; font-size:1.02rem; margin-bottom:4px; }
+  .booking-card .info span{ display:block; font-size:0.85rem; color:var(--ink-soft); }
+  .booking-card select{ padding:6px 10px; border-radius:6px; border:1px solid var(--line); font-size:0.85rem; }
+  .empty-note{ color:var(--ink-soft); font-size:0.92rem; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h1>Owner Sign In</h1>
+  <div class="field">
+    <label for="gateEmail">Email</label>
+    <input id="gateEmail" type="email" placeholder="you@example.com">
+  </div>
+  <div class="field">
+    <label for="gatePassword">Password</label>
+    <input id="gatePassword" type="password" placeholder="Your password">
+  </div>
+  <button onclick="handleGateLogin()">Sign In</button>
+  <p id="gateMsg"></p>
+</div>
+
+<div id="dashboard">
+  <div class="wrap">
+    <div class="dash-header">
+      <h1>Booking Dashboard</h1>
+      <button onclick="auth.signOut()">Sign out</button>
+    </div>
+
+    <div class="cal-nav">
+      <button onclick="changeDashMonth(-1)">&larr;</button>
+      <span class="label" id="dashMonthLabel"></span>
+      <button onclick="changeDashMonth(1)">&rarr;</button>
+    </div>
+    <div class="cal-grid" id="dashCalendar"></div>
+
+    <div class="booking-list">
+      <h2 id="listHeading">Select a day</h2>
+      <div id="bookingListEl"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// IMPORTANT: this simple gate only lets the site load the
+// dashboard UI for the listed admin email(s). It does NOT
+// replace real Firestore security rules — set rules in the
+// Firebase console so only these accounts can read/write the
+// "bookings" collection, or anyone with an account (customers
+// included) could technically call these same functions.
+// ============================================================
+const ADMIN_EMAILS = ['samala_netha@yahoo.com', 'stanfillelitecleanpros@gmail.com'];
+
+let allBookings = [];
+let dashYear, dashMonth, selectedDashDate = null;
+
+auth.onAuthStateChanged(function(user){
+  if (user && ADMIN_EMAILS.includes(user.email)) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadAllBookings();
+  } else {
+    document.getElementById('gate').style.display = 'block';
+    document.getElementById('dashboard').style.display = 'none';
+    if (user) {
+      document.getElementById('gateMsg').textContent = 'That account is not set up as an owner login.';
+      auth.signOut();
+    }
+  }
+});
+
+async function handleGateLogin(){
+  const email = document.getElementById('gateEmail').value.trim();
+  const password = document.getElementById('gatePassword').value;
+  const msgEl = document.getElementById('gateMsg');
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    msgEl.textContent = e.message;
+  }
+}
+
+async function loadAllBookings(){
+  const snap = await db.collection('bookings').orderBy('requestedDate', 'asc').get();
+  allBookings = [];
+  snap.forEach(doc => allBookings.push({ id: doc.id, ...doc.data() }));
+
+  const today = new Date();
+  dashYear = today.getFullYear();
+  dashMonth = today.getMonth();
+  renderDashCalendar();
+}
+
+function bookingsOnDate(date){
+  return allBookings.filter(b => {
+    if (!b.requestedDate) return false;
+    const d = new Date(b.requestedDate);
+    return d.toDateString() === date.toDateString();
+  });
+}
+
+function renderDashCalendar(){
+  const first = new Date(dashYear, dashMonth, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(dashYear, dashMonth + 1, 0).getDate();
+  document.getElementById('dashMonthLabel').textContent = first.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  let html = '';
+  ['S','M','T','W','T','F','S'].forEach(d => html += '<div class="cal-dow">' + d + '</div>');
+  for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(dashYear, dashMonth, d);
+    const bookings = bookingsOnDate(date);
+    const isSelected = selectedDashDate && date.toDateString() === selectedDashDate.toDateString();
+    html += '<div class="cal-day' + (bookings.length ? ' has-bookings' : '') + (isSelected ? ' selected' : '') +
+      '" onclick="selectDashDate(' + dashYear + ',' + dashMonth + ',' + d + ')">' + d +
+      (bookings.length ? '<span class="dot"></span>' : '') + '</div>';
+  }
+  document.getElementById('dashCalendar').innerHTML = html;
+}
+
+function changeDashMonth(delta){
+  dashMonth += delta;
+  if (dashMonth < 0) { dashMonth = 11; dashYear--; }
+  if (dashMonth > 11) { dashMonth = 0; dashYear++; }
+  renderDashCalendar();
+}
+
+function selectDashDate(y, m, d){
+  selectedDashDate = new Date(y, m, d);
+  renderDashCalendar();
+  renderBookingList();
+}
+
+function renderBookingList(){
+  const heading = document.getElementById('listHeading');
+  const listEl = document.getElementById('bookingListEl');
+  if (!selectedDashDate) { heading.textContent = 'Select a day'; listEl.innerHTML = ''; return; }
+
+  const formatted = selectedDashDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  heading.textContent = formatted;
+  const bookings = bookingsOnDate(selectedDashDate);
+
+  if (!bookings.length) {
+    listEl.innerHTML = '<p class="empty-note">No requests for this day.</p>';
+    return;
+  }
+
+  listEl.innerHTML = bookings.map(b => `
+    <div class="booking-card">
+      <div class="info">
+        <strong>${b.name || 'Unknown'}</strong>
+        <span>${b.phone || ''}</span>
+        <span>${b.service || ''}</span>
+        <span>${b.details || ''}</span>
+        <span>${b.wantsRewards ? 'Wants Clean Rewards' : ''}</span>
+      </div>
+      <select onchange="updateStatus('${b.id}', this.value)">
+        <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>Pending</option>
+        <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+        <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>Completed</option>
+        <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+      </select>
+    </div>
+  `).join('');
+}
+
+async function updateStatus(bookingId, status){
+  await db.collection('bookings').doc(bookingId).update({ status });
+  const b = allBookings.find(x => x.id === bookingId);
+  if (b) b.status = status;
+}
+</script>
+</body>
+</html>
