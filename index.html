@@ -219,6 +219,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 
 <div id="gate" class="gate-wrap hidden">
@@ -730,12 +732,43 @@ function stopDuty(){
 }
 
 /* ---- books ---- */
+/* ---- receipts ---- */
+function handleReceiptPreview(e){
+  const file=e.target.files[0];
+  const prev=$("#receiptPreview");
+  if (!prev) return;
+  if (file && file.type.startsWith("image/")){
+    prev.src=URL.createObjectURL(file);
+    prev.classList.remove("hidden");
+  } else {
+    prev.classList.add("hidden");
+  }
+}
+async function imageFileToPdfBlob(file){
+  const dataUrl=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+  const img=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataUrl; });
+  const { jsPDF }=window.jspdf;
+  const orientation=img.width>img.height?"l":"p";
+  const pdf=new jsPDF({orientation, unit:"pt", format:[img.width,img.height]});
+  const fmt=/png/i.test(file.type)?"PNG":"JPEG";
+  pdf.addImage(dataUrl, fmt, 0, 0, img.width, img.height);
+  return pdf.output("blob");
+}
+async function uploadReceipt(file, businessId){
+  const path="receipts/"+businessId+"/"+Date.now()+"_"+(file.name||"receipt").replace(/[^a-zA-Z0-9._-]/g,"_");
+  const ref=storage.ref().child(path);
+  await ref.put(file);
+  const url=await ref.getDownloadURL();
+  return {url, name:file.name||"receipt"};
+}
+
 function monthRows(){
   const mo=S.month;
   const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>({
     kind:"income", id:j.id, date:j.date, cat:j.service||"Cleaning", desc:j.client+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid}));
   const exp=S.expenses.filter(x=>(x.date||"").startsWith(mo)).map(x=>({
-    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:x.vendor||x.note||"", amount:Number(x.amount)||0}));
+    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:x.vendor||x.note||"", amount:Number(x.amount)||0,
+    receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
 }
 function viewBooks(){
@@ -763,11 +796,43 @@ function viewBooks(){
       el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
       el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
       el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:"Walmart, mop heads and bleach",autocomplete:"off"})),
+      el("label",{class:"f full"},"Receipt photo or PDF (optional)",
+        el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
+      el("img",{id:"receiptPreview",class:"hidden",style:"max-width:110px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-top:2px;object-fit:cover;"}),
+      el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
+        el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
+        "Save photo as a PDF receipt"),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Add expense"))));
-  f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const d=Object.fromEntries(new FormData(f));
     const amt=Number(d.amount); if(!(amt>0)) return toast("Enter an amount above zero.");
-    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId}),"Expense added");
-    f.reset(); f.querySelector("[name=date]").value=today(); };
+    const file=f.querySelector("[name=receipt]").files[0];
+    const wantsPdf=f.querySelector("[name=asPdf]").checked;
+    const submitBtn=f.querySelector("button[type=submit]");
+    submitBtn.disabled=true;
+    let receiptData={};
+    try {
+      if (file){
+        let uploadFile=file;
+        if (wantsPdf && file.type.startsWith("image/")){
+          toast("Converting to PDF…");
+          const blob=await imageFileToPdfBlob(file);
+          uploadFile=new File([blob], (file.name||"receipt").replace(/\.[^.]+$/,"")+".pdf", {type:"application/pdf"});
+        }
+        toast("Uploading receipt…");
+        const r=await uploadReceipt(uploadFile, S.businessId);
+        receiptData={receiptUrl:r.url, receiptName:r.name};
+      }
+    } catch(err){
+      console.warn(err);
+      toast("Couldn't upload the receipt, but saving the expense anyway.");
+    }
+    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...receiptData}),"Expense added");
+    f.reset(); f.querySelector("[name=date]").value=today();
+    $("#receiptPreview").classList.add("hidden");
+    submitBtn.disabled=false;
+  };
   left.append(f);
 
   const byCat={}; exp.forEach(r=>byCat[r.cat]=(byCat[r.cat]||0)+r.amount);
@@ -786,7 +851,7 @@ function viewBooks(){
     rows.forEach(r=>tbody.append(el("tr",{class:r.kind==="income"?"inc":""},
       el("td",{},niceDate(r.date)),
       el("td",{},r.cat),
-      el("td",{},r.desc||"—"),
+      el("td",{},r.desc||"—", r.receiptUrl ? el("a",{href:r.receiptUrl,target:"_blank",rel:"noopener",class:"kv",style:"display:block;margin-top:2px;"},"📎 Receipt") : null),
       el("td",{class:"num"},(r.kind==="income"?"+":"−")+money(r.amount)),
       el("td",{}, r.kind==="expense"
         ? el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete")
