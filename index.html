@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Business Board</title>
+<title>Dayshift</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
@@ -225,7 +225,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <div id="gate" class="gate-wrap hidden">
   <div class="gate-panel">
-    <h1>Business Board</h1>
+    <h1>Dayshift</h1>
     <p>Sign in to manage your business, or create an account.</p>
     <div class="gate-tabs">
       <button id="gateLoginTab" aria-selected="true">Sign In</button>
@@ -277,7 +277,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 <div class="wrap" id="mainApp" hidden>
   <header class="top">
     <div class="brand">
-      <h1 id="bizNameHeader">Business Board<span class="sparkle" aria-hidden="true"></span></h1>
+      <h1 id="bizNameHeader">Dayshift<span class="sparkle" aria-hidden="true"></span></h1>
       <p>Crew board, team locations and the books, all in one place.</p>
     </div>
     <div class="whoami" id="whoami"></div>
@@ -295,6 +295,16 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
 <dialog id="empDlg"><form method="dialog" id="empForm"></form></dialog>
+<dialog id="pendingDlg">
+  <form method="dialog" style="padding:24px;display:block;">
+    <h2 style="margin:0 0 10px;">You have <span id="pendingCount">0</span> pending booking request(s)</h2>
+    <p class="kv" style="margin-bottom:18px;">New customers are waiting on you to confirm availability.</p>
+    <div class="acts" style="justify-content:flex-end;">
+      <button type="button" class="btn" id="pendingDismissBtn">Dismiss</button>
+      <button type="button" class="btn primary" id="pendingViewBtn">View requests</button>
+    </div>
+  </form>
+</dialog>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
 <script>
@@ -633,7 +643,7 @@ function viewTeam(){
 
   if (!S.employees.length){
     frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
-      el("p",{class:"kv"},"Add each cleaner here. Then share this board with them; when they open it, they tap “This is me” on their name to see their jobs and start shifts.")));
+      el("p",{class:"kv"},"Add each cleaner here with their email. When they register using that exact email, they'll be added to your team automatically.")));
     return frag;
   }
   const grid=el("div",{class:"team"});
@@ -661,7 +671,7 @@ function viewTeam(){
     }
     card.append(el("div",{class:"kv"}, cur ? ["Working on ", el("b",{},cur.client)] : next ? ["Next up ", el("b",{},next.client), " · "+niceDate(next.date)] : "No open jobs"));
     const acts=el("div",{class:"row"});
-    if (!e.userId && S.myUserId && !m) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
+    if (!e.userId && S.myUserId && !m && (!e.email || e.email===(S.myEmail||"").toLowerCase())) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
     if (e.userId && e.userId===S.myUserId) acts.append(el("span",{class:"kv"},"This is you"));
     else if (e.userId) acts.append(el("span",{class:"kv"},"Account linked"));
     acts.append(el("span",{class:"grow"}), el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit"));
@@ -677,8 +687,10 @@ function openEmp(e){
   const f=$("#empForm"); f.replaceChildren(); const isNew=!e; e=e||{};
   f.append(el("h2",{},isNew?"Add team member":"Edit team member"),
     el("label",{class:"f full"},"Name",el("input",{name:"name",required:true,value:e.name||"",autocomplete:"off"})),
+    el("label",{class:"f full"},"Email (they'll sign in with this)",el("input",{name:"email",type:"email",value:e.email||"",autocomplete:"off"})),
     el("label",{class:"f"},"Phone",el("input",{name:"phone",type:"tel",value:e.phone||""})),
     el("label",{class:"f"},"Status",el("select",{name:"active",value:e.active===false?"no":"yes"},el("option",{value:"yes"},"Active"),el("option",{value:"no"},"Inactive"))),
+    e.email && !e.userId ? el("p",{class:"kv full",style:"margin:-6px 0 0;"},"Waiting for them to register with this email — they'll be added to the team automatically.") : null,
     el("div",{class:"acts"},
       !isNew && e.userId ? el("button",{type:"button",class:"btn ghost",onclick:()=>{ $("#empDlg").close(); write(()=>Store.update("employees",e.id,{userId:null}),"Account unlinked"); }},"Unlink account") : null,
       !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Remove "+e.name+"? Their past jobs stay in the books.")){ $("#empDlg").close(); write(async()=>{ await Store.del("employees",e.id); await Store.del("locations",e.id); },"Removed"); } }},"Remove") : null,
@@ -686,26 +698,81 @@ function openEmp(e){
       el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save changes")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
-    const data={name:d.name.trim(),phone:d.phone.trim(),active:d.active==="yes"};
+    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),active:d.active==="yes"};
     if (isNew){ data.createdAt=Date.now(); data.userId=null; data.businessId=S.businessId; write(()=>Store.set("employees",newId(),data),"Team member added"); }
     else write(()=>Store.update("employees",e.id,data),"Saved"); };
   $("#empDlg").showModal();
 }
 
 /* ---- shifts & location ---- */
-let watchId=null, lastWrite=0, lastSent=null, wq=Promise.resolve();
+let watchId=null, bgWatcherId=null, lastWrite=0, lastSent=null, wq=Promise.resolve();
 const queue = fn => { wq = wq.then(fn).catch(e=>console.warn(e)); return wq; };
+const isNative = () => !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+async function syncRunnerContext(onDuty){
+  if (!isNative()) return;
+  try {
+    const { BackgroundRunner } = Capacitor.Plugins;
+    if (!BackgroundRunner) return;
+    const m = me();
+    await BackgroundRunner.dispatchEvent({
+      label: "com.dayshift.app.locationcheckin",
+      event: "setContext",
+      details: { businessId: S.businessId, employeeId: m ? m.id : null, onDuty: !!onDuty }
+    });
+  } catch(e){ console.warn("Runner context sync failed", e); }
+}
+
 async function startDuty(){
   const m=me(); if(!m) return;
   S.dutyErr=null;
   const existing=locFor(m.id);
   const since = existing&&existing.onDuty&&existing.since ? existing.since : Date.now();
   queue(()=>Store.set("locations",m.id,{onDuty:true,since,at:existing&&existing.at||null,lat:existing&&existing.lat!=null?existing.lat:null,lng:existing&&existing.lng!=null?existing.lng:null,acc:existing&&existing.acc||null,businessId:S.businessId}));
+
+  if (isNative()){
+    try {
+      const { BackgroundGeolocation } = Capacitor.Plugins;
+      lastWrite=0; lastSent=null;
+      bgWatcherId = await BackgroundGeolocation.addWatcher({
+        backgroundMessage: "Sharing your location with the office while you're on shift.",
+        backgroundTitle: "On shift — location sharing on",
+        requestPermissions: true,
+        stale: false,
+        distanceFilter: 30
+      }, (location, error) => {
+        if (error){
+          if (error.code === "NOT_AUTHORIZED"){
+            S.dutyErr="Location permission was denied. Enable \"Always\" location access for this app in your phone's Settings, then tap Resume sharing.";
+            render();
+          }
+          return;
+        }
+        onNativePos(location);
+      });
+      S.watching=true; render(); toast("Shift started — location will keep sharing in the background");
+      syncRunnerContext(true);
+    } catch(e){
+      S.dutyErr="Couldn't start background location. "+(e&&e.message||"");
+      render();
+    }
+    return;
+  }
+
+  // Browser fallback — foreground only, page must stay open
   if (!navigator.geolocation){ S.dutyErr="This device can’t share its location. You’re on shift, but the office won’t see where you are."; render(); return; }
   if (watchId!=null) navigator.geolocation.clearWatch(watchId);
   lastWrite=0; lastSent=null;
   watchId=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:30000,timeout:60000});
   S.watching=true; render(); toast("Shift started");
+}
+function onNativePos(location){
+  const m=me(); if(!m) return;
+  const cur={lat:location.latitude,lng:location.longitude};
+  const now=Date.now();
+  const moved = lastSent ? distM(lastSent,cur) : Infinity;
+  if (now-lastWrite < 60000 && moved < 30) return;
+  lastWrite=now; lastSent=cur; S.dutyErr=null;
+  queue(()=>Store.update("locations",m.id,{lat:cur.lat,lng:cur.lng,acc:location.accuracy||null,at:now,onDuty:true}));
 }
 function onPos(p){
   const m=me(); if(!m) return;
@@ -723,11 +790,16 @@ function onPosErr(err){
   if (err.code===1){ if(watchId!=null) navigator.geolocation.clearWatch(watchId); watchId=null; S.watching=false; }
   render();
 }
-function stopDuty(){
+async function stopDuty(){
   const m=me(); if(!m) return;
+  if (isNative() && bgWatcherId){
+    try { const { BackgroundGeolocation } = Capacitor.Plugins; await BackgroundGeolocation.removeWatcher({id:bgWatcherId}); } catch(e){ console.warn(e); }
+    bgWatcherId=null;
+  }
   if (watchId!=null) navigator.geolocation.clearWatch(watchId);
   watchId=null; S.watching=false; S.dutyErr=null;
   queue(()=>Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}).catch(()=>Store.set("locations",m.id,{onDuty:false,endedAt:Date.now(),businessId:S.businessId})));
+  syncRunnerContext(false);
   render(); toast("Shift ended. Location sharing stopped.");
 }
 
@@ -1137,7 +1209,24 @@ setInterval(()=>{ if(!document.querySelector("dialog[open]")) render(); },60000)
 let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=window.innerWidth<640; if(n!==rw){ rw=n; render(); } });
 window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
 
-function subscribeAll(){ COLLS.forEach(c=>Store.subscribe(c, arr=>{ S[c]=arr; render(); }, S.businessId)); }
+let pendingPopupShown=false;
+function maybeShowPendingPopup(){
+  if (!S.isOwner || pendingPopupShown) return;
+  const pending = S.bookings.filter(b=>(b.status||"pending")==="pending");
+  if (!pending.length) return;
+  pendingPopupShown=true;
+  $("#pendingCount").textContent = pending.length;
+  $("#pendingDlg").showModal();
+}
+$("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
+$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
+
+function subscribeAll(){
+  COLLS.forEach(c=>Store.subscribe(c, arr=>{
+    S[c]=arr; render();
+    if (c==="bookings") maybeShowPendingPopup();
+  }, S.businessId));
+}
 
 /* ---------- Firebase Auth gate ---------- */
 const ADMIN_EMAILS = ['samala_netha@yahoo.com','stanfillelitecleanpros@gmail.com'];
@@ -1177,7 +1266,7 @@ function showApp(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classLi
 function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("business-"+newId()); }
 function bizMsg(text){ $("#bizMsg").textContent=text||""; }
 
-async function resolveBusiness(uid){
+async function resolveBusiness(uid, email){
   const db=firebase.firestore();
   const ownerSnap = await db.collection("businesses").where("ownerUid","==",uid).limit(1).get();
   if (!ownerSnap.empty){ const d=ownerSnap.docs[0]; return {id:d.id, ...d.data()}; }
@@ -1187,6 +1276,19 @@ async function resolveBusiness(uid){
     if (businessId){
       const bizDoc = await db.doc("businesses/"+businessId).get();
       if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+    }
+  }
+  // Not linked yet — were they pre-added by an owner using this exact email?
+  if (email){
+    const inviteSnap = await db.collection("employees").where("email","==",email.toLowerCase()).limit(1).get();
+    if (!inviteSnap.empty){
+      const inviteDoc = inviteSnap.docs[0];
+      const businessId = inviteDoc.data().businessId;
+      if (businessId){
+        await db.doc("employees/"+inviteDoc.id).update({userId:uid});
+        const bizDoc = await db.doc("businesses/"+businessId).get();
+        if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+      }
     }
   }
   return null;
@@ -1245,11 +1347,12 @@ auth.onAuthStateChanged(async function(user){
     S.myUserId = user.uid;
     S.myEmail = user.email;
     S.isOwner = ADMIN_EMAILS.includes(user.email);
-    const biz = await resolveBusiness(user.uid);
+    const biz = await resolveBusiness(user.uid, user.email);
     if (biz) enterBusiness(biz);
     else showBizOnboard();
   } else {
     S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
+    pendingPopupShown=false;
     booted=false;
     showGate();
   }
