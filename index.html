@@ -639,7 +639,12 @@ function viewTeam(){
   const onDuty=S.employees.filter(e=>{const l=locFor(e.id); return l&&l.onDuty;});
   frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"}, el("b",{},String(onDuty.length)), " of ", el("b",{},String(S.employees.filter(e=>e.active!==false).length)), " on shift right now"),
+    S.isOwner ? el("button",{class:"btn ghost",onclick:addOwnerByEmail},"Add owner") : null,
     el("button",{class:"btn",onclick:()=>openEmp()},"Add team member")));
+  if (S.isOwner && S.business){
+    const owners = S.business.ownerUids || (S.business.ownerUid?[S.business.ownerUid]:[]);
+    frag.append(el("p",{class:"kv",style:"margin:-8px 0 14px;"},"Owners with full access: ", String(owners.length), owners.length===1?" person":" people"));
+  }
 
   if (!S.employees.length){
     frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
@@ -1263,11 +1268,25 @@ function showGate(){ $("#gate").classList.remove("hidden"); $("#bizOnboard").cla
 function showBizOnboard(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#mainApp").hidden=true; }
 function showApp(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=false; }
 
+async function addOwnerByEmail(){
+  const email = (prompt("Email of the person to add as a co-owner (full access, same as you):")||"").trim().toLowerCase();
+  if (!email) return;
+  write(async()=>{
+    const db = firebase.firestore();
+    await db.doc("businesses/"+S.businessId).update({
+      pendingOwnerEmails: firebase.firestore.FieldValue.arrayUnion(email)
+    });
+  }, "Invite sent — they'll get full access the moment they register or sign in with "+email);
+}
+
 function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("business-"+newId()); }
 function bizMsg(text){ $("#bizMsg").textContent=text||""; }
 
 async function resolveBusiness(uid, email){
   const db=firebase.firestore();
+  const ownersSnap = await db.collection("businesses").where("ownerUids","array-contains",uid).limit(1).get();
+  if (!ownersSnap.empty){ const d=ownersSnap.docs[0]; return {id:d.id, ...d.data()}; }
+  // Legacy: businesses created before multi-owner support only have a single ownerUid field
   const ownerSnap = await db.collection("businesses").where("ownerUid","==",uid).limit(1).get();
   if (!ownerSnap.empty){ const d=ownerSnap.docs[0]; return {id:d.id, ...d.data()}; }
   const empSnap = await db.collection("employees").where("userId","==",uid).limit(1).get();
@@ -1276,6 +1295,18 @@ async function resolveBusiness(uid, email){
     if (businessId){
       const bizDoc = await db.doc("businesses/"+businessId).get();
       if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+    }
+  }
+  // Not linked yet — were they invited as a co-owner using this exact email?
+  if (email){
+    const ownerInviteSnap = await db.collection("businesses").where("pendingOwnerEmails","array-contains",email.toLowerCase()).limit(1).get();
+    if (!ownerInviteSnap.empty){
+      const d = ownerInviteSnap.docs[0];
+      await db.doc("businesses/"+d.id).update({
+        ownerUids: firebase.firestore.FieldValue.arrayUnion(uid),
+        pendingOwnerEmails: firebase.firestore.FieldValue.arrayRemove(email.toLowerCase())
+      });
+      return {id:d.id, ...d.data(), ownerUids:[...(d.data().ownerUids||[]), uid]};
     }
   }
   // Not linked yet — were they pre-added by an owner using this exact email?
@@ -1310,6 +1341,8 @@ async function claimLegacyData(){
 
 function enterBusiness(biz){
   S.business=biz; S.businessId=biz.id;
+  const realOwner = (biz.ownerUids && biz.ownerUids.includes(S.myUserId)) || biz.ownerUid===S.myUserId;
+  S.isOwner = S.isOwner || realOwner;
   const headerH1 = $("#bizNameHeader");
   if (headerH1) headerH1.firstChild.textContent = biz.name;
   document.title = biz.name;
@@ -1335,7 +1368,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     const db=firebase.firestore();
     const existing = await db.doc("businesses/"+id).get();
     if (existing.exists) return bizMsg("A business with a very similar name is already registered. Try adding your city, e.g. \""+name+" "+city+"\".");
-    const data={name,category,phone,city,state,description,ownerUid:S.myUserId,createdAt:Date.now(),active:true};
+    const data={name,category,phone,city,state,description,ownerUid:S.myUserId,ownerUids:[S.myUserId],createdAt:Date.now(),active:true};
     await db.doc("businesses/"+id).set(data);
     toast("Business registered!");
     enterBusiness({id,...data});
