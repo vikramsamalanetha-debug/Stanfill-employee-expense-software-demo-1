@@ -274,6 +274,14 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   </div>
 </div>
 
+<div id="pendingApproval" class="gate-wrap hidden">
+  <div class="gate-panel">
+    <h1>Almost there</h1>
+    <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
+    <button class="btn ghost" onclick="auth.signOut()">Sign out</button>
+  </div>
+</div>
+
 <div class="wrap" id="mainApp" hidden>
   <header class="top">
     <div class="brand">
@@ -284,6 +292,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   </header>
   <div id="banners"></div>
   <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
     <button role="tab" data-tab="requests" aria-selected="false">Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
     <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
@@ -295,6 +304,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
 <dialog id="empDlg"><form method="dialog" id="empForm"></form></dialog>
+<dialog id="assignDlg"><div id="assignDlgBody" style="padding:20px;"></div></dialog>
 <dialog id="pendingDlg">
   <form method="dialog" style="padding:24px;display:block;">
     <h2 style="margin:0 0 10px;">You have <span id="pendingCount">0</span> pending booking request(s)</h2>
@@ -401,7 +411,7 @@ async function write(fn, okMsg){
 /* ---------- state ---------- */
 const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
-  businessId:null, business:null };
+  businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
 const empById = id => S.employees.find(e=>e.id===id);
 const locFor = id => S.locations.find(l=>l.id===id);
@@ -411,9 +421,12 @@ let renderQueued=false;
 function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); }); }
 function draw(){
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
+  const platformBtn = $("#platformTabBtn");
+  if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
-  if (S.tab==="requests") v.append(viewRequests());
+  if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
+  else if (S.tab==="requests") v.append(viewRequests());
   else if (S.tab==="board") v.append(viewBoard());
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="insights") v.append(viewInsights());
@@ -511,6 +524,151 @@ function convertBookingToJob(b){
     await Store.set("jobs",newId(),jobData);
     await Store.update("bookings",b.id,{status:"confirmed"});
   }, "Added to the job board");
+}
+
+/* ---- platform admin ---- */
+function ensureUsersLoaded(){
+  if (S.usersLoaded) return;
+  S.usersLoaded = true;
+  firebase.firestore().collection("crewAccounts").limit(500).get().then(snap=>{
+    S.allUsers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    render();
+  });
+}
+function openAssignDlg(biz){
+  ensureUsersLoaded();
+  const body=$("#assignDlgBody");
+  const draw=(query)=>{
+    body.replaceChildren();
+    body.append(el("h2",{},"Assign a user to ", biz.name));
+    const input=el("input",{type:"text",placeholder:"Search by name or email…",value:query||"",style:"width:100%;margin:8px 0;",
+      oninput:e=>draw(e.target.value)});
+    body.append(input);
+    const q=(query||"").toLowerCase();
+    const matches = !q ? [] : S.allUsers.filter(u=>(u.name||"").toLowerCase().includes(q)||(u.email||"").toLowerCase().includes(q)).slice(0,8);
+    const list=el("div",{});
+    if (q && !matches.length) list.append(el("div",{class:"empty"},"No registered users match that."));
+    matches.forEach(u=>{
+      const row=el("div",{class:"card",style:"margin-bottom:8px;"});
+      row.append(el("div",{},el("b",{},u.name||"(no name)")), el("div",{class:"kv"},u.email||"", u.phone?" · "+u.phone:""));
+      row.append(el("div",{class:"acts"},
+        el("button",{class:"btn small primary",onclick:()=>assignUser(biz,u,"owner")},"Add as owner"),
+        el("button",{class:"btn small",onclick:()=>assignUser(biz,u,"employee")},"Add as employee")));
+      list.append(row);
+    });
+    body.append(list);
+    body.append(el("div",{class:"acts",style:"margin-top:10px;"},el("button",{class:"btn",type:"button",onclick:()=>$("#assignDlg").close()},"Close")));
+    input.focus();
+  };
+  draw("");
+  $("#assignDlg").showModal();
+}
+async function assignUser(biz,u,role){
+  const db=firebase.firestore();
+  if (role==="owner"){
+    await db.doc("businesses/"+biz.id).update({
+      ownerUids: firebase.firestore.FieldValue.arrayUnion(u.id),
+      ownerEmails: firebase.firestore.FieldValue.arrayUnion((u.email||"").toLowerCase())
+    });
+  } else {
+    await db.collection("employees").add({
+      name:u.name||u.email||"Unnamed", email:(u.email||"").toLowerCase(), phone:u.phone||"", phoneNorm:normPhone(u.phone),
+      businessId:biz.id, userId:u.id, active:true, createdAt:Date.now()
+    });
+  }
+  toast(u.name+" added as "+role+" of "+biz.name);
+  $("#assignDlg").close();
+}
+
+function viewPlatformAdmin(){
+  ensureUsersLoaded();
+  const frag=document.createDocumentFragment();
+
+  const stats = {
+    businesses: S.allBusinesses.length,
+    active: S.allBusinesses.filter(b=>b.status!=="pending").length,
+    pending: S.allBusinesses.filter(b=>b.status==="pending").length,
+    users: S.allUsers.length
+  };
+  frag.append(el("div",{class:"kpis"},
+    el("div",{class:"kpi"},el("div",{class:"l"},"Total businesses"),el("div",{class:"v"},String(stats.businesses))),
+    el("div",{class:"kpi"},el("div",{class:"l"},"Active"),el("div",{class:"v"},String(stats.active))),
+    el("div",{class:"kpi"},el("div",{class:"l"},"Pending approval"),el("div",{class:"v"},String(stats.pending))),
+    el("div",{class:"kpi"},el("div",{class:"l"},"Registered users"),el("div",{class:"v"},String(stats.users)))));
+
+  const f=el("form",{class:"panel"});
+  f.append(el("h2",{},"Pre-register a business"),
+    el("p",{class:"kv",style:"margin:-6px 0 12px;"},"Creates the business right away with the correct name. The owner gets full access automatically the moment they register or sign in using the email or phone you enter below."),
+    el("div",{class:"expform"},
+      el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,autocomplete:"off"})),
+      el("label",{class:"f"},"Category",el("select",{name:"category"},["Cleaning","Lawn Care","Handyman","Pet Care","Other"].map(c=>el("option",{},c)))),
+      el("label",{class:"f"},"City",el("input",{name:"city",autocomplete:"off"})),
+      el("label",{class:"f"},"Owner email",el("input",{name:"email",type:"email",autocomplete:"off"})),
+      el("label",{class:"f"},"Owner phone",el("input",{name:"phone",type:"tel",autocomplete:"off"})),
+      el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Pre-register business"))));
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const d=Object.fromEntries(new FormData(f));
+    const name=d.name.trim();
+    if (!name) return toast("Enter a business name.");
+    if (!d.email.trim() && !d.phone.trim()) return toast("Enter at least an owner email or phone.");
+    const similar = S.allBusinesses.find(b=>normName(b.name)===normName(name));
+    if (similar) return toast("A business called \""+similar.name+"\" already exists.");
+    const db=firebase.firestore();
+    const id0=slugify(name);
+    const existingDoc = await db.doc("businesses/"+id0).get();
+    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
+    const data={name,category:d.category,city:d.city.trim(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),
+      ownerUids:[],ownerEmails:[],createdAt:Date.now(),status:"active",
+      pendingOwnerEmails: d.email.trim() ? [d.email.trim().toLowerCase()] : [],
+      pendingOwnerPhones: d.phone.trim() ? [normPhone(d.phone)] : []};
+    write(()=>db.doc("businesses/"+id).set(data),"Business pre-registered");
+    f.reset();
+  };
+  frag.append(f);
+
+  const pending = S.allBusinesses.filter(b=>b.status==="pending");
+  if (pending.length){
+    const p=el("div",{class:"panel"},el("h2",{},"Pending approval"),el("p",{class:"kv",style:"margin:-6px 0 12px;"},pending.length+" business(es) waiting for review"));
+    pending.forEach(b=>{
+      const similar = S.allBusinesses.find(o=>o.status!=="pending" && normName(o.name)===normName(b.name));
+      const card=el("article",{class:"card",style:"max-width:640px;"});
+      card.append(el("h3",{},b.name));
+      card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
+      if (b.pendingOwnerEmails && b.pendingOwnerEmails[0]) card.append(el("div",{class:"kv"},"Email: "+b.pendingOwnerEmails[0]));
+      if (b.phone) card.append(el("div",{class:"kv"},"Phone: "+b.phone));
+      if (similar) card.append(el("div",{class:"notes",style:"color:var(--danger);background:var(--danger-soft);"},"⚠ Very similar to an existing active business: \""+similar.name+"\". This may be a duplicate."));
+      card.append(el("div",{class:"acts"},
+        el("button",{class:"btn small primary",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Approved")},"Approve"),
+        el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Reject and delete \""+b.name+"\"?")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Rejected"); }},"Reject")));
+      p.append(card);
+    });
+    frag.append(p);
+  }
+
+  const clients=el("div",{class:"panel"},el("h2",{},"All businesses (client list)"));
+  const sorted = S.allBusinesses.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if (!sorted.length) clients.append(el("div",{class:"empty"},"No businesses registered yet."));
+  sorted.forEach(b=>{
+    const owners = b.ownerEmails && b.ownerEmails.length ? b.ownerEmails.filter(Boolean).join(", ") : (b.pendingOwnerEmails&&b.pendingOwnerEmails[0] ? "(pending: "+b.pendingOwnerEmails[0]+")" : "none linked");
+    const card=el("article",{class:"card"});
+    card.append(el("div",{class:"row"},
+      el("h3",{style:"margin:0;"},b.name),
+      el("span",{class:"paid "+(b.status==="pending"?"no":b.status==="suspended"?"no":"yes")}, b.status||"active")));
+    card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
+    card.append(el("div",{class:"kv"},"Owners: ",owners));
+    card.append(el("div",{class:"acts"},
+      el("button",{class:"btn small",onclick:()=>openAssignDlg(b)},"Assign user"),
+      el("button",{class:"btn small ghost",onclick:()=>{ const n=prompt("New name for this business:",b.name); if(n&&n.trim()) write(()=>firebase.firestore().doc("businesses/"+b.id).update({name:n.trim()}),"Renamed"); }},"Rename"),
+      b.status==="suspended"
+        ? el("button",{class:"btn small",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Reactivated")},"Reactivate")
+        : el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Suspend "+b.name+"? They'll lose access until reactivated.")) write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"suspended"}),"Suspended"); }},"Suspend"),
+      el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Permanently delete "+b.name+"? This cannot be undone.")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Deleted"); }},"Delete")));
+    clients.append(card);
+  });
+  frag.append(clients);
+
+  return frag;
 }
 
 /* ---- board ---- */
@@ -644,6 +802,14 @@ function viewTeam(){
   if (S.isOwner && S.business){
     const owners = S.business.ownerUids || (S.business.ownerUid?[S.business.ownerUid]:[]);
     frag.append(el("p",{class:"kv",style:"margin:-8px 0 14px;"},"Owners with full access: ", String(owners.length), owners.length===1?" person":" people"));
+    const pendingEmp = S.employees.filter(e=>!e.userId && (e.email||e.phone));
+    const pendingOwners = (S.business.pendingOwnerEmails||[]).concat(S.business.pendingOwnerPhones||[]);
+    if (pendingEmp.length || pendingOwners.length){
+      const pp = el("div",{class:"panel"},el("h2",{},"Pending invites"));
+      pendingEmp.forEach(e=>pp.append(el("div",{class:"kv"},"Waiting for ",el("b",{},e.name)," to register with ",e.email||e.phone)));
+      pendingOwners.forEach(v=>pp.append(el("div",{class:"kv"},"Waiting for a co-owner to register with ",el("b",{},v))));
+      frag.append(pp);
+    }
   }
 
   if (!S.employees.length){
@@ -703,7 +869,7 @@ function openEmp(e){
       el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save changes")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
-    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),active:d.active==="yes"};
+    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),active:d.active==="yes"};
     if (isNew){ data.createdAt=Date.now(); data.userId=null; data.businessId=S.businessId; write(()=>Store.set("employees",newId(),data),"Team member added"); }
     else write(()=>Store.update("employees",e.id,data),"Saved"); };
   $("#empDlg").showModal();
@@ -810,7 +976,26 @@ async function stopDuty(){
 
 /* ---- books ---- */
 /* ---- receipts ---- */
+let capturedReceiptFile = null;
+async function captureReceiptPhoto(){
+  if (!isNative()) return;
+  try {
+    const { Camera } = Capacitor.Plugins;
+    const photo = await Camera.getPhoto({ quality:85, resultType:"dataUrl", source:"PROMPT", saveToGallery:false });
+    const res = await fetch(photo.dataUrl);
+    const blob = await res.blob();
+    const ext = photo.format || "jpeg";
+    capturedReceiptFile = new File([blob], "receipt."+ext, {type: blob.type || ("image/"+ext)});
+    const prev = $("#receiptPreview");
+    if (prev){ prev.src = photo.dataUrl; prev.classList.remove("hidden"); }
+  } catch(e){
+    if (e && e.message && /cancel/i.test(e.message)) return;
+    console.warn(e);
+    toast("Couldn't open the camera.");
+  }
+}
 function handleReceiptPreview(e){
+  capturedReceiptFile = null;
   const file=e.target.files[0];
   const prev=$("#receiptPreview");
   if (!prev) return;
@@ -875,6 +1060,7 @@ function viewBooks(){
       el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:"Walmart, mop heads and bleach",autocomplete:"off"})),
       el("label",{class:"f full"},"Receipt photo or PDF (optional)",
         el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
+      isNative() ? el("div",{class:"full",style:"margin-top:-6px;"},el("button",{type:"button",class:"btn small",onclick:captureReceiptPhoto},"📷 Take Photo")) : null,
       el("img",{id:"receiptPreview",class:"hidden",style:"max-width:110px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-top:2px;object-fit:cover;"}),
       el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
         el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
@@ -884,7 +1070,7 @@ function viewBooks(){
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
     const amt=Number(d.amount); if(!(amt>0)) return toast("Enter an amount above zero.");
-    const file=f.querySelector("[name=receipt]").files[0];
+    const file=capturedReceiptFile || f.querySelector("[name=receipt]").files[0];
     const wantsPdf=f.querySelector("[name=asPdf]").checked;
     const submitBtn=f.querySelector("button[type=submit]");
     submitBtn.disabled=true;
@@ -908,6 +1094,7 @@ function viewBooks(){
     write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...receiptData}),"Expense added");
     f.reset(); f.querySelector("[name=date]").value=today();
     $("#receiptPreview").classList.add("hidden");
+    capturedReceiptFile = null;
     submitBtn.disabled=false;
   };
   left.append(f);
@@ -1235,7 +1422,11 @@ function subscribeAll(){
 
 /* ---------- Firebase Auth gate ---------- */
 const ADMIN_EMAILS = ['samala_netha@yahoo.com','stanfillelitecleanpros@gmail.com'];
+const PLATFORM_ADMIN_EMAILS = ['samala_netha@yahoo.com'];
+function normPhone(p){ return (p||"").replace(/[^\d]/g,""); }
+function normName(n){ return (n||"").toLowerCase().replace(/[^a-z0-9]+/g,""); }
 let booted=false;
+let platformAdminSubscribed=false;
 function gateMsg(text){ $("#gateMsg").textContent=text||""; }
 function switchGateTab(which){
   $("#gateLoginTab").setAttribute("aria-selected",String(which==="login"));
@@ -1264,26 +1455,39 @@ function wireGate(){
   });
 }
 
-function showGate(){ $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#mainApp").hidden=true; }
-function showApp(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=false; }
+function showGate(){ $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
+function showBizOnboard(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
+function showPendingApproval(biz){
+  $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
+  $("#pendingApprovalMsg").textContent = biz.status==="suspended"
+    ? "\""+(biz.name||"Your business")+"\" has been suspended. Contact support if you believe this is a mistake."
+    : "\""+(biz.name||"Your business")+"\" is waiting for approval. You'll get full access as soon as it's reviewed.";
+  $("#pendingApproval").classList.remove("hidden");
+}
+function showApp(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=false; }
 
 async function addOwnerByEmail(){
-  const email = (prompt("Email of the person to add as a co-owner (full access, same as you):")||"").trim().toLowerCase();
-  if (!email) return;
+  const input = (prompt("Email or phone number of the person to add as a co-owner (full access, same as you):")||"").trim();
+  if (!input) return;
+  const isEmail = input.includes("@");
+  const field = isEmail ? "pendingOwnerEmails" : "pendingOwnerPhones";
+  const value = isEmail ? input.toLowerCase() : normPhone(input);
   write(async()=>{
     const db = firebase.firestore();
     await db.doc("businesses/"+S.businessId).update({
-      pendingOwnerEmails: firebase.firestore.FieldValue.arrayUnion(email)
+      [field]: firebase.firestore.FieldValue.arrayUnion(value)
     });
-  }, "Invite sent — they'll get full access the moment they register or sign in with "+email);
+  }, "Invite sent — they'll get full access the moment they register or sign in with "+input);
 }
 
 function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("business-"+newId()); }
 function bizMsg(text){ $("#bizMsg").textContent=text||""; }
 
-async function resolveBusiness(uid, email){
+async function resolveBusiness(uid, email, phone){
   const db=firebase.firestore();
+  const normEmail = email ? email.toLowerCase() : null;
+  const normPh = phone ? normPhone(phone) : null;
+
   const ownersSnap = await db.collection("businesses").where("ownerUids","array-contains",uid).limit(1).get();
   if (!ownersSnap.empty){ const d=ownersSnap.docs[0]; return {id:d.id, ...d.data()}; }
   // Legacy: businesses created before multi-owner support only have a single ownerUid field
@@ -1297,32 +1501,49 @@ async function resolveBusiness(uid, email){
       if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
     }
   }
-  // Not linked yet — were they invited as a co-owner using this exact email?
-  if (email){
-    const ownerInviteSnap = await db.collection("businesses").where("pendingOwnerEmails","array-contains",email.toLowerCase()).limit(1).get();
-    if (!ownerInviteSnap.empty){
-      const d = ownerInviteSnap.docs[0];
+  // Not linked yet — were they invited as a co-owner using this exact email or phone?
+  for (const [field,val] of [["pendingOwnerEmails",normEmail],["pendingOwnerPhones",normPh]]){
+    if (!val) continue;
+    const snap = await db.collection("businesses").where(field,"array-contains",val).limit(1).get();
+    if (!snap.empty){
+      const d = snap.docs[0];
       await db.doc("businesses/"+d.id).update({
         ownerUids: firebase.firestore.FieldValue.arrayUnion(uid),
-        pendingOwnerEmails: firebase.firestore.FieldValue.arrayRemove(email.toLowerCase())
+        ownerEmails: firebase.firestore.FieldValue.arrayUnion(normEmail||""),
+        [field]: firebase.firestore.FieldValue.arrayRemove(val)
       });
       return {id:d.id, ...d.data(), ownerUids:[...(d.data().ownerUids||[]), uid]};
     }
   }
-  // Not linked yet — were they pre-added by an owner using this exact email?
-  if (email){
-    const inviteSnap = await db.collection("employees").where("email","==",email.toLowerCase()).limit(1).get();
-    if (!inviteSnap.empty){
-      const inviteDoc = inviteSnap.docs[0];
-      const businessId = inviteDoc.data().businessId;
-      if (businessId){
-        await db.doc("employees/"+inviteDoc.id).update({userId:uid});
-        const bizDoc = await db.doc("businesses/"+businessId).get();
-        if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
-      }
+  // Not linked yet — were they pre-added by an owner using this exact email or phone?
+  for (const [field,val] of [["email",normEmail],["phoneNorm",normPh]]){
+    if (!val) continue;
+    const snap = await db.collection("employees").where(field,"==",val).limit(1).get();
+    if (snap.empty) continue;
+    const inviteDoc = snap.docs[0];
+    const businessId = inviteDoc.data().businessId;
+    if (businessId){
+      await db.doc("employees/"+inviteDoc.id).update({userId:uid});
+      const bizDoc = await db.doc("businesses/"+businessId).get();
+      if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
     }
   }
   return null;
+}
+
+// Finds an existing ACTIVE business with a very similar name (ignoring case/punctuation/spacing).
+async function findSimilarBusiness(name){
+  const db=firebase.firestore();
+  const target = normName(name);
+  if (!target) return null;
+  const snap = await db.collection("businesses").where("status","!=","pending").get().catch(()=>db.collection("businesses").get());
+  let match = null;
+  snap.forEach(doc=>{
+    if (match) return;
+    const d = doc.data();
+    if (normName(d.name) === target) match = {id:doc.id, ...d};
+  });
+  return match;
 }
 
 async function claimLegacyData(){
@@ -1363,15 +1584,23 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     phone=$("#bizPhone").value.trim(), city=$("#bizCity").value.trim(), state=$("#bizState").value.trim(),
     description=$("#bizDescription").value.trim();
   if (!name) return bizMsg("Enter your business name.");
-  const id=slugify(name);
   try {
     const db=firebase.firestore();
-    const existing = await db.doc("businesses/"+id).get();
-    if (existing.exists) return bizMsg("A business with a very similar name is already registered. Try adding your city, e.g. \""+name+" "+city+"\".");
-    const data={name,category,phone,city,state,description,ownerUid:S.myUserId,ownerUids:[S.myUserId],createdAt:Date.now(),active:true};
+    const similar = await findSimilarBusiness(name);
+    if (similar){
+      const proceed = confirm("A business called \""+similar.name+"\" already exists on this platform.\n\nIf that's actually your business, don't create a new one here — ask its owner to add you as a team member or co-owner instead.\n\nCreate a separate new business called \""+name+"\" anyway?");
+      if (!proceed) return;
+    }
+    const id0=slugify(name);
+    const existingDoc = await db.doc("businesses/"+id0).get();
+    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
+    const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
+    const data={name,category,phone,phoneNorm:normPhone(phone),city,state,description,
+      ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
+      status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
-    toast("Business registered!");
-    enterBusiness({id,...data});
+    if (isPlatformAdmin){ toast("Business registered!"); enterBusiness({id,...data}); }
+    else { toast("Submitted — waiting for approval."); showPendingApproval({id,...data}); }
   } catch(e){ bizMsg(e.message); }
 });
 
@@ -1380,8 +1609,21 @@ auth.onAuthStateChanged(async function(user){
     S.myUserId = user.uid;
     S.myEmail = user.email;
     S.isOwner = ADMIN_EMAILS.includes(user.email);
-    const biz = await resolveBusiness(user.uid, user.email);
-    if (biz) enterBusiness(biz);
+    S.isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(user.email);
+    if (S.isPlatformAdmin && !platformAdminSubscribed){
+      platformAdminSubscribed = true;
+      firebase.firestore().collection("businesses").onSnapshot(snap=>{
+        S.allBusinesses = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        render();
+      });
+    }
+    let myPhone = "";
+    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists) myPhone = acctDoc.data().phone||""; } catch(e){}
+    const biz = await resolveBusiness(user.uid, user.email, myPhone);
+    if (biz){
+      if ((biz.status==="pending"||biz.status==="suspended") && !S.isPlatformAdmin) showPendingApproval(biz);
+      else enterBusiness(biz);
+    }
     else showBizOnboard();
   } else {
     S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
