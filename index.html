@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dayshift</title>
+<meta name="author" content="LIT America">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
@@ -212,6 +213,9 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
 .gate-form{display:flex;flex-direction:column;gap:10px}
 .gate-msg{font-size:13px;color:var(--danger);min-height:16px}
+.lit-credit{margin:18px 0 0;text-align:center;color:var(--muted);font-size:13px}
+.lit-credit b{color:var(--ink);font-weight:800}
+.app-foot{padding:30px 0 6px;margin-top:34px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -245,6 +249,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
     <div class="gate-msg" id="gateMsg"></div>
   </div>
+  <p class="lit-credit">A product of <b>LIT America</b></p>
 </div>
 
 <div id="bizOnboard" class="gate-wrap hidden">
@@ -272,6 +277,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
     <div class="gate-msg" id="bizMsg"></div>
   </div>
+  <p class="lit-credit">A product of <b>LIT America</b></p>
 </div>
 
 <div id="pendingApproval" class="gate-wrap hidden">
@@ -280,6 +286,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
     <button class="btn ghost" onclick="auth.signOut()">Sign out</button>
   </div>
+  <p class="lit-credit">A product of <b>LIT America</b></p>
 </div>
 
 <div class="wrap" id="mainApp" hidden>
@@ -300,6 +307,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="books" aria-selected="false">Books</button>
   </nav>
   <main id="view"></main>
+  <footer class="lit-credit app-foot">Dayshift &middot; A product of <b>LIT America</b></footer>
 </div>
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
