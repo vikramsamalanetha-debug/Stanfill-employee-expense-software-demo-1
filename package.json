@@ -1,0 +1,17 @@
+{
+  "name": "dayshift",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dayshift crew & bookkeeping app — a product of LIT America (www.litamerica.net)",
+  "scripts": {
+    "build:web": "node scripts/copy-web.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0"
+  }
+}
