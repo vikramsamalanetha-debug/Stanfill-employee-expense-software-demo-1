@@ -215,6 +215,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-msg{font-size:13px;color:var(--danger);min-height:16px}
 .lit-credit{margin:18px 0 0;text-align:center;color:var(--muted);font-size:13px}
 .lit-credit b{color:var(--ink);font-weight:800}
+.lit-credit a{color:inherit;text-decoration:none}.lit-credit a:hover b{text-decoration:underline}
 .app-foot{padding:30px 0 6px;margin-top:34px;border-top:1px solid var(--line)}
 </style>
 </head>
@@ -249,7 +250,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
     <div class="gate-msg" id="gateMsg"></div>
   </div>
-  <p class="lit-credit">A product of <b>LIT America</b></p>
+  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
 
 <div id="bizOnboard" class="gate-wrap hidden">
@@ -277,16 +278,16 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
     <div class="gate-msg" id="bizMsg"></div>
   </div>
-  <p class="lit-credit">A product of <b>LIT America</b></p>
+  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
 
 <div id="pendingApproval" class="gate-wrap hidden">
   <div class="gate-panel">
     <h1>Almost there</h1>
     <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
-    <button class="btn ghost" onclick="auth.signOut()">Sign out</button>
+    <button class="btn ghost" onclick="signOutApp()">Sign out</button>
   </div>
-  <p class="lit-credit">A product of <b>LIT America</b></p>
+  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
 
 <div class="wrap" id="mainApp" hidden>
@@ -302,12 +303,13 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
     <button role="tab" data-tab="requests" aria-selected="false">Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
+    <button role="tab" data-tab="rewards" aria-selected="false">Rewards</button>
     <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
     <button role="tab" data-tab="books" aria-selected="false">Books</button>
   </nav>
   <main id="view"></main>
-  <footer class="lit-credit app-foot">Dayshift &middot; A product of <b>LIT America</b></footer>
+  <footer class="lit-credit app-foot">Dayshift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
 </div>
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
@@ -374,16 +376,17 @@ function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-
 let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger"];
 const Store = {
   mode:"loading", db:null, local:null, listeners:{},
   useLocal(){
     this.mode="local";
     try { this.local = JSON.parse(localStorage.getItem("secp-board")||"null"); } catch(e){ this.local=null; }
     if (!this.local) this.local = {employees:{},jobs:{},locations:{},expenses:{}};
+    ["customers","pointsLedger"].forEach(c=>{ if(!this.local[c]) this.local[c]={}; });
   },
   saveLocal(){ try{ localStorage.setItem("secp-board", JSON.stringify(this.local)); }catch(e){} },
-  emit(coll){ const arr=Object.entries(this.local[coll]).map(([id,d])=>({id,...d})); (this.listeners[coll]||[]).forEach(f=>f(arr)); },
+  emit(coll){ const arr=Object.entries(this.local[coll]||{}).map(([id,d])=>({id,...d})); (this.listeners[coll]||[]).forEach(f=>f(arr)); },
   subscribe(coll, cb, businessId){
     if (this.mode==="db"){
       let ref = this.db.collection(coll);
@@ -417,7 +420,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -435,6 +438,7 @@ function draw(){
   const v=$("#view"); v.replaceChildren();
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="requests") v.append(viewRequests());
+  else if (S.tab==="rewards") v.append(viewRewards());
   else if (S.tab==="board") v.append(viewBoard());
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="insights") v.append(viewInsights());
@@ -454,7 +458,7 @@ function drawWho(){
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   if (S.isOwner) w.append(el("button",{class:"btn ghost",onclick:claimLegacyData},"Import old data"));
-  w.append(el("button",{class:"btn ghost",onclick:()=>{ auth.signOut(); }},"Sign out"));
+  w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));
 }
 
 function drawBanners(){
@@ -481,6 +485,67 @@ function drawBanners(){
   }
 }
 
+/* ---- Clean Rewards: members, balances and the points log ---- */
+const REWARD_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
+function addLedger(c, delta, type, reason){
+  if (Store.mode!=="db") return toast("Open the published board to change points.");
+  return write(()=>firebase.firestore().collection("pointsLedger").add({
+    uid:c.id, businessId:S.businessId, customerName:c.name||c.email||"", delta, type, reason,
+    by:S.myEmail||"", createdAt:firebase.firestore.FieldValue.serverTimestamp() }), "Points updated");
+}
+function redeemFor(c, bal){
+  const ok=REWARD_TIERS.filter(t=>t.p<=bal);
+  if(!ok.length) return toast((c.name||"This customer")+" hasn\u2019t reached the first reward yet.");
+  const pick=prompt("Redeem which reward for "+(c.name||"this customer")+"?\n"+ok.map((t,i)=>(i+1)+") "+t.t+" \u2014 "+t.p+" pts").join("\n")+"\n\nType the number:");
+  const t=ok[Number(pick)-1]; if(!t) return;
+  addLedger(c, -t.p, "redeem", "Redeemed: "+t.t);
+}
+function adjustFor(c){
+  const n=Number((prompt("Add or remove points for "+(c.name||"this customer")+" (use a minus sign to remove, e.g. 50 or -25):")||"").trim());
+  if(!n || !Number.isFinite(n) || Math.abs(n)>5000) return;
+  const why=(prompt("Reason (the customer will see this):","Bonus points")||"").trim().slice(0,100);
+  if(!why) return;
+  addLedger(c, Math.round(n), "adjust", why);
+}
+function viewRewards(){
+  const frag=document.createDocumentFragment();
+  const members=S.customers.filter(c=>c.rewardsMember);
+  const byUid={}; S.pointsLedger.forEach(r=>{ (byUid[r.uid] ||= []).push(r); });
+  const bal=u=>(byUid[u]||[]).reduce((n,r)=>n+(Number(r.delta)||0),0);
+  const rows=members.map(c=>({c,bal:bal(c.id)})).sort((a,b)=>b.bal-a.bal);
+  const total=rows.reduce((n,r)=>n+r.bal,0);
+  const ready=rows.filter(r=>r.bal>=REWARD_TIERS[0].p).length;
+  frag.append(el("div",{class:"toolbar"},
+    el("span",{class:"kv grow"},el("b",{},String(rows.length))," member(s) \u00b7 ",el("b",{},String(total))," points outstanding \u00b7 ",el("b",{},String(ready))," can redeem a reward")));
+  const mp=el("div",{class:"panel"}); mp.append(el("h2",{},"Clean Rewards members"));
+  mp.append(el("div",{class:"sub"},"Points are added automatically when a job for a member is marked paid (1 point per $1). Customers see this same log on their website account."));
+  if(!rows.length) mp.append(el("div",{class:"empty"},"No members yet. Customers join from the booking form or their account page."));
+  rows.forEach(({c,bal:b})=>{
+    const next=REWARD_TIERS.find(t=>t.p>b);
+    const log=(byUid[c.id]||[]).slice().sort((x,y)=>ledgerMs(y)-ledgerMs(x));
+    const row=el("details",{style:"border-top:1px solid var(--line);padding:10px 0"});
+    row.append(el("summary",{style:"cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap"},
+      el("b",{class:"grow"},c.name||c.email||"Customer"),
+      el("span",{class:"kv"},c.phone||c.email||""),
+      el("span",{class:"paid yes"},b+" pts"),
+      el("span",{class:"kv"},next?(next.p-b)+" to "+next.t:"All rewards unlocked")));
+    const body=el("div",{style:"padding:8px 0 4px"});
+    if(S.isOwner) body.append(el("div",{class:"acts",style:"margin:0 0 8px"},
+      el("button",{class:"btn small primary",onclick:()=>redeemFor(c,b)},"Redeem reward"),
+      el("button",{class:"btn small ghost",onclick:()=>adjustFor(c)},"Add / remove points")));
+    if(!log.length) body.append(el("div",{class:"empty"},"No activity yet."));
+    log.forEach(r=>{ const d=Number(r.delta)||0;
+      body.append(el("div",{class:"kv",style:"display:flex;gap:10px;padding:3px 0"},
+        el("span",{style:"min-width:88px"},ledgerMs(r)?new Date(ledgerMs(r)).toLocaleDateString():"\u2014"),
+        el("span",{class:"grow"},r.reason||""),
+        el("b",{style:"color:"+(d>=0?"var(--ok,#1F7A69)":"#B1432E")},(d>0?"+":"")+d))); });
+    row.append(body); mp.append(row);
+  });
+  frag.append(mp);
+  return frag;
+}
+
 /* ---- booking requests (from the public website) ---- */
 function viewRequests(){
   const frag=document.createDocumentFragment();
@@ -494,6 +559,29 @@ function viewRequests(){
     el("div",{class:"chips"},
       el("button",{class:"chip","aria-pressed":String(!showAll),onclick:()=>{S.reqShowAll=false;render();}},"Pending"),
       el("button",{class:"chip","aria-pressed":String(!!showAll),onclick:()=>{S.reqShowAll=true;render();}},"All"))));
+
+  if (S.isOwner && S.business){
+    const em=S.business.notifyEmails||[], ph=S.business.notifyPhones||[];
+    const alerts=el("div",{class:"panel",style:"max-width:640px;"},
+      el("h2",{},"Booking alerts"),
+      el("p",{class:"kv",style:"margin:-6px 0 12px;"},
+        "New requests are emailed to ", el("b",{},em.length?em.join(", "):"every owner of this business"),
+        ph.length?[" and texted to ",el("b",{},ph.join(", "))]:"",
+        ". Reminders repeat until the request is answered."),
+      el("div",{class:"acts"},
+        el("button",{class:"btn small",onclick:()=>addAlert("email")},"Add alert email"),
+        el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add alert phone"),
+        (em.length||ph.length)?el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset to all owners"):null));
+    const cur=S.business.alertSound||"chime";
+    const sel=el("select",{"aria-label":"Phone alert sound",onchange:()=>{ previewSound(sel.value); saveAlertSound(sel.value); }},
+      ...ALERT_SOUNDS.map(o=>el("option",{value:o.id,selected:o.id===cur},o.label)));
+    alerts.append(el("div",{style:"margin-top:16px;padding-top:14px;border-top:1px solid var(--line,#e3e8e6);"},
+      el("p",{class:"kv",style:"margin:0 0 8px;"},el("b",{},"Phone alert sound"),
+        " \u2014 plays for new booking requests on every phone signed in as an owner."),
+      el("div",{class:"acts"},sel,
+        el("button",{class:"btn small ghost",onclick:()=>previewSound(sel.value)},"\u25B6 Preview"))));
+    frag.append(alerts);
+  }
 
   if (!list.length){
     frag.append(el("div",{class:"panel"},el("div",{class:"empty"},showAll?"No booking requests yet.":"No pending requests right now.")));
@@ -513,10 +601,16 @@ function viewRequests(){
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
     if (b.details) card.append(el("div",{class:"notes"},b.details));
     if (b.wantsRewards) card.append(el("div",{class:"kv"},"Wants Clean Rewards"));
+    const trail=[];
+    if (b.ownerNotifiedAt) trail.push("Owners alerted");
+    if (b.reminderCount) trail.push(b.reminderCount+" reminder"+(b.reminderCount>1?"s":"")+" sent");
+    if (b.respondedVia) trail.push((status==="confirmed"?"Approved":"Declined")+(b.respondedVia==="email"?" from an email link":" in the app"));
+    if (b.customerNotifiedAt) trail.push("customer emailed");
+    if (trail.length) card.append(el("div",{class:"kv"},trail.join(" · ")));
     if (status==="pending"){
       const acts=el("div",{class:"acts"});
       acts.append(el("button",{class:"btn small primary",onclick:()=>convertBookingToJob(b)},"Convert to job"));
-      acts.append(el("button",{class:"btn small ghost danger",onclick:()=>{ if(confirm("Decline this request?")) write(()=>Store.update("bookings",b.id,{status:"declined"}),"Request declined"); }},"Decline"));
+      acts.append(el("button",{class:"btn small ghost danger",onclick:()=>{ if(confirm("Decline this request?")) write(()=>Store.update("bookings",b.id,{status:"declined",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()}),"Request declined"); }},"Decline"));
       card.append(acts);
     }
     board.append(card);
@@ -524,13 +618,40 @@ function viewRequests(){
   frag.append(board);
   return frag;
 }
+function addAlert(kind){
+  const isEmail = kind==="email";
+  const raw=(prompt(isEmail?"Email address to alert about new booking requests:":"Mobile number to text about new booking requests (US, 10 digits):")||"").trim();
+  if (!raw) return;
+  let value, field;
+  if (isEmail){
+    value=raw.toLowerCase(); field="notifyEmails";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return toast("That doesn't look like an email address.");
+  } else {
+    value=normPhone(raw); field="notifyPhones";
+    if (value.length===11 && value[0]==="1") value=value.slice(1);
+    if (value.length!==10) return toast("Enter a 10-digit US mobile number.");
+  }
+  write(async()=>{
+    await firebase.firestore().doc("businesses/"+S.businessId).update({[field]:firebase.firestore.FieldValue.arrayUnion(value)});
+    S.business[field]=[...new Set([...(S.business[field]||[]),value])];
+    render();
+  }, "Alert "+(isEmail?"email":"number")+" added");
+}
+function resetAlerts(){
+  if (!confirm("Send alerts to every owner again, and stop texting?")) return;
+  write(async()=>{
+    await firebase.firestore().doc("businesses/"+S.businessId).update({notifyEmails:[],notifyPhones:[]});
+    S.business.notifyEmails=[]; S.business.notifyPhones=[];
+    render();
+  }, "Alerts reset");
+}
 function convertBookingToJob(b){
   const dateStr = (b.requestedDate||"").slice(0,10);
   const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], price:0, date:dateStr, time:"",
     phone:b.phone||"", notes:b.details||"", assigneeId:null, status:"new", paid:false, createdAt:Date.now(), fromBookingId:b.id, businessId:S.businessId };
   write(async()=>{
     await Store.set("jobs",newId(),jobData);
-    await Store.update("bookings",b.id,{status:"confirmed"});
+    await Store.update("bookings",b.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()});
   }, "Added to the job board");
 }
 
@@ -1433,6 +1554,71 @@ const ADMIN_EMAILS = ['samala_netha@yahoo.com','stanfillelitecleanpros@gmail.com
 const PLATFORM_ADMIN_EMAILS = ['samala_netha@yahoo.com'];
 function normPhone(p){ return (p||"").replace(/[^\d]/g,""); }
 function normName(n){ return (n||"").toLowerCase().replace(/[^a-z0-9]+/g,""); }
+
+const ALERT_SOUNDS=[
+  {id:"chime",label:"Chime (default)"},{id:"default",label:"Phone's own sound"},{id:"bell",label:"Bell"},
+  {id:"dingdong",label:"Ding-dong"},{id:"urgent",label:"Urgent beeps"},{id:"marimba",label:"Marimba"}];
+function previewSound(id){
+  if (!id || id==="default") return toast("That one uses your phone's own notification sound.");
+  try { const a=new Audio("sounds/"+id+".wav"); a.play().catch(()=>toast("Preview works in the phone app.")); }
+  catch(e){ toast("Preview works in the phone app."); }
+}
+function saveAlertSound(id){
+  write(async()=>{
+    await firebase.firestore().doc("businesses/"+S.businessId).update({alertSound:id});
+    S.business.alertSound=id; render();
+  }, "Alert sound saved for all your devices");
+}
+/* ---------- phone alerts (native app): new-booking push notifications for owners ---------- */
+let pushToken=null, pushWired=false;
+async function wirePush(){
+  if (pushWired || !isNative()) return;
+  const PN = window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+  if (!PN) return;
+  pushWired=true;
+  try { await PN.createChannel({id:"bookings", name:"Booking requests", description:"New booking requests and reminders", importance:5, visibility:1, vibration:true}); } catch(e){ console.warn(e); }
+  for (const snd of ALERT_SOUNDS){          // one channel per tone: Android fixes the sound by channel
+    if (snd.id==="default") continue;
+    try { await PN.createChannel({id:"bookings_"+snd.id, name:"Booking requests \u2013 "+snd.label, description:"New booking requests and reminders",
+      importance:5, visibility:1, vibration:true, sound:snd.id+".wav"}); } catch(e){ console.warn(e); }
+  }
+  PN.addListener("registration", async t=>{
+    pushToken=t.value;
+    if (!S.myUserId) return;
+    try {
+      await firebase.firestore().doc("devices/"+pushToken).set({
+        uid:S.myUserId, email:(S.myEmail||"").toLowerCase(), businessId:S.businessId||null,
+        platform:"android", updatedAt:Date.now() });
+    } catch(e){ console.warn("Could not save device token", e); }
+  });
+  PN.addListener("registrationError", e=>console.warn("Push registration failed", e));
+  PN.addListener("pushNotificationReceived", n=>{            // app is open: show it in-app
+    S.tab="requests"; render(); toast((n.title||"New booking request")+(n.body?" — "+n.body:""));
+  });
+  PN.addListener("pushNotificationActionPerformed", ()=>{    // owner tapped the notification
+    S.tab="requests"; render();
+  });
+}
+async function enablePush(){
+  if (!isNative() || !(S.isOwner || S.isPlatformAdmin)) return;
+  try {
+    await wirePush();
+    const PN = window.Capacitor.Plugins.PushNotifications; if (!PN) return;
+    let perm = await PN.checkPermissions();
+    if (perm.receive==="prompt" || perm.receive==="prompt-with-rationale") perm = await PN.requestPermissions();
+    if (perm.receive!=="granted"){ toast("Turn on notifications for this app in Android settings to get booking alerts."); return; }
+    await PN.register();
+  } catch(e){ console.warn("Push setup failed", e); }
+}
+async function signOutApp(){
+  try {
+    if (pushToken){ await firebase.firestore().doc("devices/"+pushToken).delete(); }
+    if (isNative() && window.Capacitor.Plugins.PushNotifications) await window.Capacitor.Plugins.PushNotifications.unregister();
+  } catch(e){ console.warn(e); }
+  pushToken=null;
+  auth.signOut();
+}
+window.signOutApp = signOutApp;
 let booted=false;
 let platformAdminSubscribed=false;
 function gateMsg(text){ $("#gateMsg").textContent=text||""; }
@@ -1581,6 +1767,7 @@ function enterBusiness(biz){
     subscribeAll();
   }
   showApp(); render();
+  enablePush();
 }
 
 wireGate();
