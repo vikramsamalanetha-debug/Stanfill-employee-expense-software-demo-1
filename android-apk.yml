@@ -31,6 +31,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Arrange uploaded files into folders
+        run: |
+          mkdir -p scripts assets android-keystore
+          [ -f copy-web.js ] && cp copy-web.js scripts/copy-web.js
+          for f in icon-only.png icon-foreground.png icon-background.png splash.png splash-dark.png; do [ -f "$f" ] && cp "$f" assets/; done
+          [ -f dayshift-debug.keystore ] && cp dayshift-debug.keystore android-keystore/
+          ls scripts assets android-keystore
+
       - name: Install Capacitor
         run: npm install
 
