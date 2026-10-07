@@ -10,28 +10,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F3F7F5; --surface:#FFFFFF; --surface-2:#EAF3EF; --ink:#193532; --muted:#5B716E; --line:#D6E4DF;
-  --primary:#1F7A69; --primary-ink:#FFFFFF; --primary-soft:#DDF0EA;
-  --lemon:#F2C230; --lemon-soft:#FCF2CF; --sky:#3E7FB8; --sky-soft:#E1EDF8;
-  --danger:#B1432E; --danger-soft:#F8E3DE; --ok:#2F8A4E;
+  color-scheme:light;
+  --bg:#F7F6F3; --surface:#FFFFFF; --surface-2:#EFEDE8; --ink:#1D1B18; --muted:#6A655D; --line:#E3E0D9;
+  --primary:#D9480F; --primary-ink:#FFFFFF; --primary-soft:#FDE9DD;
+  --lemon:#F2B705; --lemon-soft:#FDF1C9; --sky:#3E7FB8; --sky-soft:#E1EDF8;
+  --danger:#B42318; --danger-soft:#FBE4E1; --ok:#2F8A4E;
   --radius-lg:18px; --radius:12px; --radius-sm:8px;
   --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body:"Nunito Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#0F1D1B; --surface:#172A27; --surface-2:#1E3531; --ink:#E4F0EC; --muted:#9DB5B0; --line:#2B4541;
-    --primary:#4DB9A2; --primary-ink:#0C1B18; --primary-soft:#1C3C35;
-    --lemon:#F2C94C; --lemon-soft:#3A3419; --sky:#7FB3E3; --sky-soft:#1B3044;
-    --danger:#E8836C; --danger-soft:#3D2420; --ok:#6CCB8C;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0F1D1B; --surface:#172A27; --surface-2:#1E3531; --ink:#E4F0EC; --muted:#9DB5B0; --line:#2B4541;
-  --primary:#4DB9A2; --primary-ink:#0C1B18; --primary-soft:#1C3C35;
-  --lemon:#F2C94C; --lemon-soft:#3A3419; --sky:#7FB3E3; --sky-soft:#1B3044;
-  --danger:#E8836C; --danger-soft:#3D2420; --ok:#6CCB8C;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -50,7 +37,7 @@ a{color:var(--primary)}
 .whoami{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:20px;width:max-content;max-width:100%;overflow-x:auto}
 .tabs button{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
+.tabs button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
 
 /* buttons & fields */
 .btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font-size:14px}
@@ -80,7 +67,7 @@ textarea{resize:vertical;min-height:70px}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
 .board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
 @media (max-width:1000px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:620px){.board{grid-template-columns:1fr}}
@@ -217,6 +204,10 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .lit-credit b{color:var(--ink);font-weight:800}
 .lit-credit a{color:inherit;text-decoration:none}.lit-credit a:hover b{text-decoration:underline}
 .app-foot{padding:30px 0 6px;margin-top:34px;border-top:1px solid var(--line)}
+.srow{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
+.sctl{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -307,6 +298,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
     <button role="tab" data-tab="books" aria-selected="false">Books</button>
+    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main id="view"></main>
   <footer class="lit-credit app-foot">Dayshift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
@@ -340,7 +332,7 @@ const STATUSES = [
   {id:"in_progress", label:"In progress"},
   {id:"done", label:"Done"}
 ];
-const COLORS = ["#1F7A69","#3E7FB8","#C0842A","#8A5BB5","#C2554A","#4B8B3B","#2F6F8F","#A0527A"];
+const COLORS = ["#D9480F","#3E7FB8","#C0842A","#8A5BB5","#C2554A","#4B8B3B","#2F6F8F","#A0527A"];
 const STALE_MS = 15*60*1000;
 
 /* ---------- helpers ---------- */
@@ -442,6 +434,7 @@ function draw(){
   else if (S.tab==="board") v.append(viewBoard());
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="insights") v.append(viewInsights());
+  else if (S.tab==="settings") v.append(viewSettings());
   else v.append(viewBooks());
 }
 
@@ -457,8 +450,7 @@ function drawWho(){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
-  if (S.isOwner) w.append(el("button",{class:"btn ghost",onclick:claimLegacyData},"Import old data"));
-  w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));
+  w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
 }
 
 function drawBanners(){
@@ -539,10 +531,85 @@ function viewRewards(){
       body.append(el("div",{class:"kv",style:"display:flex;gap:10px;padding:3px 0"},
         el("span",{style:"min-width:88px"},ledgerMs(r)?new Date(ledgerMs(r)).toLocaleDateString():"\u2014"),
         el("span",{class:"grow"},r.reason||""),
-        el("b",{style:"color:"+(d>=0?"var(--ok,#1F7A69)":"#B1432E")},(d>0?"+":"")+d))); });
+        el("b",{style:"color:"+(d>=0?"var(--ok,#2F8A4E)":"#B1432E")},(d>0?"+":"")+d))); });
     row.append(body); mp.append(row);
   });
   frag.append(mp);
+  return frag;
+}
+
+/* ---- Settings: everything that is set once, not done daily ---- */
+function setRow(title,desc,control){
+  return el("div",{class:"srow"},
+    el("div",{class:"sinfo"},el("b",{},title),desc?el("span",{class:"kv"},desc):null),
+    el("div",{class:"sctl"},control));
+}
+function setPanel(title,sub,...rows){
+  const p=el("div",{class:"panel",style:"max-width:720px;"},el("h2",{},title));
+  if (sub) p.append(el("div",{class:"sub"},sub));
+  rows.filter(Boolean).forEach(r=>p.append(r));
+  return p;
+}
+function settingsNotify(){
+  const frag=document.createDocumentFragment();
+  const em=S.business.notifyEmails||[], ph=S.business.notifyPhones||[];
+  const cur=S.business.alertSound||"chime";
+  const sel=el("select",{"aria-label":"Phone alert sound",onchange:()=>{ previewSound(sel.value); saveAlertSound(sel.value); }},
+    ...ALERT_SOUNDS.map(o=>el("option",{value:o.id,selected:o.id===cur},o.label)));
+  frag.append(setPanel("Who gets booking alerts","New requests are emailed here, and reminders repeat until someone answers.",
+    setRow("Alert emails",em.length?em.join(", "):"Every owner of this business",el("button",{class:"btn small",onclick:()=>addAlert("email")},"Add email")),
+    setRow("Alert phone numbers (text)",ph.length?ph.join(", "):"None. Texting is off.",el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add number")),
+    (em.length||ph.length)?setRow("Back to default","Send alerts to every owner again.",el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset")):null));
+  let status;
+  if (!isNative()) status="Phone alerts need the Android app.";
+  else if (pushToken) status="On for this phone.";
+  else status="Not set up yet. Sign out, sign back in, and tap Allow when asked about notifications.";
+  frag.append(setPanel("Phone alerts","Pop-up alerts on every phone signed in as an owner.",
+    setRow("This phone",status,null),
+    setRow("Alert sound","Plays for new booking requests on every owner phone.",el("div",{class:"row"},sel,el("button",{class:"btn small ghost",onclick:()=>previewSound(sel.value)},"\u25B6 Preview")))));
+  return frag;
+}
+function settingsAccess(){
+  const owners=S.business.ownerUids||(S.business.ownerUid?[S.business.ownerUid]:[]);
+  const frag=document.createDocumentFragment();
+  frag.append(setPanel("Owners","Owners have full access to everything, including the books and settings.",
+    setRow("Owners with full access",String(owners.length)+(owners.length===1?" person":" people"),el("button",{class:"btn small",onclick:addOwnerByEmail},"Add owner"))));
+  const pendingEmp=S.employees.filter(e=>!e.userId&&(e.email||e.phone));
+  const pendingOwners=(S.business.pendingOwnerEmails||[]).concat(S.business.pendingOwnerPhones||[]);
+  const pp=setPanel("Pending invites","People you added who haven't registered yet.");
+  if(!pendingEmp.length&&!pendingOwners.length) pp.append(el("div",{class:"empty"},"No pending invites."));
+  pendingEmp.forEach(e=>pp.append(el("div",{class:"kv"},"Waiting for ",el("b",{},e.name)," to register with ",e.email||e.phone)));
+  pendingOwners.forEach(v=>pp.append(el("div",{class:"kv"},"Waiting for a co-owner to register with ",el("b",{},v))));
+  frag.append(pp);
+  return frag;
+}
+function settingsRewards(){
+  const p=setPanel("Clean Rewards","Customers earn 1 point per $1 once a job is marked paid. Points and members are on the Rewards tab.",
+    ...REWARD_TIERS.map(t=>setRow(t.p+" points",t.t,null)),
+    setRow("Members and balances","See who has points and redeem rewards.",el("button",{class:"btn small",onclick:()=>{S.tab="rewards";render();}},"Open Rewards")));
+  return p;
+}
+function settingsAccount(){
+  const frag=document.createDocumentFragment();
+  const m=me();
+  frag.append(setPanel("Account","",
+    setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
+    S.business?setRow("Business",S.business.name||"",null):null,
+    S.isOwner?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
+  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"Dayshift \u00b7 A product of ",
+    el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},el("b",{},"LIT America"))));
+  return frag;
+}
+function viewSettings(){
+  const frag=document.createDocumentFragment();
+  const secs=S.isOwner&&S.business
+    ?[["notify","Notifications"],["access","Owners & invites"],["rewards","Rewards"],["account","Account"]]
+    :[["account","Account"]];
+  if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
+  frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
+    ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
+  const body={notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  frag.append(body());
   return frag;
 }
 
@@ -561,26 +628,10 @@ function viewRequests(){
       el("button",{class:"chip","aria-pressed":String(!!showAll),onclick:()=>{S.reqShowAll=true;render();}},"All"))));
 
   if (S.isOwner && S.business){
-    const em=S.business.notifyEmails||[], ph=S.business.notifyPhones||[];
-    const alerts=el("div",{class:"panel",style:"max-width:640px;"},
-      el("h2",{},"Booking alerts"),
-      el("p",{class:"kv",style:"margin:-6px 0 12px;"},
-        "New requests are emailed to ", el("b",{},em.length?em.join(", "):"every owner of this business"),
-        ph.length?[" and texted to ",el("b",{},ph.join(", "))]:"",
-        ". Reminders repeat until the request is answered."),
-      el("div",{class:"acts"},
-        el("button",{class:"btn small",onclick:()=>addAlert("email")},"Add alert email"),
-        el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add alert phone"),
-        (em.length||ph.length)?el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset to all owners"):null));
-    const cur=S.business.alertSound||"chime";
-    const sel=el("select",{"aria-label":"Phone alert sound",onchange:()=>{ previewSound(sel.value); saveAlertSound(sel.value); }},
-      ...ALERT_SOUNDS.map(o=>el("option",{value:o.id,selected:o.id===cur},o.label)));
-    alerts.append(el("div",{style:"margin-top:16px;padding-top:14px;border-top:1px solid var(--line,#e3e8e6);"},
-      el("p",{class:"kv",style:"margin:0 0 8px;"},el("b",{},"Phone alert sound"),
-        " \u2014 plays for new booking requests on every phone signed in as an owner."),
-      el("div",{class:"acts"},sel,
-        el("button",{class:"btn small ghost",onclick:()=>previewSound(sel.value)},"\u25B6 Preview"))));
-    frag.append(alerts);
+    const em=S.business.notifyEmails||[];
+    frag.append(el("p",{class:"kv",style:"margin:-6px 0 14px;"},
+      "Alerts go to ",el("b",{},em.length?em.join(", "):"every owner")," \u00b7 ",
+      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";render();}},"Change alert settings")));
   }
 
   if (!list.length){
@@ -926,21 +977,7 @@ function viewTeam(){
   const onDuty=S.employees.filter(e=>{const l=locFor(e.id); return l&&l.onDuty;});
   frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"}, el("b",{},String(onDuty.length)), " of ", el("b",{},String(S.employees.filter(e=>e.active!==false).length)), " on shift right now"),
-    S.isOwner ? el("button",{class:"btn ghost",onclick:addOwnerByEmail},"Add owner") : null,
     el("button",{class:"btn",onclick:()=>openEmp()},"Add team member")));
-  if (S.isOwner && S.business){
-    const owners = S.business.ownerUids || (S.business.ownerUid?[S.business.ownerUid]:[]);
-    frag.append(el("p",{class:"kv",style:"margin:-8px 0 14px;"},"Owners with full access: ", String(owners.length), owners.length===1?" person":" people"));
-    const pendingEmp = S.employees.filter(e=>!e.userId && (e.email||e.phone));
-    const pendingOwners = (S.business.pendingOwnerEmails||[]).concat(S.business.pendingOwnerPhones||[]);
-    if (pendingEmp.length || pendingOwners.length){
-      const pp = el("div",{class:"panel"},el("h2",{},"Pending invites"));
-      pendingEmp.forEach(e=>pp.append(el("div",{class:"kv"},"Waiting for ",el("b",{},e.name)," to register with ",e.email||e.phone)));
-      pendingOwners.forEach(v=>pp.append(el("div",{class:"kv"},"Waiting for a co-owner to register with ",el("b",{},v))));
-      frag.append(pp);
-    }
-  }
-
   if (!S.employees.length){
     frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
       el("p",{class:"kv"},"Add each cleaner here with their email. When they register using that exact email, they'll be added to your team automatically.")));
