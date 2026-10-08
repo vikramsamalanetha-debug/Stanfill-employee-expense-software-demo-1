@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dayshift</title>
+<title>Dazift</title>
 <meta name="author" content="LIT America">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -221,7 +221,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <div id="gate" class="gate-wrap hidden">
   <div class="gate-panel">
-    <h1>Dayshift</h1>
+    <h1>Dazift</h1>
     <p>Sign in to manage your business, or create an account.</p>
     <div class="gate-tabs">
       <button id="gateLoginTab" aria-selected="true">Sign In</button>
@@ -284,7 +284,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 <div class="wrap" id="mainApp" hidden>
   <header class="top">
     <div class="brand">
-      <h1 id="bizNameHeader">Dayshift<span class="sparkle" aria-hidden="true"></span></h1>
+      <h1 id="bizNameHeader">Dazift<span class="sparkle" aria-hidden="true"></span></h1>
       <p>Crew board, team locations and the books, all in one place.</p>
     </div>
     <div class="whoami" id="whoami"></div>
@@ -301,7 +301,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main id="view"></main>
-  <footer class="lit-credit app-foot">Dayshift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
+  <footer class="lit-credit app-foot">Dazift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
 </div>
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
@@ -596,7 +596,7 @@ function settingsAccount(){
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isOwner?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
-  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"Dayshift \u00b7 A product of ",
+  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"Dazift \u00b7 A product of ",
     el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},el("b",{},"LIT America"))));
   return frag;
 }
@@ -1052,7 +1052,7 @@ async function syncRunnerContext(onDuty){
     if (!BackgroundRunner) return;
     const m = me();
     await BackgroundRunner.dispatchEvent({
-      label: "com.dayshift.app.locationcheckin",
+      label: "com.dazift.app.locationcheckin",
       event: "setContext",
       details: { businessId: S.businessId, employeeId: m ? m.id : null, onDuty: !!onDuty }
     });

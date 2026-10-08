@@ -1,6 +1,6 @@
 {
-  "appId": "net.litamerica.dayshift",
-  "appName": "Dayshift",
+  "appId": "net.litamerica.dazift",
+  "appName": "Dazift",
   "webDir": "www",
   "android": {
     "allowMixedContent": false
