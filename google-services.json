@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "711004999611",
+    "project_id": "stanfill-clean-pros",
+    "storage_bucket": "stanfill-clean-pros.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711004999611:android:d43581ffb48aca1143be9e",
+        "android_client_info": {
+          "package_name": "com.dayshift.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWIy20ZQuMSuE6wJbQ6GhRLswUcHBwUbw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711004999611:android:b3f3a2ea18e9fc2143be9e",
+        "android_client_info": {
+          "package_name": "net.litamerica.dayshift"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWIy20ZQuMSuE6wJbQ6GhRLswUcHBwUbw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711004999611:android:a0ce8225fda875b343be9e",
+        "android_client_info": {
+          "package_name": "net.litamerica.dazift"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWIy20ZQuMSuE6wJbQ6GhRLswUcHBwUbw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
