@@ -2,1869 +2,262 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dazift</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dazift · Run your service business from one board</title>
+<meta name="description" content="Dazift brings booking requests, your crew's day, and the books into one place for cleaning, lawn care, handyman and pet care businesses.">
 <meta name="author" content="LIT America">
+<meta name="theme-color" content="#1F7A69">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-only.png">
+<meta property="og:title" content="Dazift · Run your service business from one board">
+<meta property="og:description" content="Booking requests, crew shifts and the books, all in one place. A product of LIT America.">
+<meta property="og:image" content="https://dazift.com/icon-only.png">
+<meta property="og:url" content="https://dazift.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
 <style>
 :root{
-  color-scheme:light;
-  --bg:#F7F6F3; --surface:#FFFFFF; --surface-2:#EFEDE8; --ink:#1D1B18; --muted:#6A655D; --line:#E3E0D9;
-  --primary:#D9480F; --primary-ink:#FFFFFF; --primary-soft:#FDE9DD;
-  --lemon:#F2B705; --lemon-soft:#FDF1C9; --sky:#3E7FB8; --sky-soft:#E1EDF8;
-  --danger:#B42318; --danger-soft:#FBE4E1; --ok:#2F8A4E;
-  --radius-lg:18px; --radius:12px; --radius-sm:8px;
-  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body:"Nunito Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  --teal:#1F7A69; --teal-deep:#145848; --teal-soft:#DDF0EA; --sun:#F2C230; --sun-soft:#FCF2CF;
+  --ink:#16302C; --muted:#56706B; --bg:#FBFAF6; --surface:#FFFFFF; --line:#E2E8E4; --orange:#D9480F;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif; --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
 }
-*,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-a{color:var(--primary)}
-:focus-visible{outline:3px solid var(--lemon);outline-offset:2px;border-radius:6px}
-.wrap{max-width:1240px;margin:0 auto;padding:20px 18px 60px}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:var(--teal)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:3px;border-radius:6px}
+.w{max-width:1140px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;margin:0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:800;text-decoration:none;font-size:16px;border:2px solid transparent;white-space:nowrap}
+.btn.sun{background:var(--sun);color:#2A2305}
+.btn.sun:hover{background:#E8B51C}
+.btn.line{border-color:currentColor;color:inherit}
+.btn.teal{background:var(--teal);color:#fff}
+.btn.teal:hover{background:var(--teal-deep)}
 
-/* header */
-.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:18px}
-.brand h1{font:750 clamp(26px,4.2vw,38px)/1.02 var(--display);letter-spacing:-.02em;margin:0}
-.brand p{margin:4px 0 0;color:var(--muted)}
-.sparkle{display:inline-block;width:.62em;height:.62em;margin-left:.12em;vertical-align:.32em;background:var(--lemon);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%)}
-.whoami{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:20px;width:max-content;max-width:100%;overflow-x:auto}
-.tabs button{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap}
-.tabs button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
+/* nav */
+.nav{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff}
+.nav .w{display:flex;align-items:center;gap:16px;height:66px}
+.logo{display:inline-flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:800 24px var(--display);letter-spacing:-.02em}
+.logo svg{width:34px;height:34px}
+.nav nav{display:flex;gap:22px;margin-left:auto;align-items:center}
+.nav nav a{color:#fff;text-decoration:none;font-weight:700;font-size:15px;opacity:.9}
+.nav nav a:hover{opacity:1;text-decoration:underline}
+.nav .btn{padding:8px 16px;font-size:15px}
+@media (max-width:760px){.nav nav a.hide-sm{display:none}}
 
-/* buttons & fields */
-.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font-size:14px}
-.btn:hover{border-color:var(--primary)}
-.btn.primary{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
-.btn.lemon{background:var(--lemon);color:#2A2305;border-color:var(--lemon)}
-.btn.small{padding:5px 11px;font-size:13px}
-.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
-.btn.danger{color:var(--danger)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13px;color:var(--muted)}
-input,select,textarea{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);padding:9px 10px;font-weight:400;font-size:15px;color:var(--ink);min-width:0}
-textarea{resize:vertical;min-height:70px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.grow{flex:1}
+/* hero */
+.hero{background:var(--teal);color:#fff;padding:56px 0 0;overflow:hidden;position:relative}
+.hero .w{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:end}
+@media (max-width:900px){.hero .w{grid-template-columns:1fr}}
+.hero h1{font-size:clamp(38px,6vw,64px);line-height:1.02;font-weight:800}
+.hero h1 em{font-style:normal;color:var(--sun)}
+.hero p.lede{font-size:19px;opacity:.92;max-width:34ch;margin:18px 0 26px}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;padding-bottom:56px}
+.hero .note{font-size:14px;opacity:.8;margin-top:-40px;padding-bottom:56px}
+.sunrise{position:absolute;left:50%;bottom:-260px;width:620px;height:520px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(242,194,48,.22),rgba(242,194,48,0) 65%);pointer-events:none}
 
-/* banners */
-.banner{padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.banner.info{background:var(--sky-soft)}
-.banner.duty{background:var(--primary-soft)}
-.banner.warn{background:var(--lemon-soft)}
-.pulse{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
-@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+/* mock board */
+.mock{background:#F3F7F5;border-radius:18px 18px 0 0;padding:16px;color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.18);position:relative;z-index:1}
+.mock .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mock .bar b{font:800 18px var(--display)}
+.mock .pill{font-size:12px;font-weight:800;background:var(--sun);border-radius:999px;padding:3px 10px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.col{background:#E6EFEB;border-radius:12px;padding:8px}
+.col h4{margin:2px 4px 8px;font:700 13px var(--body);color:var(--muted);display:flex;align-items:center;gap:6px}
+.col h4 i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 9px;margin-bottom:7px;font-size:13px;line-height:1.35}
+.card .s{font-size:11px;font-weight:800;color:var(--orange)}
+.card b{display:block;font-family:var(--display);font-size:14px}
+.card .m{display:flex;justify-content:space-between;color:var(--muted);margin-top:3px}
+.card .who{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;font-weight:700}
+.dot{width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:9px;font-weight:800}
+.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2F8A4E;margin-left:3px}
+@media (max-width:520px){.cols{grid-template-columns:repeat(2,1fr)}.cols .col:nth-child(3){display:none}}
 
-/* board */
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
-.chip[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
-.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
-@media (max-width:1000px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:620px){.board{grid-template-columns:1fr}}
-.col{background:var(--surface-2);border-radius:var(--radius-lg);padding:12px;min-height:120px}
-.col h2{font:600 17px/1.2 var(--display);margin:2px 4px 12px;display:flex;justify-content:space-between;align-items:center}
-.col h2 .count{font:800 13px var(--body);color:var(--muted)}
-.col[data-s="new"] h2::before,.col[data-s="assigned"] h2::before,.col[data-s="in_progress"] h2::before,.col[data-s="done"] h2::before{content:"";width:10px;height:10px;border-radius:3px;margin-right:8px;flex:none}
-.col h2 span.t{flex:1;display:flex;align-items:center}
-.col[data-s="new"] h2::before{background:var(--lemon)}
-.col[data-s="assigned"] h2::before{background:var(--sky)}
-.col[data-s="in_progress"] h2::before{background:var(--primary)}
-.col[data-s="done"] h2::before{background:var(--muted)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px}
-.card .svc{font-size:12px;font-weight:800;color:var(--primary)}
-.card h3{margin:2px 0 2px;font:600 17px/1.25 var(--display)}
-.card .addr{color:var(--muted);font-size:14px}
-.card .meta{display:flex;justify-content:space-between;gap:8px;margin:8px 0;font-size:14px}
-.card .price{font-weight:800}
-.card .notes{font-size:13px;color:var(--muted);background:var(--bg);border-radius:var(--radius-sm);padding:6px 8px;margin:6px 0;white-space:pre-wrap}
-.card select{width:100%;padding:6px 8px;font-size:14px}
-.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.paid{font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
-.paid.yes{background:var(--primary-soft);color:var(--primary)}
-.paid.no{background:var(--danger-soft);color:var(--danger)}
-.empty{color:var(--muted);font-size:14px;padding:8px 6px}
-.overdue{color:var(--danger);font-weight:800}
+/* sections */
+section{padding:84px 0}
+.eyebrow{font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.sec-h{font-size:clamp(30px,4vw,44px);line-height:1.08;margin:8px 0 14px;max-width:22ch}
+.sec-p{color:var(--muted);max-width:60ch;margin:0}
+.trades{background:var(--sun-soft);padding:20px 0}
+.trades .w{display:flex;gap:10px 26px;flex-wrap:wrap;align-items:center;justify-content:center;font-weight:800}
+.trades span.l{color:var(--muted);font-weight:700}
 
-/* team */
-.team{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.person{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:8px}
-.person .head{display:flex;align-items:center;gap:12px}
-.avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:750 17px var(--display);color:#fff;flex:none}
-.person h3{margin:0;font:600 18px/1.2 var(--display)}
-.status{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
-.dot.on{background:var(--ok)} .dot.stale{background:var(--lemon)}
-.kv{font-size:14px;color:var(--muted)}
-.kv b{color:var(--ink);font-weight:700}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
-.panel h2{font:600 20px/1.2 var(--display);margin:0 0 12px}
+.feats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:40px}
+@media (max-width:900px){.feats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.feats{grid-template-columns:1fr}}
+.feat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.feat .ic{width:44px;height:44px;border-radius:12px;background:var(--teal-soft);display:grid;place-items:center;margin-bottom:14px}
+.feat .ic svg{width:24px;height:24px;stroke:var(--teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.feat h3{font-size:21px;margin-bottom:6px}
+.feat p{margin:0;color:var(--muted);font-size:16px}
 
-/* books */
-.sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-@media (max-width:760px){.sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px}
-.stat .l{font-size:13px;font-weight:700;color:var(--muted)}
-.stat .v{font:750 26px/1.15 var(--display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.stat.net .v{color:var(--primary)} .stat.net.neg .v{color:var(--danger)}
-.books{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;align-items:start}
-@media (max-width:860px){.books{grid-template-columns:1fr}}
-.bar{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;font-size:14px;margin-bottom:8px}
-.bar .track{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden}
-.bar .fill{height:100%;background:var(--lemon);border-radius:999px}
-.tablewrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th{text-align:left;color:var(--muted);font-weight:700;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--line)}
-td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-tr.inc td.num{color:var(--ok)}
-.expform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.expform .full{grid-column:1/-1}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:40px;counter-reset:s}
+@media (max-width:800px){.steps{grid-template-columns:1fr}}
+.step{border-top:3px solid var(--teal);padding-top:18px}
+.step::before{counter-increment:s;content:counter(s);font:800 44px/1 var(--display);color:var(--sun);display:block;margin-bottom:8px}
+.step h3{font-size:22px;margin-bottom:6px}
+.step p{margin:0;color:var(--muted)}
 
-dialog{border:0;border-radius:var(--radius-lg);padding:0;background:var(--surface);color:var(--ink);width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
-dialog::backdrop{background:rgba(10,25,22,.45)}
-dialog form{padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-dialog h2{grid-column:1/-1;margin:0;font:600 22px var(--display)}
-dialog .full{grid-column:1/-1}
-dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.story{background:var(--teal);color:#fff}
+.story .w{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+@media (max-width:800px){.story .w{grid-template-columns:1fr}}
+.story .eyebrow{color:var(--sun)}
+.story p{opacity:.92}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.fact{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:18px}
+.fact b{display:block;font:800 22px var(--display);color:var(--sun);margin-bottom:4px}
+.fact span{font-size:15px;opacity:.9}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:50;max-width:calc(100vw - 30px)}
+.faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 28px;margin-top:34px}
+@media (max-width:800px){.faq{grid-template-columns:1fr}}
+.faq h3{font-size:19px;margin-bottom:4px}
+.faq p{margin:0;color:var(--muted);font-size:16px}
 
-/* insights */
-.seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px;gap:2px}
-.seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px}
-.kpi .l{font-size:13px;font-weight:700;color:var(--muted)}
-.kpi .v{font:750 26px/1.15 var(--display);letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin:2px 0}
-.kpi .d{font-size:13px;font-weight:700;color:var(--muted)}
-.d.up{color:var(--ok)} .d.down{color:var(--danger)}
-.hero{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:18px 18px 10px;margin-bottom:16px}
-.hero-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.hero h2{font:600 22px/1.2 var(--display);margin:0}
-.legend{display:flex;gap:14px;font-size:13px;font-weight:700;color:var(--muted);flex-wrap:wrap}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.readout{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin:8px 0 4px;min-height:22px}
-.readout b{font-variant-numeric:tabular-nums}
-.chart{width:100%;height:auto;display:block}
-.chart .grid{stroke:var(--line);stroke-width:1}
-.chart .zero{stroke:var(--muted);stroke-width:1}
-.chart .axis{fill:var(--muted);font:600 11px var(--body)}
-.chart .inc{fill:var(--primary)}
-.chart .exp{fill:var(--lemon)}
-.chart .pline{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
-.chart .pdot{fill:var(--surface);stroke:var(--ink);stroke-width:2}
-.chart .hl{fill:var(--surface-2)}
-.chart .hit{fill:transparent;cursor:pointer;outline:none}
-.chart .hit:focus-visible{stroke:var(--lemon);stroke-width:2}
-.rangefoot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;border-top:1px solid var(--line);margin-top:8px;padding-top:10px}
-@media (max-width:700px){.rangefoot{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.rangefoot div{font-size:13px;color:var(--muted);font-weight:700}
-.rangefoot b{display:block;color:var(--ink);font:750 18px var(--display);font-variant-numeric:tabular-nums}
-.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
-@media (max-width:860px){.duo{grid-template-columns:1fr}}
-.panel .sub{font-size:13px;color:var(--muted);margin:-8px 0 12px}
-.hbar{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:10px;align-items:center;font-size:14px;margin-bottom:10px}
-.hbar .track{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden}
-.hbar .fill{height:100%;border-radius:999px;background:var(--primary)}
-.hbar small{display:block;color:var(--muted);font-size:12px}
-.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:150px;padding-top:6px}
-.days .c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
-.days .col-b{width:100%;max-width:36px;background:var(--sky);border-radius:6px 6px 2px 2px;min-height:3px}
-.days .c.best .col-b{background:var(--primary)}
-.days .n{color:var(--ink)}
-.upc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.upc div{background:var(--bg);border-radius:var(--radius);padding:10px 12px;font-size:13px;font-weight:700;color:var(--muted)}
-.upc b{display:block;color:var(--ink);font:750 20px var(--display);font-variant-numeric:tabular-nums}
-.delta{font-size:12px;font-weight:800;margin-left:6px}
-.hidden{display:none!important}
+.final{text-align:center}
+.final .sec-h{margin-left:auto;margin-right:auto}
+.final .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
 
-/* auth gate */
-.gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
-.gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
-.gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
-.gate-panel p{color:var(--muted);margin:0 0 18px}
-.gate-tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:18px}
-.gate-tabs button{flex:1;border:0;background:transparent;padding:8px 0;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted)}
-.gate-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
-.gate-form{display:flex;flex-direction:column;gap:10px}
-.gate-msg{font-size:13px;color:var(--danger);min-height:16px}
-.lit-credit{margin:18px 0 0;text-align:center;color:var(--muted);font-size:13px}
-.lit-credit b{color:var(--ink);font-weight:800}
-.lit-credit a{color:inherit;text-decoration:none}.lit-credit a:hover b{text-decoration:underline}
-.app-foot{padding:30px 0 6px;margin-top:34px;border-top:1px solid var(--line)}
-.srow{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}
-.srow:first-of-type{border-top:0}
-.sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
-.sctl{flex:0 0 auto}
+footer{background:#0F2A25;color:#CFE3DD;padding:34px 0;font-size:15px}
+footer .w{display:flex;gap:16px 28px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+footer a{color:#fff}
+footer .sig a{font-weight:800}
 </style>
 </head>
 <body>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="firebase-config.js"></script>
-
-<div id="gate" class="gate-wrap hidden">
-  <div class="gate-panel">
-    <h1>Dazift</h1>
-    <p>Sign in to manage your business, or create an account.</p>
-    <div class="gate-tabs">
-      <button id="gateLoginTab" aria-selected="true">Sign In</button>
-      <button id="gateRegisterTab" aria-selected="false">Register</button>
-    </div>
-    <div id="gateLoginPanel" class="gate-form">
-      <label class="f">Email<input id="gateLoginEmail" type="email" autocomplete="username"></label>
-      <label class="f">Password<input id="gateLoginPassword" type="password" autocomplete="current-password"></label>
-      <button class="btn primary" id="gateLoginBtn">Sign in</button>
-    </div>
-    <div id="gateRegisterPanel" class="gate-form hidden">
-      <label class="f">Your name<input id="gateRegName" type="text" autocomplete="name"></label>
-      <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
-      <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
-      <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
-      <button class="btn primary" id="gateRegBtn">Create account</button>
-    </div>
-    <div class="gate-msg" id="gateMsg"></div>
+<header class="nav">
+  <div class="w">
+    <a class="logo" href="/" aria-label="Dazift home">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 38a18 18 0 0 1 36 0z" fill="#F2C230"/><rect x="10" y="42" width="44" height="5" rx="2.5" fill="#fff"/><g fill="#F2C230"><rect x="30.5" y="8" width="3" height="7"/><rect x="16" y="13" width="3" height="7" transform="rotate(-35 17.5 16.5)"/><rect x="45" y="13" width="3" height="7" transform="rotate(35 46.5 16.5)"/></g></svg>
+      Dazift
+    </a>
+    <nav aria-label="Main">
+      <a href="#features" class="hide-sm">Features</a>
+      <a href="#how" class="hide-sm">How it works</a>
+      <a href="/app">Sign in</a>
+      <a class="btn sun" href="/app?register">Get started</a>
+    </nav>
   </div>
-  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
-</div>
+</header>
 
-<div id="bizOnboard" class="gate-wrap hidden">
-  <div class="gate-panel">
-    <h1>Set up your business</h1>
-    <p>We didn't find a business linked to your account yet. Register it below — or if you're joining an existing team, ask the owner to add you on their Team tab instead.</p>
-    <div class="gate-form">
-      <label class="f">Business name<input id="bizName" type="text" placeholder="e.g. Stanfill Elite Clean Pros"></label>
-      <label class="f">Category
-        <select id="bizCategory">
-          <option>Cleaning</option>
-          <option>Lawn Care</option>
-          <option>Handyman</option>
-          <option>Pet Care</option>
-          <option>Other</option>
-        </select>
-      </label>
-      <label class="f">Phone<input id="bizPhone" type="tel"></label>
-      <div class="row">
-        <label class="f grow">City<input id="bizCity" type="text"></label>
-        <label class="f" style="width:80px">State<input id="bizState" type="text" maxlength="2" placeholder="TN"></label>
+<main>
+<section class="hero" aria-labelledby="hero-h">
+  <div class="sunrise" aria-hidden="true"></div>
+  <div class="w">
+    <div>
+      <h1 id="hero-h">Your whole workday, <em>on one board.</em></h1>
+      <p class="lede">Dazift catches every booking request, puts your crew’s jobs and shifts in one place, and keeps the books as you go. Built for small service businesses.</p>
+      <div class="ctas">
+        <a class="btn sun" href="/app?register">Create your account</a>
+        <a class="btn line" href="/app">Sign in</a>
       </div>
-      <label class="f">Short description<textarea id="bizDescription" placeholder="What you do, and for whom"></textarea></label>
-      <button class="btn primary" id="bizRegBtn">Create my business</button>
     </div>
-    <div class="gate-msg" id="bizMsg"></div>
+    <div class="mock" aria-label="Example of the Dazift job board" role="img">
+      <div class="bar"><b>Today’s board</b><span class="pill">2 new requests</span></div>
+      <div class="cols">
+        <div class="col"><h4><i style="background:#F2C230"></i>New</h4>
+          <div class="card"><span class="s">Deep cleaning</span><b>Carter home</b><div class="m"><span>Today, 1:00</span><span>$260</span></div></div>
+          <div class="card"><span class="s">Move-out</span><b>Brooks rental</b><div class="m"><span>Fri, 9:00</span><span>$340</span></div></div>
+        </div>
+        <div class="col"><h4><i style="background:#3E7FB8"></i>Assigned</h4>
+          <div class="card"><span class="s">Regular cleaning</span><b>Henderson family</b><div class="m"><span>Today, 9:00</span><span>$140</span></div><span class="who"><span class="dot" style="background:#3E7FB8">TG</span>Tasha</span></div>
+          <div class="card"><span class="s">Commercial</span><b>Family Dental</b><div class="m"><span>Today, 5:30</span><span>$220</span></div><span class="who"><span class="dot" style="background:#8A5BB5">JP</span>Jordan</span></div>
+        </div>
+        <div class="col"><h4><i style="background:#1F7A69"></i>In progress</h4>
+          <div class="card"><span class="s">Regular cleaning</span><b>Dr. Patel</b><div class="m"><span>Started 8:10</span><span>$155</span></div><span class="who"><span class="dot" style="background:#D9480F">ML</span>Maria<span class="live" title="On shift"></span></span></div>
+        </div>
+      </div>
+    </div>
   </div>
-  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
-</div>
+</section>
 
-<div id="pendingApproval" class="gate-wrap hidden">
-  <div class="gate-panel">
-    <h1>Almost there</h1>
-    <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
-    <button class="btn ghost" onclick="signOutApp()">Sign out</button>
+<div class="trades"><div class="w"><span class="l">Made for</span><span>Cleaning</span><span>Lawn care</span><span>Handyman</span><span>Pet care</span><span>…and other crews on the move</span></div></div>
+
+<section id="features" aria-labelledby="f-h">
+  <div class="w">
+    <div class="eyebrow">What Dazift does</div>
+    <h2 class="sec-h" id="f-h">Less juggling between texts, notebooks and spreadsheets.</h2>
+    <p class="sec-p">Everything a small crew business runs on, in one app that works on a laptop in the office and a phone on the job.</p>
+    <div class="feats">
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+        <h3>Booking requests you won’t miss</h3><p>Requests from your website land in Dazift and alert every owner by email, text or phone notification, with reminders until someone answers.</p></article>
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg></div>
+        <h3>A job board for the whole crew</h3><p>Turn a request into a job, assign a cleaner, and watch it move from new to done. Each crew member sees their own jobs on their phone.</p></article>
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <h3>Crew shifts and locations</h3><p>Crew members start a shift and the office sees where they are, with one tap to route to the next job. Sharing stops the moment the shift ends.</p></article>
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div>
+        <h3>Books that keep themselves</h3><p>Finished jobs count as income automatically. Log expenses with a photo of the receipt, track who still owes you, and export the month for your accountant.</p></article>
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
+        <h3>Insights at a glance</h3><p>See earnings against expenses by day, week or month, which services sell, your busiest days, top clients and how each crew member is doing.</p></article>
+      <article class="feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7Z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7Z"/></svg></div>
+        <h3>Rewards that bring clients back</h3><p>Customers earn points on every paid job and redeem them for discounts. You see every member’s balance and history.</p></article>
+    </div>
   </div>
-  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
-</div>
+</section>
 
-<div class="wrap" id="mainApp" hidden>
-  <header class="top">
-    <div class="brand">
-      <h1 id="bizNameHeader">Dazift<span class="sparkle" aria-hidden="true"></span></h1>
-      <p>Crew board, team locations and the books, all in one place.</p>
+<section id="how" aria-labelledby="h-h" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="w">
+    <div class="eyebrow">How it works</div>
+    <h2 class="sec-h" id="h-h">Up and running in an afternoon.</h2>
+    <div class="steps">
+      <div class="step"><h3>Create your account</h3><p>Sign up with your email, then register your business: name, trade and city.</p></div>
+      <div class="step"><h3>We approve your business</h3><p>We review every new business before it goes live, so the platform stays real businesses only.</p></div>
+      <div class="step"><h3>Bring in your crew</h3><p>Add your team by email or phone. When they sign up with it, they land on your board, ready to start shifts.</p></div>
     </div>
-    <div class="whoami" id="whoami"></div>
-  </header>
-  <div id="banners"></div>
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
-    <button role="tab" data-tab="requests" aria-selected="false">Booking Requests</button>
-    <button role="tab" data-tab="board" aria-selected="true">Job board</button>
-    <button role="tab" data-tab="rewards" aria-selected="false">Rewards</button>
-    <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
-    <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
-    <button role="tab" data-tab="books" aria-selected="false">Books</button>
-    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
-  </nav>
-  <main id="view"></main>
-  <footer class="lit-credit app-foot">Dazift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
-</div>
+  </div>
+</section>
 
-<dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
-<dialog id="empDlg"><form method="dialog" id="empForm"></form></dialog>
-<dialog id="assignDlg"><div id="assignDlgBody" style="padding:20px;"></div></dialog>
-<dialog id="pendingDlg">
-  <form method="dialog" style="padding:24px;display:block;">
-    <h2 style="margin:0 0 10px;">You have <span id="pendingCount">0</span> pending booking request(s)</h2>
-    <p class="kv" style="margin-bottom:18px;">New customers are waiting on you to confirm availability.</p>
-    <div class="acts" style="justify-content:flex-end;">
-      <button type="button" class="btn" id="pendingDismissBtn">Dismiss</button>
-      <button type="button" class="btn primary" id="pendingViewBtn">View requests</button>
+<section class="story" aria-labelledby="s-h">
+  <div class="w">
+    <div>
+      <div class="eyebrow">Built on the job</div>
+      <h2 class="sec-h" id="s-h">Made with a real cleaning crew, not in a boardroom.</h2>
+      <p>Dazift started as the crew board for Stanfill Elite Clean Pros, a husband-and-wife cleaning company in Lexington, Tennessee. Every feature earned its place by saving them time on a real workday. Now it’s open to other service businesses.</p>
     </div>
-  </form>
-</dialog>
-<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-
-<script>
-(function(){
-"use strict";
-
-/* ---------- constants ---------- */
-const SERVICES = ["Regular cleaning","Deep cleaning","Move-in / move-out","Commercial cleaning"];
-const EXP_CATS = ["Cleaning supplies","Fuel & mileage","Payroll","Equipment","Insurance","Marketing","Vehicle upkeep","Other"];
-const STATUSES = [
-  {id:"new", label:"New jobs"},
-  {id:"assigned", label:"Assigned"},
-  {id:"in_progress", label:"In progress"},
-  {id:"done", label:"Done"}
-];
-const COLORS = ["#D9480F","#3E7FB8","#C0842A","#8A5BB5","#C2554A","#4B8B3B","#2F6F8F","#A0527A"];
-const STALE_MS = 15*60*1000;
-
-/* ---------- helpers ---------- */
-const $ = s => document.querySelector(s);
-function el(tag, props, ...kids){
-  const n = document.createElement(tag); let val;
-  for (const [k,v] of Object.entries(props||{})){
-    if (v==null || v===false) continue;
-    if (k==="class") n.className = v;
-    else if (k==="text") n.textContent = v;
-    else if (k==="value") val = v;
-    else if (k.startsWith("on") && typeof v==="function") n.addEventListener(k.slice(2), v);
-    else n.setAttribute(k, v===true ? "" : v);
-  }
-  for (const c of kids.flat()){ if (c==null || c===false) continue; n.append(c instanceof Node ? c : document.createTextNode(String(c))); }
-  if (val!==undefined) n.value = val;
-  return n;
-}
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const pad = n => String(n).padStart(2,"0");
-const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-const today = () => ymd(new Date());
-const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-function niceDate(s){ if(!s) return "No date"; const [y,m,d]=s.split("-").map(Number); const dt=new Date(y,m-1,d);
-  const t=today(); if(s===t) return "Today"; const tm=new Date(); tm.setDate(tm.getDate()+1); if(s===ymd(tm)) return "Tomorrow";
-  return dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}); }
-function niceTime(s){ if(!s) return ""; const [h,m]=s.split(":").map(Number); const d=new Date(); d.setHours(h,m); return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
-function ago(ms){ const s=Math.round((Date.now()-ms)/1000); if(s<60) return "just now"; const m=Math.round(s/60); if(m<60) return m+" min ago"; const h=Math.round(m/60); if(h<24) return h+" hr ago"; return Math.round(h/24)+" days ago"; }
-function initials(name){ return (name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
-function colorFor(emp){ const i = Math.abs([...(emp.id||"x")].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7)) % COLORS.length; return emp.color || COLORS[i]; }
-function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng);
-  const h=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
-
-/* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger"];
-const Store = {
-  mode:"loading", db:null, local:null, listeners:{},
-  useLocal(){
-    this.mode="local";
-    try { this.local = JSON.parse(localStorage.getItem("secp-board")||"null"); } catch(e){ this.local=null; }
-    if (!this.local) this.local = {employees:{},jobs:{},locations:{},expenses:{}};
-    ["customers","pointsLedger"].forEach(c=>{ if(!this.local[c]) this.local[c]={}; });
-  },
-  saveLocal(){ try{ localStorage.setItem("secp-board", JSON.stringify(this.local)); }catch(e){} },
-  emit(coll){ const arr=Object.entries(this.local[coll]||{}).map(([id,d])=>({id,...d})); (this.listeners[coll]||[]).forEach(f=>f(arr)); },
-  subscribe(coll, cb, businessId){
-    if (this.mode==="db"){
-      let ref = this.db.collection(coll);
-      if (businessId) ref = ref.where("businessId","==",businessId);
-      return ref.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))), e=>{ console.warn(coll,e); if(e && e.code==="revoked") toast("Access to this board changed. Reload to continue."); });
-    }
-    (this.listeners[coll] ||= []).push(cb); this.emit(coll); return ()=>{};
-  },
-  async set(coll,id,data){
-    if (this.mode==="db") return this.db.doc(coll+"/"+id).set(data);
-    this.local[coll][id] = JSON.parse(JSON.stringify(data)); this.saveLocal(); this.emit(coll);
-  },
-  async update(coll,id,data){
-    if (this.mode==="db") return this.db.doc(coll+"/"+id).update(data);
-    this.local[coll][id] = {...(this.local[coll][id]||{}), ...JSON.parse(JSON.stringify(data))}; this.saveLocal(); this.emit(coll);
-  },
-  async del(coll,id){
-    if (this.mode==="db") return this.db.doc(coll+"/"+id).delete();
-    delete this.local[coll][id]; this.saveLocal(); this.emit(coll);
-  }
-};
-async function write(fn, okMsg){
-  try { await fn(); if(okMsg) toast(okMsg); }
-  catch(e){
-    console.warn(e);
-    const code = e && e.code;
-    if (code==="invalid_argument") toast("You can view this board but not change it. Ask the owner for “Can interact” access.");
-    else if (code==="quota_exceeded") toast("The board is full. Delete old expenses or finished jobs to make room.");
-    else toast("That didn’t save. Check your connection and try again.");
-  }
-}
-
-/* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
-  month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
-  businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
-const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
-const empById = id => S.employees.find(e=>e.id===id);
-const locFor = id => S.locations.find(l=>l.id===id);
-
-/* ---------- rendering ---------- */
-let renderQueued=false;
-function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); }); }
-function draw(){
-  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
-  const platformBtn = $("#platformTabBtn");
-  if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
-  drawWho(); drawBanners();
-  const v=$("#view"); v.replaceChildren();
-  if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
-  else if (S.tab==="requests") v.append(viewRequests());
-  else if (S.tab==="rewards") v.append(viewRewards());
-  else if (S.tab==="board") v.append(viewBoard());
-  else if (S.tab==="team") v.append(viewTeam());
-  else if (S.tab==="insights") v.append(viewInsights());
-  else if (S.tab==="settings") v.append(viewSettings());
-  else v.append(viewBooks());
-}
-
-function drawWho(){
-  const w=$("#whoami"); w.replaceChildren();
-  const m=me();
-  if (m){
-    const loc=locFor(m.id); const on = loc && loc.onDuty;
-    w.append(el("span",{class:"kv"},"Signed in as ", el("b",{},m.name)));
-    w.append(on ? el("button",{class:"btn",onclick:stopDuty},"End shift")
-                : el("button",{class:"btn lemon",onclick:startDuty},"Start shift"));
-  } else if (S.myEmail){
-    w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
-  }
-  w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
-  w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
-}
-
-function drawBanners(){
-  const b=$("#banners"); b.replaceChildren();
-  if (Store.mode==="local") b.append(el("div",{class:"banner info"},
-    "Preview mode: changes are saved on this device only. Open the published link to share the board with your crew."));
-  const m=me();
-  if (m){
-    const loc=locFor(m.id);
-    if (loc && loc.onDuty && S.watching){
-      b.append(el("div",{class:"banner duty"}, el("span",{class:"pulse","aria-hidden":"true"}),
-        el("span",{class:"grow"}, "You’re on shift and sharing your location with the office. Keep this page open; sharing stops when you end your shift."),
-        el("button",{class:"btn small",onclick:stopDuty},"End shift")));
-    } else if (loc && loc.onDuty && !S.watching){
-      b.append(el("div",{class:"banner warn"},
-        el("span",{class:"grow"},"You’re marked on shift, but this page isn’t sharing your location right now."),
-        el("button",{class:"btn small lemon",onclick:startDuty},"Resume sharing"),
-        el("button",{class:"btn small",onclick:stopDuty},"End shift")));
-    }
-    if (S.dutyErr) b.append(el("div",{class:"banner warn"}, S.dutyErr));
-  } else if (S.myUserId && S.employees.some(e=>!e.userId) && !S.isOwner){
-    b.append(el("div",{class:"banner info"}, el("span",{class:"grow"},"Are you on the crew? Link your name so you can see your jobs and start shifts."),
-      el("button",{class:"btn small",onclick:()=>{S.tab="team";render();}},"Link my name")));
-  }
-}
-
-/* ---- Clean Rewards: members, balances and the points log ---- */
-const REWARD_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
-const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
-function addLedger(c, delta, type, reason){
-  if (Store.mode!=="db") return toast("Open the published board to change points.");
-  return write(()=>firebase.firestore().collection("pointsLedger").add({
-    uid:c.id, businessId:S.businessId, customerName:c.name||c.email||"", delta, type, reason,
-    by:S.myEmail||"", createdAt:firebase.firestore.FieldValue.serverTimestamp() }), "Points updated");
-}
-function redeemFor(c, bal){
-  const ok=REWARD_TIERS.filter(t=>t.p<=bal);
-  if(!ok.length) return toast((c.name||"This customer")+" hasn\u2019t reached the first reward yet.");
-  const pick=prompt("Redeem which reward for "+(c.name||"this customer")+"?\n"+ok.map((t,i)=>(i+1)+") "+t.t+" \u2014 "+t.p+" pts").join("\n")+"\n\nType the number:");
-  const t=ok[Number(pick)-1]; if(!t) return;
-  addLedger(c, -t.p, "redeem", "Redeemed: "+t.t);
-}
-function adjustFor(c){
-  const n=Number((prompt("Add or remove points for "+(c.name||"this customer")+" (use a minus sign to remove, e.g. 50 or -25):")||"").trim());
-  if(!n || !Number.isFinite(n) || Math.abs(n)>5000) return;
-  const why=(prompt("Reason (the customer will see this):","Bonus points")||"").trim().slice(0,100);
-  if(!why) return;
-  addLedger(c, Math.round(n), "adjust", why);
-}
-function viewRewards(){
-  const frag=document.createDocumentFragment();
-  const members=S.customers.filter(c=>c.rewardsMember);
-  const byUid={}; S.pointsLedger.forEach(r=>{ (byUid[r.uid] ||= []).push(r); });
-  const bal=u=>(byUid[u]||[]).reduce((n,r)=>n+(Number(r.delta)||0),0);
-  const rows=members.map(c=>({c,bal:bal(c.id)})).sort((a,b)=>b.bal-a.bal);
-  const total=rows.reduce((n,r)=>n+r.bal,0);
-  const ready=rows.filter(r=>r.bal>=REWARD_TIERS[0].p).length;
-  frag.append(el("div",{class:"toolbar"},
-    el("span",{class:"kv grow"},el("b",{},String(rows.length))," member(s) \u00b7 ",el("b",{},String(total))," points outstanding \u00b7 ",el("b",{},String(ready))," can redeem a reward")));
-  const mp=el("div",{class:"panel"}); mp.append(el("h2",{},"Clean Rewards members"));
-  mp.append(el("div",{class:"sub"},"Points are added automatically when a job for a member is marked paid (1 point per $1). Customers see this same log on their website account."));
-  if(!rows.length) mp.append(el("div",{class:"empty"},"No members yet. Customers join from the booking form or their account page."));
-  rows.forEach(({c,bal:b})=>{
-    const next=REWARD_TIERS.find(t=>t.p>b);
-    const log=(byUid[c.id]||[]).slice().sort((x,y)=>ledgerMs(y)-ledgerMs(x));
-    const row=el("details",{style:"border-top:1px solid var(--line);padding:10px 0"});
-    row.append(el("summary",{style:"cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap"},
-      el("b",{class:"grow"},c.name||c.email||"Customer"),
-      el("span",{class:"kv"},c.phone||c.email||""),
-      el("span",{class:"paid yes"},b+" pts"),
-      el("span",{class:"kv"},next?(next.p-b)+" to "+next.t:"All rewards unlocked")));
-    const body=el("div",{style:"padding:8px 0 4px"});
-    if(S.isOwner) body.append(el("div",{class:"acts",style:"margin:0 0 8px"},
-      el("button",{class:"btn small primary",onclick:()=>redeemFor(c,b)},"Redeem reward"),
-      el("button",{class:"btn small ghost",onclick:()=>adjustFor(c)},"Add / remove points")));
-    if(!log.length) body.append(el("div",{class:"empty"},"No activity yet."));
-    log.forEach(r=>{ const d=Number(r.delta)||0;
-      body.append(el("div",{class:"kv",style:"display:flex;gap:10px;padding:3px 0"},
-        el("span",{style:"min-width:88px"},ledgerMs(r)?new Date(ledgerMs(r)).toLocaleDateString():"\u2014"),
-        el("span",{class:"grow"},r.reason||""),
-        el("b",{style:"color:"+(d>=0?"var(--ok,#2F8A4E)":"#B1432E")},(d>0?"+":"")+d))); });
-    row.append(body); mp.append(row);
-  });
-  frag.append(mp);
-  return frag;
-}
-
-/* ---- Settings: everything that is set once, not done daily ---- */
-function setRow(title,desc,control){
-  return el("div",{class:"srow"},
-    el("div",{class:"sinfo"},el("b",{},title),desc?el("span",{class:"kv"},desc):null),
-    el("div",{class:"sctl"},control));
-}
-function setPanel(title,sub,...rows){
-  const p=el("div",{class:"panel",style:"max-width:720px;"},el("h2",{},title));
-  if (sub) p.append(el("div",{class:"sub"},sub));
-  rows.filter(Boolean).forEach(r=>p.append(r));
-  return p;
-}
-function settingsNotify(){
-  const frag=document.createDocumentFragment();
-  const em=S.business.notifyEmails||[], ph=S.business.notifyPhones||[];
-  const cur=S.business.alertSound||"chime";
-  const sel=el("select",{"aria-label":"Phone alert sound",onchange:()=>{ previewSound(sel.value); saveAlertSound(sel.value); }},
-    ...ALERT_SOUNDS.map(o=>el("option",{value:o.id,selected:o.id===cur},o.label)));
-  frag.append(setPanel("Who gets booking alerts","New requests are emailed here, and reminders repeat until someone answers.",
-    setRow("Alert emails",em.length?em.join(", "):"Every owner of this business",el("button",{class:"btn small",onclick:()=>addAlert("email")},"Add email")),
-    setRow("Alert phone numbers (text)",ph.length?ph.join(", "):"None. Texting is off.",el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add number")),
-    (em.length||ph.length)?setRow("Back to default","Send alerts to every owner again.",el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset")):null));
-  let status;
-  if (!isNative()) status="Phone alerts need the Android app.";
-  else if (pushToken) status="On for this phone.";
-  else status="Not set up yet. Sign out, sign back in, and tap Allow when asked about notifications.";
-  frag.append(setPanel("Phone alerts","Pop-up alerts on every phone signed in as an owner.",
-    setRow("This phone",status,null),
-    setRow("Alert sound","Plays for new booking requests on every owner phone.",el("div",{class:"row"},sel,el("button",{class:"btn small ghost",onclick:()=>previewSound(sel.value)},"\u25B6 Preview")))));
-  return frag;
-}
-function settingsAccess(){
-  const owners=S.business.ownerUids||(S.business.ownerUid?[S.business.ownerUid]:[]);
-  const frag=document.createDocumentFragment();
-  frag.append(setPanel("Owners","Owners have full access to everything, including the books and settings.",
-    setRow("Owners with full access",String(owners.length)+(owners.length===1?" person":" people"),el("button",{class:"btn small",onclick:addOwnerByEmail},"Add owner"))));
-  const pendingEmp=S.employees.filter(e=>!e.userId&&(e.email||e.phone));
-  const pendingOwners=(S.business.pendingOwnerEmails||[]).concat(S.business.pendingOwnerPhones||[]);
-  const pp=setPanel("Pending invites","People you added who haven't registered yet.");
-  if(!pendingEmp.length&&!pendingOwners.length) pp.append(el("div",{class:"empty"},"No pending invites."));
-  pendingEmp.forEach(e=>pp.append(el("div",{class:"kv"},"Waiting for ",el("b",{},e.name)," to register with ",e.email||e.phone)));
-  pendingOwners.forEach(v=>pp.append(el("div",{class:"kv"},"Waiting for a co-owner to register with ",el("b",{},v))));
-  frag.append(pp);
-  return frag;
-}
-function settingsRewards(){
-  const p=setPanel("Clean Rewards","Customers earn 1 point per $1 once a job is marked paid. Points and members are on the Rewards tab.",
-    ...REWARD_TIERS.map(t=>setRow(t.p+" points",t.t,null)),
-    setRow("Members and balances","See who has points and redeem rewards.",el("button",{class:"btn small",onclick:()=>{S.tab="rewards";render();}},"Open Rewards")));
-  return p;
-}
-function settingsAccount(){
-  const frag=document.createDocumentFragment();
-  const m=me();
-  frag.append(setPanel("Account","",
-    setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
-    S.business?setRow("Business",S.business.name||"",null):null,
-    S.isOwner?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
-  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"Dazift \u00b7 A product of ",
-    el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},el("b",{},"LIT America"))));
-  return frag;
-}
-function viewSettings(){
-  const frag=document.createDocumentFragment();
-  const secs=S.isOwner&&S.business
-    ?[["notify","Notifications"],["access","Owners & invites"],["rewards","Rewards"],["account","Account"]]
-    :[["account","Account"]];
-  if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
-  frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
-    ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
-  const body={notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
-  frag.append(body());
-  return frag;
-}
-
-/* ---- booking requests (from the public website) ---- */
-function viewRequests(){
-  const frag=document.createDocumentFragment();
-  const showAll = S.reqShowAll;
-  const list = S.bookings
-    .filter(b => showAll || (b.status||"pending")==="pending")
-    .sort((a,b)=>(a.requestedDate||"").localeCompare(b.requestedDate||""));
-
-  frag.append(el("div",{class:"toolbar"},
-    el("span",{class:"kv grow"}, el("b",{},String(S.bookings.filter(b=>(b.status||"pending")==="pending").length)), " pending request(s) from the website"),
-    el("div",{class:"chips"},
-      el("button",{class:"chip","aria-pressed":String(!showAll),onclick:()=>{S.reqShowAll=false;render();}},"Pending"),
-      el("button",{class:"chip","aria-pressed":String(!!showAll),onclick:()=>{S.reqShowAll=true;render();}},"All"))));
-
-  if (S.isOwner && S.business){
-    const em=S.business.notifyEmails||[];
-    frag.append(el("p",{class:"kv",style:"margin:-6px 0 14px;"},
-      "Alerts go to ",el("b",{},em.length?em.join(", "):"every owner")," \u00b7 ",
-      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";render();}},"Change alert settings")));
-  }
-
-  if (!list.length){
-    frag.append(el("div",{class:"panel"},el("div",{class:"empty"},showAll?"No booking requests yet.":"No pending requests right now.")));
-    return frag;
-  }
-
-  const board=el("div",{});
-  list.forEach(b=>{
-    const dateStr = (b.requestedDate||"").slice(0,10);
-    const status = b.status||"pending";
-    const card=el("article",{class:"card",style:"margin-bottom:12px;max-width:640px;"});
-    card.append(el("div",{class:"svc"},b.service||"Cleaning"));
-    card.append(el("h3",{},b.name||"Unknown"));
-    card.append(el("div",{class:"meta"},
-      el("span",{},niceDate(dateStr)),
-      el("span",{class:"paid "+(status==="pending"?"no":"yes")}, status)));
-    if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
-    if (b.details) card.append(el("div",{class:"notes"},b.details));
-    if (b.wantsRewards) card.append(el("div",{class:"kv"},"Wants Clean Rewards"));
-    const trail=[];
-    if (b.ownerNotifiedAt) trail.push("Owners alerted");
-    if (b.reminderCount) trail.push(b.reminderCount+" reminder"+(b.reminderCount>1?"s":"")+" sent");
-    if (b.respondedVia) trail.push((status==="confirmed"?"Approved":"Declined")+(b.respondedVia==="email"?" from an email link":" in the app"));
-    if (b.customerNotifiedAt) trail.push("customer emailed");
-    if (trail.length) card.append(el("div",{class:"kv"},trail.join(" · ")));
-    if (status==="pending"){
-      const acts=el("div",{class:"acts"});
-      acts.append(el("button",{class:"btn small primary",onclick:()=>convertBookingToJob(b)},"Convert to job"));
-      acts.append(el("button",{class:"btn small ghost danger",onclick:()=>{ if(confirm("Decline this request?")) write(()=>Store.update("bookings",b.id,{status:"declined",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()}),"Request declined"); }},"Decline"));
-      card.append(acts);
-    }
-    board.append(card);
-  });
-  frag.append(board);
-  return frag;
-}
-function addAlert(kind){
-  const isEmail = kind==="email";
-  const raw=(prompt(isEmail?"Email address to alert about new booking requests:":"Mobile number to text about new booking requests (US, 10 digits):")||"").trim();
-  if (!raw) return;
-  let value, field;
-  if (isEmail){
-    value=raw.toLowerCase(); field="notifyEmails";
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return toast("That doesn't look like an email address.");
-  } else {
-    value=normPhone(raw); field="notifyPhones";
-    if (value.length===11 && value[0]==="1") value=value.slice(1);
-    if (value.length!==10) return toast("Enter a 10-digit US mobile number.");
-  }
-  write(async()=>{
-    await firebase.firestore().doc("businesses/"+S.businessId).update({[field]:firebase.firestore.FieldValue.arrayUnion(value)});
-    S.business[field]=[...new Set([...(S.business[field]||[]),value])];
-    render();
-  }, "Alert "+(isEmail?"email":"number")+" added");
-}
-function resetAlerts(){
-  if (!confirm("Send alerts to every owner again, and stop texting?")) return;
-  write(async()=>{
-    await firebase.firestore().doc("businesses/"+S.businessId).update({notifyEmails:[],notifyPhones:[]});
-    S.business.notifyEmails=[]; S.business.notifyPhones=[];
-    render();
-  }, "Alerts reset");
-}
-function convertBookingToJob(b){
-  const dateStr = (b.requestedDate||"").slice(0,10);
-  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], price:0, date:dateStr, time:"",
-    phone:b.phone||"", notes:b.details||"", assigneeId:null, status:"new", paid:false, createdAt:Date.now(), fromBookingId:b.id, businessId:S.businessId };
-  write(async()=>{
-    await Store.set("jobs",newId(),jobData);
-    await Store.update("bookings",b.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  }, "Added to the job board");
-}
-
-/* ---- platform admin ---- */
-function ensureUsersLoaded(){
-  if (S.usersLoaded) return;
-  S.usersLoaded = true;
-  firebase.firestore().collection("crewAccounts").limit(500).get().then(snap=>{
-    S.allUsers = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    render();
-  });
-}
-function openAssignDlg(biz){
-  ensureUsersLoaded();
-  const body=$("#assignDlgBody");
-  const draw=(query)=>{
-    body.replaceChildren();
-    body.append(el("h2",{},"Assign a user to ", biz.name));
-    const input=el("input",{type:"text",placeholder:"Search by name or email…",value:query||"",style:"width:100%;margin:8px 0;",
-      oninput:e=>draw(e.target.value)});
-    body.append(input);
-    const q=(query||"").toLowerCase();
-    const matches = !q ? [] : S.allUsers.filter(u=>(u.name||"").toLowerCase().includes(q)||(u.email||"").toLowerCase().includes(q)).slice(0,8);
-    const list=el("div",{});
-    if (q && !matches.length) list.append(el("div",{class:"empty"},"No registered users match that."));
-    matches.forEach(u=>{
-      const row=el("div",{class:"card",style:"margin-bottom:8px;"});
-      row.append(el("div",{},el("b",{},u.name||"(no name)")), el("div",{class:"kv"},u.email||"", u.phone?" · "+u.phone:""));
-      row.append(el("div",{class:"acts"},
-        el("button",{class:"btn small primary",onclick:()=>assignUser(biz,u,"owner")},"Add as owner"),
-        el("button",{class:"btn small",onclick:()=>assignUser(biz,u,"employee")},"Add as employee")));
-      list.append(row);
-    });
-    body.append(list);
-    body.append(el("div",{class:"acts",style:"margin-top:10px;"},el("button",{class:"btn",type:"button",onclick:()=>$("#assignDlg").close()},"Close")));
-    input.focus();
-  };
-  draw("");
-  $("#assignDlg").showModal();
-}
-async function assignUser(biz,u,role){
-  const db=firebase.firestore();
-  if (role==="owner"){
-    await db.doc("businesses/"+biz.id).update({
-      ownerUids: firebase.firestore.FieldValue.arrayUnion(u.id),
-      ownerEmails: firebase.firestore.FieldValue.arrayUnion((u.email||"").toLowerCase())
-    });
-  } else {
-    await db.collection("employees").add({
-      name:u.name||u.email||"Unnamed", email:(u.email||"").toLowerCase(), phone:u.phone||"", phoneNorm:normPhone(u.phone),
-      businessId:biz.id, userId:u.id, active:true, createdAt:Date.now()
-    });
-  }
-  toast(u.name+" added as "+role+" of "+biz.name);
-  $("#assignDlg").close();
-}
-
-function viewPlatformAdmin(){
-  ensureUsersLoaded();
-  const frag=document.createDocumentFragment();
-
-  const stats = {
-    businesses: S.allBusinesses.length,
-    active: S.allBusinesses.filter(b=>b.status!=="pending").length,
-    pending: S.allBusinesses.filter(b=>b.status==="pending").length,
-    users: S.allUsers.length
-  };
-  frag.append(el("div",{class:"kpis"},
-    el("div",{class:"kpi"},el("div",{class:"l"},"Total businesses"),el("div",{class:"v"},String(stats.businesses))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Active"),el("div",{class:"v"},String(stats.active))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Pending approval"),el("div",{class:"v"},String(stats.pending))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Registered users"),el("div",{class:"v"},String(stats.users)))));
-
-  const f=el("form",{class:"panel"});
-  f.append(el("h2",{},"Pre-register a business"),
-    el("p",{class:"kv",style:"margin:-6px 0 12px;"},"Creates the business right away with the correct name. The owner gets full access automatically the moment they register or sign in using the email or phone you enter below."),
-    el("div",{class:"expform"},
-      el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,autocomplete:"off"})),
-      el("label",{class:"f"},"Category",el("select",{name:"category"},["Cleaning","Lawn Care","Handyman","Pet Care","Other"].map(c=>el("option",{},c)))),
-      el("label",{class:"f"},"City",el("input",{name:"city",autocomplete:"off"})),
-      el("label",{class:"f"},"Owner email",el("input",{name:"email",type:"email",autocomplete:"off"})),
-      el("label",{class:"f"},"Owner phone",el("input",{name:"phone",type:"tel",autocomplete:"off"})),
-      el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Pre-register business"))));
-  f.onsubmit=async e=>{
-    e.preventDefault();
-    const d=Object.fromEntries(new FormData(f));
-    const name=d.name.trim();
-    if (!name) return toast("Enter a business name.");
-    if (!d.email.trim() && !d.phone.trim()) return toast("Enter at least an owner email or phone.");
-    const similar = S.allBusinesses.find(b=>normName(b.name)===normName(name));
-    if (similar) return toast("A business called \""+similar.name+"\" already exists.");
-    const db=firebase.firestore();
-    const id0=slugify(name);
-    const existingDoc = await db.doc("businesses/"+id0).get();
-    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
-    const data={name,category:d.category,city:d.city.trim(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),
-      ownerUids:[],ownerEmails:[],createdAt:Date.now(),status:"active",
-      pendingOwnerEmails: d.email.trim() ? [d.email.trim().toLowerCase()] : [],
-      pendingOwnerPhones: d.phone.trim() ? [normPhone(d.phone)] : []};
-    write(()=>db.doc("businesses/"+id).set(data),"Business pre-registered");
-    f.reset();
-  };
-  frag.append(f);
-
-  const pending = S.allBusinesses.filter(b=>b.status==="pending");
-  if (pending.length){
-    const p=el("div",{class:"panel"},el("h2",{},"Pending approval"),el("p",{class:"kv",style:"margin:-6px 0 12px;"},pending.length+" business(es) waiting for review"));
-    pending.forEach(b=>{
-      const similar = S.allBusinesses.find(o=>o.status!=="pending" && normName(o.name)===normName(b.name));
-      const card=el("article",{class:"card",style:"max-width:640px;"});
-      card.append(el("h3",{},b.name));
-      card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
-      if (b.pendingOwnerEmails && b.pendingOwnerEmails[0]) card.append(el("div",{class:"kv"},"Email: "+b.pendingOwnerEmails[0]));
-      if (b.phone) card.append(el("div",{class:"kv"},"Phone: "+b.phone));
-      if (similar) card.append(el("div",{class:"notes",style:"color:var(--danger);background:var(--danger-soft);"},"⚠ Very similar to an existing active business: \""+similar.name+"\". This may be a duplicate."));
-      card.append(el("div",{class:"acts"},
-        el("button",{class:"btn small primary",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Approved")},"Approve"),
-        el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Reject and delete \""+b.name+"\"?")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Rejected"); }},"Reject")));
-      p.append(card);
-    });
-    frag.append(p);
-  }
-
-  const clients=el("div",{class:"panel"},el("h2",{},"All businesses (client list)"));
-  const sorted = S.allBusinesses.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  if (!sorted.length) clients.append(el("div",{class:"empty"},"No businesses registered yet."));
-  sorted.forEach(b=>{
-    const owners = b.ownerEmails && b.ownerEmails.length ? b.ownerEmails.filter(Boolean).join(", ") : (b.pendingOwnerEmails&&b.pendingOwnerEmails[0] ? "(pending: "+b.pendingOwnerEmails[0]+")" : "none linked");
-    const card=el("article",{class:"card"});
-    card.append(el("div",{class:"row"},
-      el("h3",{style:"margin:0;"},b.name),
-      el("span",{class:"paid "+(b.status==="pending"?"no":b.status==="suspended"?"no":"yes")}, b.status||"active")));
-    card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
-    card.append(el("div",{class:"kv"},"Owners: ",owners));
-    card.append(el("div",{class:"acts"},
-      el("button",{class:"btn small",onclick:()=>openAssignDlg(b)},"Assign user"),
-      el("button",{class:"btn small ghost",onclick:()=>{ const n=prompt("New name for this business:",b.name); if(n&&n.trim()) write(()=>firebase.firestore().doc("businesses/"+b.id).update({name:n.trim()}),"Renamed"); }},"Rename"),
-      b.status==="suspended"
-        ? el("button",{class:"btn small",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Reactivated")},"Reactivate")
-        : el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Suspend "+b.name+"? They'll lose access until reactivated.")) write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"suspended"}),"Suspended"); }},"Suspend"),
-      el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Permanently delete "+b.name+"? This cannot be undone.")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Deleted"); }},"Delete")));
-    clients.append(card);
-  });
-  frag.append(clients);
-
-  return frag;
-}
-
-/* ---- board ---- */
-function jobVisible(j){
-  if (S.who==="mine"){ const m=me(); if(!m || j.assigneeId!==m.id) return false; }
-  else if (S.who!=="all" && j.assigneeId!==S.who) return false;
-  if (S.range==="all") return true;
-  const t=today();
-  if (S.range==="today") return j.date===t || (j.status!=="done" && j.date && j.date<t);
-  const end=new Date(); end.setDate(end.getDate()+7);
-  const start=new Date(); start.setDate(start.getDate()-7);
-  if (j.status!=="done" && j.date && j.date<t) return true; // overdue always shows
-  return !j.date || (j.date>=ymd(start) && j.date<=ymd(end));
-}
-function viewBoard(){
-  const frag=document.createDocumentFragment();
-  const tb=el("div",{class:"toolbar"});
-  const whoChips=el("div",{class:"chips","aria-label":"Show jobs for"});
-  const opts=[["all","Everyone"]]; if(me()) opts.push(["mine","My jobs"]);
-  S.employees.filter(e=>e.active!==false).forEach(e=>{ if(!me()||e.id!==me().id) opts.push([e.id,e.name]); });
-  opts.forEach(([id,l])=>whoChips.append(el("button",{class:"chip","aria-pressed":String(S.who===id),onclick:()=>{S.who=id;render();}},l)));
-  const rangeChips=el("div",{class:"chips","aria-label":"Date range"});
-  [["today","Today"],["week","This week"],["all","All dates"]].forEach(([id,l])=>rangeChips.append(el("button",{class:"chip","aria-pressed":String(S.range===id),onclick:()=>{S.range=id;render();}},l)));
-  tb.append(whoChips, el("span",{class:"grow"}), rangeChips);
-  frag.append(tb);
-
-  const board=el("div",{class:"board"});
-  const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
-  for (const st of STATUSES){
-    const list=jobs.filter(j=>(j.status||"new")===st.id);
-    if (st.id==="done") list.reverse();
-    const col=el("section",{class:"col","data-s":st.id,"aria-label":st.label},
-      el("h2",{},el("span",{class:"t"},st.label), el("span",{class:"count"},list.length)));
-    if (!list.length) col.append(el("div",{class:"empty"}, st.id==="new" ? "No unassigned jobs. Add one with New job." : "Nothing here."));
-    list.forEach(j=>col.append(jobCard(j)));
-    board.append(col);
-  }
-  frag.append(board);
-  return frag;
-}
-function jobCard(j){
-  const st=j.status||"new"; const t=today();
-  const overdue = st!=="done" && j.date && j.date<t;
-  const card=el("article",{class:"card"});
-  card.append(el("div",{class:"svc"},j.service||"Cleaning"));
-  card.append(el("h3",{},j.client||"Untitled job"));
-  if (j.address){
-    card.append(el("div",{class:"addr"}, el("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},j.address)));
-  }
-  card.append(el("div",{class:"meta"},
-    el("span",{class: overdue?"overdue":""}, niceDate(j.date)+(j.time?", "+niceTime(j.time):"")+(overdue?" (overdue)":"")),
-    el("span",{class:"price"},money(j.price))));
-  if (j.phone) card.append(el("div",{class:"kv"},"Client phone: ", el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)));
-  if (j.notes) card.append(el("div",{class:"notes"},j.notes));
-
-  if (st!=="done"){
-    const sel=el("select",{"aria-label":"Assign to", value:j.assigneeId||"", onchange:e=>assign(j,e.target.value)},
-      el("option",{value:""},"Unassigned"),
-      S.employees.filter(e=>e.active!==false || e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)));
-    card.append(sel);
-  } else {
-    const a=empById(j.assigneeId);
-    card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},a?a.name:"—")),
-      el("span",{class:"grow"}), el("span",{class:"paid "+(j.paid?"yes":"no")}, j.paid?"Paid":"Unpaid")));
-  }
-  const acts=el("div",{class:"acts"});
-  if (st==="assigned") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
-  if (st==="in_progress") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"done")},"Mark done"));
-  if (st==="done"){
-    acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
-    acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
-  }
-  acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
-  card.append(acts);
-  return card;
-}
-function assign(j, empId){
-  const st = j.status||"new";
-  const status = !empId ? "new" : (st==="new" ? "assigned" : st);
-  const who = empById(empId);
-  write(()=>Store.update("jobs",j.id,{assigneeId:empId||null,status}), who?("Assigned to "+who.name):"Unassigned");
-}
-function setStatus(j,status){
-  const patch={status};
-  if (status==="in_progress") patch.startedAt=Date.now();
-  if (status==="done") patch.completedAt=Date.now();
-  write(()=>Store.update("jobs",j.id,patch), status==="done"?"Nice work. Job marked done.":null);
-}
-
-function openJob(j){
-  const f=$("#jobForm"); f.replaceChildren();
-  const isNew=!j; j=j||{date:today(),service:SERVICES[0],status:"new"};
-  f.append(el("h2",{},isNew?"New job":"Edit job"),
-    el("label",{class:"f full"},"Client name",el("input",{name:"client",required:true,value:j.client||"",autocomplete:"off"})),
-    el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"})),
-    el("label",{class:"f"},"Service",el("select",{name:"service",value:j.service},SERVICES.map(s=>el("option",{},s)))),
-    el("label",{class:"f"},"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??""})),
-    el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
-    el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
-    el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
-    el("label",{class:"f"},"Assign to",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),S.employees.filter(e=>e.active!==false||e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)))),
-    el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:"Gate code, pets, rooms to skip…"},j.notes||"")),
-    el("div",{class:"acts"},
-      !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),"Job deleted"); } }},"Delete") : null,
-      el("span",{class:"grow"}),
-      el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
-      el("button",{type:"submit",class:"btn primary"},isNew?"Add job":"Save changes")));
-  f.onsubmit=e=>{
-    e.preventDefault();
-    const d=Object.fromEntries(new FormData(f));
-    const data={client:d.client.trim(),address:d.address.trim(),service:d.service,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
-    let status=j.status||"new";
-    if (!data.assigneeId && status!=="done") status="new";
-    else if (data.assigneeId && status==="new") status="assigned";
-    data.status=status;
-    $("#jobDlg").close();
-    if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),"Job added"); }
-    else write(()=>Store.update("jobs",j.id,data),"Job saved");
-  };
-  $("#jobDlg").showModal();
-}
-
-/* ---- team ---- */
-function viewTeam(){
-  const frag=document.createDocumentFragment();
-  const onDuty=S.employees.filter(e=>{const l=locFor(e.id); return l&&l.onDuty;});
-  frag.append(el("div",{class:"toolbar"},
-    el("span",{class:"kv grow"}, el("b",{},String(onDuty.length)), " of ", el("b",{},String(S.employees.filter(e=>e.active!==false).length)), " on shift right now"),
-    el("button",{class:"btn",onclick:()=>openEmp()},"Add team member")));
-  if (!S.employees.length){
-    frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
-      el("p",{class:"kv"},"Add each cleaner here with their email. When they register using that exact email, they'll be added to your team automatically.")));
-    return frag;
-  }
-  const grid=el("div",{class:"team"});
-  const m=me();
-  S.employees.slice().sort((a,b)=>(a.active===false)-(b.active===false)||a.name.localeCompare(b.name)).forEach(e=>{
-    const loc=locFor(e.id);
-    const on=loc&&loc.onDuty; const fresh=loc&&loc.at&&Date.now()-loc.at<STALE_MS;
-    const cur=S.jobs.find(j=>j.assigneeId===e.id&&j.status==="in_progress");
-    const next=S.jobs.filter(j=>j.assigneeId===e.id&&j.status==="assigned").sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""))[0];
-    let statusText="Off shift", dotCls="";
-    if (on && loc.lat!=null && fresh){ statusText="On shift, location live"; dotCls="on"; }
-    else if (on && loc.lat!=null){ statusText="On shift, signal lost"; dotCls="stale"; }
-    else if (on){ statusText="On shift, no location yet"; dotCls="stale"; }
-    const card=el("article",{class:"person"},
-      el("div",{class:"head"}, el("div",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
-        el("div",{class:"grow"}, el("h3",{},e.name + (e.active===false?" (inactive)":"")),
-          el("span",{class:"status"},el("span",{class:"dot "+dotCls,"aria-hidden":"true"}),statusText))));
-    if (e.phone) card.append(el("div",{class:"kv"},"Phone: ",el("a",{href:"tel:"+e.phone.replace(/[^\d+]/g,"")},e.phone)));
-    if (on && loc.since) card.append(el("div",{class:"kv"},"Shift started ",el("b",{},new Date(loc.since).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}))));
-    if (loc && loc.lat!=null){
-      card.append(el("div",{class:"kv"},"Last location ", el("b",{},ago(loc.at)), loc.acc?(" (within about "+Math.round(loc.acc)+" m)"):"" ));
-      card.append(el("div",{class:"row"},
-        el("a",{class:"btn small",href:"https://www.google.com/maps/search/?api=1&query="+loc.lat.toFixed(6)+","+loc.lng.toFixed(6),target:"_blank",rel:"noopener"},"Open in Maps"),
-        cur&&cur.address ? el("a",{class:"btn small",href:"https://www.google.com/maps/dir/?api=1&origin="+loc.lat.toFixed(6)+","+loc.lng.toFixed(6)+"&destination="+encodeURIComponent(cur.address),target:"_blank",rel:"noopener"},"Route to job") : null));
-    }
-    card.append(el("div",{class:"kv"}, cur ? ["Working on ", el("b",{},cur.client)] : next ? ["Next up ", el("b",{},next.client), " · "+niceDate(next.date)] : "No open jobs"));
-    const acts=el("div",{class:"row"});
-    if (!e.userId && S.myUserId && !m && (!e.email || e.email===(S.myEmail||"").toLowerCase())) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
-    if (e.userId && e.userId===S.myUserId) acts.append(el("span",{class:"kv"},"This is you"));
-    else if (e.userId) acts.append(el("span",{class:"kv"},"Account linked"));
-    acts.append(el("span",{class:"grow"}), el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit"));
-    card.append(acts);
-    grid.append(card);
-  });
-  frag.append(grid);
-  frag.append(el("p",{class:"kv",style:"margin-top:18px;max-width:70ch"},
-    "Locations are only shared while a team member is on shift and has this page open on their phone. Ending a shift stops sharing right away."));
-  return frag;
-}
-function openEmp(e){
-  const f=$("#empForm"); f.replaceChildren(); const isNew=!e; e=e||{};
-  f.append(el("h2",{},isNew?"Add team member":"Edit team member"),
-    el("label",{class:"f full"},"Name",el("input",{name:"name",required:true,value:e.name||"",autocomplete:"off"})),
-    el("label",{class:"f full"},"Email (they'll sign in with this)",el("input",{name:"email",type:"email",value:e.email||"",autocomplete:"off"})),
-    el("label",{class:"f"},"Phone",el("input",{name:"phone",type:"tel",value:e.phone||""})),
-    el("label",{class:"f"},"Status",el("select",{name:"active",value:e.active===false?"no":"yes"},el("option",{value:"yes"},"Active"),el("option",{value:"no"},"Inactive"))),
-    e.email && !e.userId ? el("p",{class:"kv full",style:"margin:-6px 0 0;"},"Waiting for them to register with this email — they'll be added to the team automatically.") : null,
-    el("div",{class:"acts"},
-      !isNew && e.userId ? el("button",{type:"button",class:"btn ghost",onclick:()=>{ $("#empDlg").close(); write(()=>Store.update("employees",e.id,{userId:null}),"Account unlinked"); }},"Unlink account") : null,
-      !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Remove "+e.name+"? Their past jobs stay in the books.")){ $("#empDlg").close(); write(async()=>{ await Store.del("employees",e.id); await Store.del("locations",e.id); },"Removed"); } }},"Remove") : null,
-      el("span",{class:"grow"}),
-      el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
-      el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save changes")));
-  f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
-    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),active:d.active==="yes"};
-    if (isNew){ data.createdAt=Date.now(); data.userId=null; data.businessId=S.businessId; write(()=>Store.set("employees",newId(),data),"Team member added"); }
-    else write(()=>Store.update("employees",e.id,data),"Saved"); };
-  $("#empDlg").showModal();
-}
-
-/* ---- shifts & location ---- */
-let watchId=null, bgWatcherId=null, lastWrite=0, lastSent=null, wq=Promise.resolve();
-const queue = fn => { wq = wq.then(fn).catch(e=>console.warn(e)); return wq; };
-const isNative = () => !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-async function syncRunnerContext(onDuty){
-  if (!isNative()) return;
-  try {
-    const { BackgroundRunner } = Capacitor.Plugins;
-    if (!BackgroundRunner) return;
-    const m = me();
-    await BackgroundRunner.dispatchEvent({
-      label: "com.dazift.app.locationcheckin",
-      event: "setContext",
-      details: { businessId: S.businessId, employeeId: m ? m.id : null, onDuty: !!onDuty }
-    });
-  } catch(e){ console.warn("Runner context sync failed", e); }
-}
-
-async function startDuty(){
-  const m=me(); if(!m) return;
-  S.dutyErr=null;
-  const existing=locFor(m.id);
-  const since = existing&&existing.onDuty&&existing.since ? existing.since : Date.now();
-  queue(()=>Store.set("locations",m.id,{onDuty:true,since,at:existing&&existing.at||null,lat:existing&&existing.lat!=null?existing.lat:null,lng:existing&&existing.lng!=null?existing.lng:null,acc:existing&&existing.acc||null,businessId:S.businessId}));
-
-  if (isNative()){
-    try {
-      const { BackgroundGeolocation } = Capacitor.Plugins;
-      lastWrite=0; lastSent=null;
-      bgWatcherId = await BackgroundGeolocation.addWatcher({
-        backgroundMessage: "Sharing your location with the office while you're on shift.",
-        backgroundTitle: "On shift — location sharing on",
-        requestPermissions: true,
-        stale: false,
-        distanceFilter: 30
-      }, (location, error) => {
-        if (error){
-          if (error.code === "NOT_AUTHORIZED"){
-            S.dutyErr="Location permission was denied. Enable \"Always\" location access for this app in your phone's Settings, then tap Resume sharing.";
-            render();
-          }
-          return;
-        }
-        onNativePos(location);
-      });
-      S.watching=true; render(); toast("Shift started — location will keep sharing in the background");
-      syncRunnerContext(true);
-    } catch(e){
-      S.dutyErr="Couldn't start background location. "+(e&&e.message||"");
-      render();
-    }
-    return;
-  }
-
-  // Browser fallback — foreground only, page must stay open
-  if (!navigator.geolocation){ S.dutyErr="This device can’t share its location. You’re on shift, but the office won’t see where you are."; render(); return; }
-  if (watchId!=null) navigator.geolocation.clearWatch(watchId);
-  lastWrite=0; lastSent=null;
-  watchId=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:30000,timeout:60000});
-  S.watching=true; render(); toast("Shift started");
-}
-function onNativePos(location){
-  const m=me(); if(!m) return;
-  const cur={lat:location.latitude,lng:location.longitude};
-  const now=Date.now();
-  const moved = lastSent ? distM(lastSent,cur) : Infinity;
-  if (now-lastWrite < 60000 && moved < 30) return;
-  lastWrite=now; lastSent=cur; S.dutyErr=null;
-  queue(()=>Store.update("locations",m.id,{lat:cur.lat,lng:cur.lng,acc:location.accuracy||null,at:now,onDuty:true}));
-}
-function onPos(p){
-  const m=me(); if(!m) return;
-  const cur={lat:p.coords.latitude,lng:p.coords.longitude};
-  const now=Date.now();
-  const moved = lastSent ? distM(lastSent,cur) : Infinity;
-  if (now-lastWrite < 60000 && moved < 100) return;   // at most once a minute unless they moved 100 m+
-  lastWrite=now; lastSent=cur; S.dutyErr=null;
-  queue(()=>Store.update("locations",m.id,{lat:cur.lat,lng:cur.lng,acc:p.coords.accuracy||null,at:now,onDuty:true}));
-}
-function onPosErr(err){
-  if (err.code===1) S.dutyErr="Location is blocked for this page. Allow location in your browser or phone settings, then tap Resume sharing.";
-  else if (err.code===3) return; // timeout, keep waiting
-  else S.dutyErr="Couldn’t get your location. Move somewhere with better signal; the page will keep trying.";
-  if (err.code===1){ if(watchId!=null) navigator.geolocation.clearWatch(watchId); watchId=null; S.watching=false; }
-  render();
-}
-async function stopDuty(){
-  const m=me(); if(!m) return;
-  if (isNative() && bgWatcherId){
-    try { const { BackgroundGeolocation } = Capacitor.Plugins; await BackgroundGeolocation.removeWatcher({id:bgWatcherId}); } catch(e){ console.warn(e); }
-    bgWatcherId=null;
-  }
-  if (watchId!=null) navigator.geolocation.clearWatch(watchId);
-  watchId=null; S.watching=false; S.dutyErr=null;
-  queue(()=>Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}).catch(()=>Store.set("locations",m.id,{onDuty:false,endedAt:Date.now(),businessId:S.businessId})));
-  syncRunnerContext(false);
-  render(); toast("Shift ended. Location sharing stopped.");
-}
-
-/* ---- books ---- */
-/* ---- receipts ---- */
-let capturedReceiptFile = null;
-async function captureReceiptPhoto(){
-  if (!isNative()) return;
-  try {
-    const { Camera } = Capacitor.Plugins;
-    const photo = await Camera.getPhoto({ quality:85, resultType:"dataUrl", source:"PROMPT", saveToGallery:false });
-    const res = await fetch(photo.dataUrl);
-    const blob = await res.blob();
-    const ext = photo.format || "jpeg";
-    capturedReceiptFile = new File([blob], "receipt."+ext, {type: blob.type || ("image/"+ext)});
-    const prev = $("#receiptPreview");
-    if (prev){ prev.src = photo.dataUrl; prev.classList.remove("hidden"); }
-  } catch(e){
-    if (e && e.message && /cancel/i.test(e.message)) return;
-    console.warn(e);
-    toast("Couldn't open the camera.");
-  }
-}
-function handleReceiptPreview(e){
-  capturedReceiptFile = null;
-  const file=e.target.files[0];
-  const prev=$("#receiptPreview");
-  if (!prev) return;
-  if (file && file.type.startsWith("image/")){
-    prev.src=URL.createObjectURL(file);
-    prev.classList.remove("hidden");
-  } else {
-    prev.classList.add("hidden");
-  }
-}
-async function imageFileToPdfBlob(file){
-  const dataUrl=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
-  const img=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=dataUrl; });
-  const { jsPDF }=window.jspdf;
-  const orientation=img.width>img.height?"l":"p";
-  const pdf=new jsPDF({orientation, unit:"pt", format:[img.width,img.height]});
-  const fmt=/png/i.test(file.type)?"PNG":"JPEG";
-  pdf.addImage(dataUrl, fmt, 0, 0, img.width, img.height);
-  return pdf.output("blob");
-}
-async function uploadReceipt(file, businessId){
-  const path="receipts/"+businessId+"/"+Date.now()+"_"+(file.name||"receipt").replace(/[^a-zA-Z0-9._-]/g,"_");
-  const ref=storage.ref().child(path);
-  await ref.put(file);
-  const url=await ref.getDownloadURL();
-  return {url, name:file.name||"receipt"};
-}
-
-function monthRows(){
-  const mo=S.month;
-  const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>({
-    kind:"income", id:j.id, date:j.date, cat:j.service||"Cleaning", desc:j.client+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid}));
-  const exp=S.expenses.filter(x=>(x.date||"").startsWith(mo)).map(x=>({
-    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:x.vendor||x.note||"", amount:Number(x.amount)||0,
-    receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
-  return {income,exp};
-}
-function viewBooks(){
-  const frag=document.createDocumentFragment();
-  const {income,exp}=monthRows();
-  const inc=income.reduce((a,r)=>a+r.amount,0), out=exp.reduce((a,r)=>a+r.amount,0), net=inc-out;
-  const unpaid=income.filter(r=>!r.paid).reduce((a,r)=>a+r.amount,0);
-
-  frag.append(el("div",{class:"toolbar"},
-    el("label",{class:"f"},"Month",el("input",{type:"month",value:S.month,onchange:e=>{ if(e.target.value){S.month=e.target.value;render();} }})),
-    el("span",{class:"grow"}),
-    el("button",{class:"btn",onclick:exportCsv},"Export month as CSV")));
-
-  frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Money in (finished jobs)"),el("div",{class:"v"},money(inc))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
-    el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Still owed by clients"),el("div",{class:"v"},money(unpaid)))));
-
-  const left=el("div",{});
-  const f=el("form",{class:"panel"});
-  f.append(el("h2",{},"Log an expense"),
-    el("div",{class:"expform"},
-      el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
-      el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
-      el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
-      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:"Walmart, mop heads and bleach",autocomplete:"off"})),
-      el("label",{class:"f full"},"Receipt photo or PDF (optional)",
-        el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
-      isNative() ? el("div",{class:"full",style:"margin-top:-6px;"},el("button",{type:"button",class:"btn small",onclick:captureReceiptPhoto},"📷 Take Photo")) : null,
-      el("img",{id:"receiptPreview",class:"hidden",style:"max-width:110px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-top:2px;object-fit:cover;"}),
-      el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
-        el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
-        "Save photo as a PDF receipt"),
-      el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Add expense"))));
-  f.onsubmit=async e=>{
-    e.preventDefault();
-    const d=Object.fromEntries(new FormData(f));
-    const amt=Number(d.amount); if(!(amt>0)) return toast("Enter an amount above zero.");
-    const file=capturedReceiptFile || f.querySelector("[name=receipt]").files[0];
-    const wantsPdf=f.querySelector("[name=asPdf]").checked;
-    const submitBtn=f.querySelector("button[type=submit]");
-    submitBtn.disabled=true;
-    let receiptData={};
-    try {
-      if (file){
-        let uploadFile=file;
-        if (wantsPdf && file.type.startsWith("image/")){
-          toast("Converting to PDF…");
-          const blob=await imageFileToPdfBlob(file);
-          uploadFile=new File([blob], (file.name||"receipt").replace(/\.[^.]+$/,"")+".pdf", {type:"application/pdf"});
-        }
-        toast("Uploading receipt…");
-        const r=await uploadReceipt(uploadFile, S.businessId);
-        receiptData={receiptUrl:r.url, receiptName:r.name};
-      }
-    } catch(err){
-      console.warn(err);
-      toast("Couldn't upload the receipt, but saving the expense anyway.");
-    }
-    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...receiptData}),"Expense added");
-    f.reset(); f.querySelector("[name=date]").value=today();
-    $("#receiptPreview").classList.add("hidden");
-    capturedReceiptFile = null;
-    submitBtn.disabled=false;
-  };
-  left.append(f);
-
-  const byCat={}; exp.forEach(r=>byCat[r.cat]=(byCat[r.cat]||0)+r.amount);
-  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const max=cats.length?cats[0][1]:1;
-  const catPanel=el("div",{class:"panel"},el("h2",{},"Where the money went"));
-  if (!cats.length) catPanel.append(el("div",{class:"empty"},"No expenses logged for this month yet."));
-  cats.forEach(([c,v])=>catPanel.append(el("div",{class:"bar"},el("span",{},c),
-    el("div",{class:"track"},el("div",{class:"fill",style:"width:"+Math.max(3,v/max*100).toFixed(1)+"%"})),el("b",{},money(v)))));
-  left.append(catPanel);
-
-  const rows=[...income,...exp].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-  const tp=el("div",{class:"panel"},el("h2",{},"Transactions"));
-  if (!rows.length) tp.append(el("div",{class:"empty"},"No money in or out this month. Finished jobs show up here automatically."));
-  else {
-    const tbody=el("tbody");
-    rows.forEach(r=>tbody.append(el("tr",{class:r.kind==="income"?"inc":""},
-      el("td",{},niceDate(r.date)),
-      el("td",{},r.cat),
-      el("td",{},r.desc||"—", r.receiptUrl ? el("a",{href:r.receiptUrl,target:"_blank",rel:"noopener",class:"kv",style:"display:block;margin-top:2px;"},"📎 Receipt") : null),
-      el("td",{class:"num"},(r.kind==="income"?"+":"−")+money(r.amount)),
-      el("td",{}, r.kind==="expense"
-        ? el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete")
-        : (!r.paid ? el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid") : el("span",{class:"paid yes"},"Paid"))))));
-    tp.append(el("div",{class:"tablewrap"},el("table",{},
-      el("thead",{},el("tr",{},el("th",{},"Date"),el("th",{},"Category"),el("th",{},"Details"),el("th",{class:"num"},"Amount"),el("th",{}))),tbody)));
-  }
-  frag.append(el("div",{class:"books"},left,tp));
-  return frag;
-}
-async function exportCsv(){
-  const {income,exp}=monthRows();
-  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-  const lines=[["Date","Type","Category","Details","Amount"].join(",")];
-  [...income,...exp].sort((a,b)=>(a.date||"").localeCompare(b.date||"")).forEach(r=>lines.push([r.date,r.kind==="income"?"Income":"Expense",r.cat,r.desc,(r.kind==="income"?"":"-")+r.amount.toFixed(2)].map(q).join(",")));
-  try {
-    const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download="stanfill-books-"+S.month+".csv";
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-  } catch(e){ toast("The download didn’t start."); }
-}
-
-/* ---- insights ---- */
-const SVGNS="http://www.w3.org/2000/svg";
-function sv(tag,attrs,...kids){ const n=document.createElementNS(SVGNS,tag); for(const [k,v] of Object.entries(attrs||{})){ if(v==null) continue; if(k.startsWith("on")&&typeof v==="function") n.addEventListener(k.slice(2),v); else n.setAttribute(k,v);} kids.flat().forEach(c=>c!=null&&n.append(c instanceof Node?c:document.createTextNode(String(c)))); return n; }
-function parseYmd(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
-function weekStart(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
-function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return ymd(d); }
-function niceCeil(v){ if(v<=0) return 1; const p=10**Math.floor(Math.log10(v)); const n=v/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
-const shortMoney = n => { const a=Math.abs(n), sg=n<0?"−":""; return sg+"$"+(a>=1000?(a/1000).toFixed(a>=10000?0:1).replace(/\.0$/,"")+"k":Math.round(a)); };
-const doneJobs = () => S.jobs.filter(j=>j.status==="done" && j.date);
-const sum = (arr,f) => arr.reduce((a,x)=>a+(Number(f(x))||0),0);
-function pctChange(cur,prev){ if(!prev) return null; return (cur-prev)/Math.abs(prev)*100; }
-
-function makeBuckets(gran){
-  const now=new Date(), out=[];
-  if (gran==="day"){ for(let i=13;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
-    out.push({key:ymd(d), label:d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}), tick:d.toLocaleDateString("en-US",{month:"numeric",day:"numeric"})}); } }
-  else if (gran==="week"){ const ws=weekStart(now); for(let i=11;i>=0;i--){ const d=new Date(ws); d.setDate(d.getDate()-7*i);
-    out.push({key:ymd(d), label:"Week of "+d.toLocaleDateString("en-US",{month:"short",day:"numeric"}), tick:d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}); } }
-  else { for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    out.push({key:ymd(d).slice(0,7), label:d.toLocaleDateString("en-US",{month:"long",year:"numeric"}), tick:d.toLocaleDateString("en-US",{month:"short"})+(d.getMonth()===0?" ’"+String(d.getFullYear()).slice(2):"")}); } }
-  const keyOf = gran==="day" ? s=>s : gran==="week" ? s=>ymd(weekStart(parseYmd(s))) : s=>s.slice(0,7);
-  const idx=new Map(out.map((b,i)=>[b.key,i]));
-  out.forEach(b=>{b.inc=0;b.exp=0;b.jobs=0;});
-  doneJobs().forEach(j=>{ const i=idx.get(keyOf(j.date)); if(i!=null){ out[i].inc+=Number(j.price)||0; out[i].jobs++; } });
-  S.expenses.forEach(x=>{ if(!x.date) return; const i=idx.get(keyOf(x.date)); if(i!=null) out[i].exp+=Number(x.amount)||0; });
-  out.forEach(b=>b.net=b.inc-b.exp);
-  return out;
-}
-
-function trendChart(bs, onPick){
-  const narrow=window.innerWidth<640, W=narrow?380:720,H=narrow?250:270,L=narrow?44:52,R=6,T=12,B=30, iw=W-L-R, ih=H-T-B;
-  const hi=Math.max(1,...bs.map(b=>Math.max(b.inc,b.exp))), lo=Math.min(0,...bs.map(b=>b.net));
-  const step=niceCeil((hi-lo)/4); const top=Math.ceil(hi/step)*step, bot=Math.floor(lo/step)*step;
-  const y=v=>T+ih*(top-v)/(top-bot);
-  const svg=sv("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart",role:"img","aria-label":"Earnings and expenses chart"});
-  for(let v=bot; v<=top+1e-9; v+=step){ const yy=y(v);
-    svg.append(sv("line",{x1:L,x2:W-R,y1:yy,y2:yy,class:Math.abs(v)<1e-9?"zero":"grid"}), sv("text",{x:L-8,y:yy+4,"text-anchor":"end",class:"axis"},shortMoney(v))); }
-  if (bot<0) svg.append(sv("line",{x1:L,x2:W-R,y1:y(0),y2:y(0),class:"zero"}));
-  const bw=iw/bs.length, barW=Math.min(20,bw*0.34);
-  const hl=sv("rect",{x:L,y:T,width:bw,height:ih,class:"hl",rx:6}); svg.append(hl);
-  const every = narrow ? (bs.length>12?3:2) : (bs.length>12?2:1);
-  bs.forEach((b,i)=>{ const cx=L+i*bw+bw/2, y0=y(0);
-    if (b.inc>0) svg.append(sv("rect",{x:cx-barW-1,y:y(b.inc),width:barW,height:Math.max(1,y0-y(b.inc)),rx:3,class:"inc"}));
-    if (b.exp>0) svg.append(sv("rect",{x:cx+1,y:y(b.exp),width:barW,height:Math.max(1,y0-y(b.exp)),rx:3,class:"exp"}));
-    if ((bs.length-1-i)%every===0) svg.append(sv("text",{x:cx,y:H-10,"text-anchor":"middle",class:"axis"},b.tick)); });
-  const pts=bs.map((b,i)=>[L+i*bw+bw/2, y(b.net)]);
-  svg.append(sv("polyline",{points:pts.map(p=>p.map(n=>n.toFixed(1)).join(",")).join(" "),class:"pline"}));
-  pts.forEach(p=>svg.append(sv("circle",{cx:p[0],cy:p[1],r:3.5,class:"pdot"})));
-  const pick=i=>{ hl.setAttribute("x",L+i*bw); onPick(i); };
-  bs.forEach((b,i)=>svg.append(sv("rect",{x:L+i*bw,y:T,width:bw,height:ih,class:"hit",tabindex:"0","aria-label":`${b.label}: earned ${money(b.inc)}, spent ${money(b.exp)}`,
-    onmouseenter:()=>pick(i), onfocus:()=>pick(i), onclick:()=>pick(i)})));
-  pick(bs.length-1);
-  return svg;
-}
-
-function kpi(label, value, cur, prev, opts={}){
-  const ch=pctChange(cur,prev); let d="Nothing to compare yet";
-  let cls="d";
-  if (ch!=null){ const better = opts.lowerIsBetter ? ch<0 : ch>0; cls+= Math.abs(ch)<0.5?"":(better?" up":" down");
-    d=(ch>0?"▲ ":ch<0?"▼ ":"")+Math.abs(ch).toFixed(0)+"% vs this point last month"; }
-  if (opts.note){ d=opts.note; cls="d"; }
-  return el("div",{class:"kpi"},el("div",{class:"l"},label),el("div",{class:"v"},value),el("div",{class:cls},d));
-}
-
-function viewInsights(){
-  const frag=document.createDocumentFragment();
-  const hasSample = S.jobs.some(j=>j.sample)||S.expenses.some(x=>x.sample)||S.employees.some(e=>e.sample);
-  const empty = !doneJobs().length && !S.expenses.length;
-
-  if (hasSample) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},"You’re looking at sample data. Clear it before the crew starts using the board for real."),
-    el("button",{class:"btn small",disabled:S.seeding,onclick:clearSample},"Clear sample data")));
-
-  if (empty){
-    frag.append(el("div",{class:"panel"},el("h2",{},"Insights fill in as you work"),
-      el("p",{class:"kv",style:"max-width:62ch"},"Every job marked done and every expense logged feeds these charts: daily, weekly and monthly earnings, profit, crew performance, best clients and busiest days. Load three months of sample data to see how it looks."),
-      el("button",{class:"btn lemon",disabled:S.seeding,onclick:loadSample},S.seeding?"Loading sample data…":"Load sample data")));
-    return frag;
-  }
-
-  const now=new Date(); const thisMo=ymd(now).slice(0,7);
-  const lm=new Date(now.getFullYear(),now.getMonth()-1,1); const lastMo=ymd(lm).slice(0,7);
-  const dj=doneJobs();
-  const cut=lastMo+"-"+pad(Math.min(now.getDate(), new Date(now.getFullYear(),now.getMonth(),0).getDate()));
-  const inLast = s => s && s.startsWith(lastMo) && s<=cut;
-  const jm=dj.filter(j=>j.date.startsWith(thisMo)), jl=dj.filter(j=>inLast(j.date));
-  const inc=sum(jm,j=>j.price), incL=sum(jl,j=>j.price);
-  const exp=sum(S.expenses.filter(x=>(x.date||"").startsWith(thisMo)),x=>x.amount), expL=sum(S.expenses.filter(x=>inLast(x.date)),x=>x.amount);
-  const net=inc-exp, netL=incL-expL;
-  const avg=jm.length?inc/jm.length:0, avgL=jl.length?incL/jl.length:0;
-  const paid=sum(jm.filter(j=>j.paid),j=>j.price);
-  const owed=sum(dj.filter(j=>!j.paid),j=>j.price);
-  const margin = inc ? net/inc*100 : 0;
-
-  frag.append(el("div",{class:"kpis"},
-    kpi("Earned this month",money(inc),inc,incL),
-    kpi("Spent this month",money(exp),exp,expL,{lowerIsBetter:true}),
-    kpi("Profit this month",money(net),net,netL,{note: inc?("Keeping "+margin.toFixed(0)+"¢ of every dollar"):null}),
-    kpi("Jobs finished",String(jm.length),jm.length,jl.length),
-    kpi("Average job",money(avg),avg,avgL),
-    kpi("Collected this month",inc?Math.round(paid/inc*100)+"%":"—",0,0,{note:money(paid)+" of "+money(inc)+" paid"}),
-    kpi("Owed by clients",money(owed),0,0,{note:dj.filter(j=>!j.paid).length+" unpaid jobs, all time"}),
-    kpi("Crew on shift now",String(S.locations.filter(l=>l.onDuty).length),0,0,{note:"of "+S.employees.filter(e=>e.active!==false).length+" active cleaners"})));
-
-  // trend chart
-  const bs=makeBuckets(S.gran);
-  const unit={day:"day",week:"week",month:"month"}[S.gran];
-  const seg=el("div",{class:"seg",role:"group","aria-label":"Chart period"});
-  [["day","Daily"],["week","Weekly"],["month","Monthly"]].forEach(([id,l])=>seg.append(el("button",{"aria-pressed":String(S.gran===id),onclick:()=>{S.gran=id;render();}},l)));
-  const ro=el("div",{class:"readout","aria-live":"polite"});
-  const chart=trendChart(bs,i=>{ const b=bs[i]; ro.replaceChildren(el("b",{},b.label),
-    el("span",{},"Earned ",el("b",{},money(b.inc))), el("span",{},"Spent ",el("b",{},money(b.exp))),
-    el("span",{},"Profit ",el("b",{style:b.net<0?"color:var(--danger)":""},money(b.net))), el("span",{},el("b",{},String(b.jobs))," jobs")); });
-  const totI=sum(bs,b=>b.inc), totE=sum(bs,b=>b.exp), best=bs.reduce((a,b)=>b.inc>a.inc?b:a,bs[0]);
-  frag.append(el("section",{class:"hero"},
-    el("div",{class:"hero-head"},el("div",{},el("h2",{},"Earnings vs expenses"),
-      el("div",{class:"legend"},el("span",{},el("i",{style:"background:var(--primary)"}),"Earned"),el("span",{},el("i",{style:"background:var(--lemon)"}),"Spent"),el("span",{},el("i",{style:"background:var(--ink);height:3px;vertical-align:3px"}),"Profit"))),seg),
-    ro, chart,
-    el("div",{class:"rangefoot"},
-      el("div",{},"Earned, last "+bs.length+" "+unit+"s",el("b",{},money(totI))),
-      el("div",{},"Spent",el("b",{},money(totE))),
-      el("div",{},"Average profit per "+unit,el("b",{},money((totI-totE)/bs.length))),
-      el("div",{},"Best "+unit,el("b",{},best.inc?best.tick+" · "+shortMoney(best.inc):"—")))));
-
-  // crew performance (last 30 days)
-  const since30=daysAgo(30), since90=daysAgo(90);
-  const d30=dj.filter(j=>j.date>=since30), d90=dj.filter(j=>j.date>=since90);
-  const crew=S.employees.map(e=>{ const js=d30.filter(j=>j.assigneeId===e.id);
-    const timed=js.filter(j=>j.startedAt&&j.completedAt&&j.completedAt>j.startedAt&&j.completedAt-j.startedAt<12*3600e3);
-    return {e, n:js.length, rev:sum(js,j=>j.price), hrs: timed.length? sum(timed,j=>j.completedAt-j.startedAt)/timed.length/3600e3 : null}; })
-    .filter(c=>c.n||c.e.active!==false).sort((a,b)=>b.rev-a.rev);
-  const crewMax=Math.max(1,...crew.map(c=>c.rev));
-  const crewP=el("section",{class:"panel"},el("h2",{},"Crew performance"),el("p",{class:"sub"},"Last 30 days, by money brought in"));
-  if (!crew.length) crewP.append(el("div",{class:"empty"},"Add team members to see how each cleaner is doing."));
-  crew.forEach(c=>crewP.append(el("div",{class:"hbar"},
-    el("span",{},c.e.name,el("small",{},c.n+" jobs"+(c.hrs?" · avg "+c.hrs.toFixed(1)+" hrs/job":""))),
-    el("div",{class:"track"},el("div",{class:"fill",style:`width:${Math.max(2,c.rev/crewMax*100).toFixed(1)}%;background:${colorFor(c.e)}`})),
-    el("b",{},money(c.rev)))));
-
-  // service mix (90 days)
-  const svc=SERVICES.map(s=>{const js=d90.filter(j=>(j.service||SERVICES[0])===s); return {s,n:js.length,rev:sum(js,j=>j.price)};}).sort((a,b)=>b.rev-a.rev);
-  const svcMax=Math.max(1,...svc.map(x=>x.rev)); const svcTot=sum(svc,x=>x.rev);
-  const svcP=el("section",{class:"panel"},el("h2",{},"What sells"),el("p",{class:"sub"},"Last 90 days, earnings by service"));
-  svc.forEach(x=>svcP.append(el("div",{class:"hbar"},
-    el("span",{},x.s,el("small",{},x.n+" jobs"+(x.n?" · avg "+money(x.rev/x.n):""))),
-    el("div",{class:"track"},el("div",{class:"fill",style:`width:${Math.max(2,x.rev/svcMax*100).toFixed(1)}%`})),
-    el("b",{},svcTot?Math.round(x.rev/svcTot*100)+"%":"0%"))));
-  frag.append(el("div",{class:"duo"},crewP,svcP));
-
-  // busiest days + top clients
-  const dn=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]; const dc=[0,0,0,0,0,0,0], dr=[0,0,0,0,0,0,0];
-  d90.forEach(j=>{ const k=(parseYmd(j.date).getDay()+6)%7; dc[k]++; dr[k]+=Number(j.price)||0; });
-  const dMax=Math.max(1,...dc), topDay=dc.indexOf(Math.max(...dc));
-  const daysP=el("section",{class:"panel"},el("h2",{},"Busiest days"),el("p",{class:"sub"},"Jobs finished by weekday, last 90 days"),
-    el("div",{class:"days"},dn.map((n,i)=>el("div",{class:"c"+(i===topDay&&dc[i]?" best":""),title:`${n}: ${dc[i]} jobs, ${money(dr[i])}`},
-      el("span",{class:"n"},String(dc[i])), el("div",{class:"col-b",style:`height:${(dc[i]/dMax*100).toFixed(0)}%`}), el("span",{},n)))),
-    dc[topDay] ? el("p",{class:"kv",style:"margin:10px 0 0"},dn[topDay]+"s bring in the most work. "+dn[dc.slice(0,5).indexOf(Math.min(...dc.slice(0,5)))]+"s are the slowest weekday, a good slot for deep cleans or a promo.") : null);
-
-  const byClient={}; d90.forEach(j=>{ const k=(j.client||"Unknown").trim(); (byClient[k] ||= {n:0,rev:0,last:""}); byClient[k].n++; byClient[k].rev+=Number(j.price)||0; if(j.date>byClient[k].last) byClient[k].last=j.date; });
-  const tops=Object.entries(byClient).sort((a,b)=>b[1].rev-a[1].rev).slice(0,6);
-  const repeat=Object.values(byClient).filter(c=>c.n>1).length, allC=Object.keys(byClient).length;
-  const cliP=el("section",{class:"panel"},el("h2",{},"Top clients"),el("p",{class:"sub"},allC?`${repeat} of ${allC} clients booked more than once in the last 90 days`:"Last 90 days"));
-  if (!tops.length) cliP.append(el("div",{class:"empty"},"No finished jobs in the last 90 days."));
-  else { const tb=el("tbody"); tops.forEach(([name,c])=>tb.append(el("tr",{},el("td",{},name),el("td",{class:"num"},c.n+" visits"),el("td",{},niceDate(c.last)),el("td",{class:"num"},el("b",{},money(c.rev))))));
-    cliP.append(el("div",{class:"tablewrap"},el("table",{},el("thead",{},el("tr",{},el("th",{},"Client"),el("th",{class:"num"},"Visits"),el("th",{},"Last visit"),el("th",{class:"num"},"Earned"))),tb))); }
-  frag.append(el("div",{class:"duo"},daysP,cliP));
-
-  // coming up + expense changes
-  const t=today(), d7=(()=>{const d=new Date();d.setDate(d.getDate()+7);return ymd(d);})(), d30f=(()=>{const d=new Date();d.setDate(d.getDate()+30);return ymd(d);})();
-  const open=S.jobs.filter(j=>j.status!=="done");
-  const n7=open.filter(j=>j.date&&j.date>=t&&j.date<=d7), n30=open.filter(j=>j.date&&j.date>=t&&j.date<=d30f);
-  const unassigned=open.filter(j=>!j.assigneeId&&(!j.date||j.date>=t)).length, overdue=open.filter(j=>j.date&&j.date<t).length;
-  const upP=el("section",{class:"panel"},el("h2",{},"Coming up"),el("p",{class:"sub"},"Booked work that hasn’t been done yet"),
-    el("div",{class:"upc"},
-      el("div",{},"Next 7 days",el("b",{},money(sum(n7,j=>j.price))),n7.length+" jobs booked"),
-      el("div",{},"Next 30 days",el("b",{},money(sum(n30,j=>j.price))),n30.length+" jobs booked"),
-      el("div",{},"Need a cleaner",el("b",{style:unassigned?"color:var(--danger)":""},String(unassigned)),"unassigned jobs"),
-      el("div",{},"Overdue",el("b",{style:overdue?"color:var(--danger)":""},String(overdue)),"past date, not done")));
-
-  const cats={}; S.expenses.forEach(x=>{ const m=(x.date||"").slice(0,7); if(m!==thisMo&&m!==lastMo) return; const c=(cats[x.category] ||= {cur:0,prev:0}); if(m===thisMo) c.cur+=Number(x.amount)||0; else c.prev+=Number(x.amount)||0; });
-  const ce=Object.entries(cats).sort((a,b)=>b[1].cur-a[1].cur);
-  const exP=el("section",{class:"panel"},el("h2",{},"Spending by category"),el("p",{class:"sub"},"This month so far, compared with all of last month"));
-  if (!ce.length) exP.append(el("div",{class:"empty"},"No expenses in the last two months."));
-  else { const tb=el("tbody"); ce.forEach(([c,v])=>{ const ch=pctChange(v.cur,v.prev);
-      tb.append(el("tr",{},el("td",{},c),el("td",{class:"num"},money(v.prev)),el("td",{class:"num"},el("b",{},money(v.cur)),
-        ch!=null&&Math.abs(ch)>=1?el("span",{class:"delta "+(ch>0?"d down":"d up")},(ch>0?"▲":"▼")+Math.abs(ch).toFixed(0)+"%"):null))); });
-    exP.append(el("div",{class:"tablewrap"},el("table",{},el("thead",{},el("tr",{},el("th",{},"Category"),el("th",{class:"num"},"Last month"),el("th",{class:"num"},"This month"))),tb))); }
-  frag.append(el("div",{class:"duo"},upP,exP));
-  return frag;
-}
-
-/* ---- sample data ---- */
-async function runPool(tasks, label){
-  let done=0; const total=tasks.length; let i=0;
-  async function worker(){ while(i<tasks.length){ const t=tasks[i++]; try{ await t(); }catch(e){ console.warn(e); if(e&&e.code==="invalid_argument"){ throw e; } } done++; if(done%10===0||done===total) toast(label+" "+done+" of "+total); } }
-  await Promise.all([worker(),worker(),worker(),worker()]);
-}
-async function loadSample(){
-  if (!confirm("Add about three months of sample jobs, expenses and three sample cleaners? You can clear them anytime.")) return;
-  S.seeding=true; render();
-  const R=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], cents=n=>Math.round(n*100)/100;
-  const emps=[["Maria Lopez","731-555-0142"],["Tasha Greene","731-555-0178"],["Jordan Pike","731-555-0119"]]
-    .map(([name,phone])=>({id:"s"+newId(),name,phone,active:true,userId:null,createdAt:Date.now(),sample:true,businessId:S.businessId}));
-  const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
-    ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
-    ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],
-    ["Davis duplex","402 Poplar St, Lexington, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],["Hall family","225 Southern Ave, Lexington, TN"]];
-  const weights=[5,4,4,3,1,3,2,2,1,1,2,2]; const wsum=weights.reduce((a,b)=>a+b,0);
-  const pickClient=()=>{ let r=Math.random()*wsum; for(let i=0;i<clients.length;i++){ r-=weights[i]; if(r<=0) return i; } return 0; };
-  const svcFor=ci=>{ if(ci===3||ci===7) return "Commercial cleaning"; if(ci===4||ci===9) return Math.random()<.6?"Move-in / move-out":"Deep cleaning"; return Math.random()<.78?"Regular cleaning":"Deep cleaning"; };
-  const price={ "Regular cleaning":[115,165],"Deep cleaning":[225,320],"Move-in / move-out":[275,395],"Commercial cleaning":[190,340] };
-  const hours={ "Regular cleaning":[2,3.2],"Deep cleaning":[3.5,5.5],"Move-in / move-out":[4,6],"Commercial cleaning":[2.5,4.5] };
-  const times=["08:00","08:30","09:00","10:00","12:30","13:00","14:00"];
-  const tasks=[]; const now=new Date();
-  emps.forEach(e=>tasks.push(()=>Store.set("employees",e.id,e)));
-  for (let off=-92; off<=12; off++){
-    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off); const dow=d.getDay(); if(dow===0) continue;
-    let n = dow===6 ? (Math.random()<.5?1:0) : 1+(Math.random()<.45?1:0)+(dow===5&&Math.random()<.5?1:0);
-    for (let k=0;k<n;k++){
-      const ci=pickClient(), service=svcFor(ci), time=pick(times), [h,m]=time.split(":").map(Number);
-  const job={client:clients[ci][0],address:clients[ci][1],service,price:Math.round(R(...price[service])/5)*5,date:ymd(d),time,phone:"",notes:"",createdAt:Date.now(),sample:true,businessId:S.businessId};
-      const emp=pick(emps);
-      if (off<0){ const st=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m).getTime()+R(-10,15)*60e3;
-        Object.assign(job,{status:"done",assigneeId:emp.id,startedAt:Math.round(st),completedAt:Math.round(st+R(...hours[service])*3600e3),paid: off< -12 ? Math.random()<.97 : Math.random()<.55}); }
-      else if (Math.random()<.2){ Object.assign(job,{status:"new",assigneeId:null,paid:false}); }
-      else Object.assign(job,{status:"assigned",assigneeId:emp.id,paid:false});
-      tasks.push(()=>Store.set("jobs","s"+newId(),job));
-    }
-  }
-  const exp=(date,category,amount,vendor)=>tasks.push(()=>Store.set("expenses","s"+newId(),{date,category,amount:cents(amount),vendor,createdAt:Date.now(),sample:true}));
-  let payroll=false;
-  for (let off=-92; off<=0; off++){
-    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off), s=ymd(d), dow=d.getDay();
-    if (dow===1) exp(s,"Cleaning supplies",R(35,95),pick(["Walmart","Sam’s Club","Dollar General"])+" supplies");
-    if (dow===2||dow===5) exp(s,"Fuel & mileage",R(32,62),pick(["Murphy USA","Shell","Marathon"])+" fuel");
-    if (dow===5){ payroll=!payroll; if(payroll) exp(s,"Payroll",R(720,960),"Crew payroll"); }
-    if (d.getDate()===1) exp(s,"Insurance",148,"Liability insurance");
-    if (d.getDate()===15 && Math.random()<.7) exp(s,"Marketing",R(40,90),"Facebook ads");
-    if (off===-47) exp(s,"Equipment",239.99,"Replacement vacuum");
-    if (off===-20) exp(s,"Vehicle upkeep",184.5,"Oil change and tire rotation");
-  }
-  try { await runPool(tasks,"Adding sample data…"); toast("Sample data loaded"); }
-  catch(e){ write(()=>Promise.reject(e)); }
-  S.seeding=false; render();
-}
-async function clearSample(){
-  if (!confirm("Remove all sample jobs, expenses and sample cleaners? Your real entries stay.")) return;
-  S.seeding=true; render();
-  const tasks=[];
-  S.jobs.filter(j=>j.sample).forEach(j=>tasks.push(()=>Store.del("jobs",j.id)));
-  S.expenses.filter(x=>x.sample).forEach(x=>tasks.push(()=>Store.del("expenses",x.id)));
-  S.employees.filter(e=>e.sample).forEach(e=>{ tasks.push(()=>Store.del("employees",e.id)); tasks.push(()=>Store.del("locations",e.id)); });
-  try { await runPool(tasks,"Clearing sample data…"); toast("Sample data cleared"); } catch(e){ write(()=>Promise.reject(e)); }
-  S.seeding=false; render();
-}
-
-/* ---------- wiring ---------- */
-document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{S.tab=b.dataset.tab;render();}));
-setInterval(()=>{ if(!document.querySelector("dialog[open]")) render(); },60000); // refresh "x min ago"
-let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=window.innerWidth<640; if(n!==rw){ rw=n; render(); } });
-window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
-
-let pendingPopupShown=false;
-function maybeShowPendingPopup(){
-  if (!S.isOwner || pendingPopupShown) return;
-  const pending = S.bookings.filter(b=>(b.status||"pending")==="pending");
-  if (!pending.length) return;
-  pendingPopupShown=true;
-  $("#pendingCount").textContent = pending.length;
-  $("#pendingDlg").showModal();
-}
-$("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
-$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
-
-function subscribeAll(){
-  COLLS.forEach(c=>Store.subscribe(c, arr=>{
-    S[c]=arr; render();
-    if (c==="bookings") maybeShowPendingPopup();
-  }, S.businessId));
-}
-
-/* ---------- Firebase Auth gate ---------- */
-const ADMIN_EMAILS = ['samala_netha@yahoo.com','stanfillelitecleanpros@gmail.com'];
-const PLATFORM_ADMIN_EMAILS = ['samala_netha@yahoo.com'];
-function normPhone(p){ return (p||"").replace(/[^\d]/g,""); }
-function normName(n){ return (n||"").toLowerCase().replace(/[^a-z0-9]+/g,""); }
-
-const ALERT_SOUNDS=[
-  {id:"chime",label:"Chime (default)"},{id:"default",label:"Phone's own sound"},{id:"bell",label:"Bell"},
-  {id:"dingdong",label:"Ding-dong"},{id:"urgent",label:"Urgent beeps"},{id:"marimba",label:"Marimba"}];
-function previewSound(id){
-  if (!id || id==="default") return toast("That one uses your phone's own notification sound.");
-  try { const a=new Audio("sounds/"+id+".wav"); a.play().catch(()=>toast("Preview works in the phone app.")); }
-  catch(e){ toast("Preview works in the phone app."); }
-}
-function saveAlertSound(id){
-  write(async()=>{
-    await firebase.firestore().doc("businesses/"+S.businessId).update({alertSound:id});
-    S.business.alertSound=id; render();
-  }, "Alert sound saved for all your devices");
-}
-/* ---------- phone alerts (native app): new-booking push notifications for owners ---------- */
-let pushToken=null, pushWired=false;
-async function wirePush(){
-  if (pushWired || !isNative()) return;
-  const PN = window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
-  if (!PN) return;
-  pushWired=true;
-  try { await PN.createChannel({id:"bookings", name:"Booking requests", description:"New booking requests and reminders", importance:5, visibility:1, vibration:true}); } catch(e){ console.warn(e); }
-  for (const snd of ALERT_SOUNDS){          // one channel per tone: Android fixes the sound by channel
-    if (snd.id==="default") continue;
-    try { await PN.createChannel({id:"bookings_"+snd.id, name:"Booking requests \u2013 "+snd.label, description:"New booking requests and reminders",
-      importance:5, visibility:1, vibration:true, sound:snd.id+".wav"}); } catch(e){ console.warn(e); }
-  }
-  PN.addListener("registration", async t=>{
-    pushToken=t.value;
-    if (!S.myUserId) return;
-    try {
-      await firebase.firestore().doc("devices/"+pushToken).set({
-        uid:S.myUserId, email:(S.myEmail||"").toLowerCase(), businessId:S.businessId||null,
-        platform:"android", updatedAt:Date.now() });
-    } catch(e){ console.warn("Could not save device token", e); }
-  });
-  PN.addListener("registrationError", e=>console.warn("Push registration failed", e));
-  PN.addListener("pushNotificationReceived", n=>{            // app is open: show it in-app
-    S.tab="requests"; render(); toast((n.title||"New booking request")+(n.body?" — "+n.body:""));
-  });
-  PN.addListener("pushNotificationActionPerformed", ()=>{    // owner tapped the notification
-    S.tab="requests"; render();
-  });
-}
-async function enablePush(){
-  if (!isNative() || !(S.isOwner || S.isPlatformAdmin)) return;
-  try {
-    await wirePush();
-    const PN = window.Capacitor.Plugins.PushNotifications; if (!PN) return;
-    let perm = await PN.checkPermissions();
-    if (perm.receive==="prompt" || perm.receive==="prompt-with-rationale") perm = await PN.requestPermissions();
-    if (perm.receive!=="granted"){ toast("Turn on notifications for this app in Android settings to get booking alerts."); return; }
-    await PN.register();
-  } catch(e){ console.warn("Push setup failed", e); }
-}
-async function signOutApp(){
-  try {
-    if (pushToken){ await firebase.firestore().doc("devices/"+pushToken).delete(); }
-    if (isNative() && window.Capacitor.Plugins.PushNotifications) await window.Capacitor.Plugins.PushNotifications.unregister();
-  } catch(e){ console.warn(e); }
-  pushToken=null;
-  auth.signOut();
-}
-window.signOutApp = signOutApp;
-let booted=false;
-let platformAdminSubscribed=false;
-function gateMsg(text){ $("#gateMsg").textContent=text||""; }
-function switchGateTab(which){
-  $("#gateLoginTab").setAttribute("aria-selected",String(which==="login"));
-  $("#gateRegisterTab").setAttribute("aria-selected",String(which==="register"));
-  $("#gateLoginPanel").classList.toggle("hidden",which!=="login");
-  $("#gateRegisterPanel").classList.toggle("hidden",which!=="register");
-  gateMsg("");
-}
-function wireGate(){
-  $("#gateLoginTab").addEventListener("click",()=>switchGateTab("login"));
-  $("#gateRegisterTab").addEventListener("click",()=>switchGateTab("register"));
-  $("#gateLoginBtn").addEventListener("click", async ()=>{
-    const email=$("#gateLoginEmail").value.trim(), password=$("#gateLoginPassword").value;
-    if (!email||!password) return gateMsg("Enter your email and password.");
-    try { await auth.signInWithEmailAndPassword(email,password); }
-    catch(e){ gateMsg(e.message); }
-  });
-  $("#gateRegBtn").addEventListener("click", async ()=>{
-    const name=$("#gateRegName").value.trim(), email=$("#gateRegEmail").value.trim(),
-      phone=$("#gateRegPhone").value.trim(), password=$("#gateRegPassword").value;
-    if (!name||!email||!password) return gateMsg("Fill in your name, email, and a password.");
-    try {
-      const cred = await auth.createUserWithEmailAndPassword(email,password);
-      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set({name,email,phone,createdAt:Date.now()});
-    } catch(e){ gateMsg(e.message); }
-  });
-}
-
-function showGate(){ $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showPendingApproval(biz){
-  $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
-  $("#pendingApprovalMsg").textContent = biz.status==="suspended"
-    ? "\""+(biz.name||"Your business")+"\" has been suspended. Contact support if you believe this is a mistake."
-    : "\""+(biz.name||"Your business")+"\" is waiting for approval. You'll get full access as soon as it's reviewed.";
-  $("#pendingApproval").classList.remove("hidden");
-}
-function showApp(){ $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=false; }
-
-async function addOwnerByEmail(){
-  const input = (prompt("Email or phone number of the person to add as a co-owner (full access, same as you):")||"").trim();
-  if (!input) return;
-  const isEmail = input.includes("@");
-  const field = isEmail ? "pendingOwnerEmails" : "pendingOwnerPhones";
-  const value = isEmail ? input.toLowerCase() : normPhone(input);
-  write(async()=>{
-    const db = firebase.firestore();
-    await db.doc("businesses/"+S.businessId).update({
-      [field]: firebase.firestore.FieldValue.arrayUnion(value)
-    });
-  }, "Invite sent — they'll get full access the moment they register or sign in with "+input);
-}
-
-function slugify(s){ return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"") || ("business-"+newId()); }
-function bizMsg(text){ $("#bizMsg").textContent=text||""; }
-
-async function resolveBusiness(uid, email, phone){
-  const db=firebase.firestore();
-  const normEmail = email ? email.toLowerCase() : null;
-  const normPh = phone ? normPhone(phone) : null;
-
-  const ownersSnap = await db.collection("businesses").where("ownerUids","array-contains",uid).limit(1).get();
-  if (!ownersSnap.empty){ const d=ownersSnap.docs[0]; return {id:d.id, ...d.data()}; }
-  // Legacy: businesses created before multi-owner support only have a single ownerUid field
-  const ownerSnap = await db.collection("businesses").where("ownerUid","==",uid).limit(1).get();
-  if (!ownerSnap.empty){ const d=ownerSnap.docs[0]; return {id:d.id, ...d.data()}; }
-  const empSnap = await db.collection("employees").where("userId","==",uid).limit(1).get();
-  if (!empSnap.empty){
-    const businessId = empSnap.docs[0].data().businessId;
-    if (businessId){
-      const bizDoc = await db.doc("businesses/"+businessId).get();
-      if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
-    }
-  }
-  // Not linked yet — were they invited as a co-owner using this exact email or phone?
-  for (const [field,val] of [["pendingOwnerEmails",normEmail],["pendingOwnerPhones",normPh]]){
-    if (!val) continue;
-    const snap = await db.collection("businesses").where(field,"array-contains",val).limit(1).get();
-    if (!snap.empty){
-      const d = snap.docs[0];
-      await db.doc("businesses/"+d.id).update({
-        ownerUids: firebase.firestore.FieldValue.arrayUnion(uid),
-        ownerEmails: firebase.firestore.FieldValue.arrayUnion(normEmail||""),
-        [field]: firebase.firestore.FieldValue.arrayRemove(val)
-      });
-      return {id:d.id, ...d.data(), ownerUids:[...(d.data().ownerUids||[]), uid]};
-    }
-  }
-  // Not linked yet — were they pre-added by an owner using this exact email or phone?
-  for (const [field,val] of [["email",normEmail],["phoneNorm",normPh]]){
-    if (!val) continue;
-    const snap = await db.collection("employees").where(field,"==",val).limit(1).get();
-    if (snap.empty) continue;
-    const inviteDoc = snap.docs[0];
-    const businessId = inviteDoc.data().businessId;
-    if (businessId){
-      await db.doc("employees/"+inviteDoc.id).update({userId:uid});
-      const bizDoc = await db.doc("businesses/"+businessId).get();
-      if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
-    }
-  }
-  return null;
-}
-
-// Finds an existing ACTIVE business with a very similar name (ignoring case/punctuation/spacing).
-async function findSimilarBusiness(name){
-  const db=firebase.firestore();
-  const target = normName(name);
-  if (!target) return null;
-  const snap = await db.collection("businesses").where("status","!=","pending").get().catch(()=>db.collection("businesses").get());
-  let match = null;
-  snap.forEach(doc=>{
-    if (match) return;
-    const d = doc.data();
-    if (normName(d.name) === target) match = {id:doc.id, ...d};
-  });
-  return match;
-}
-
-async function claimLegacyData(){
-  if (!confirm("Import any older data that isn't linked to your business yet? This only needs to run once.")) return;
-  const db=firebase.firestore();
-  let claimed=0;
-  for (const coll of ["jobs","employees","expenses","locations","bookings"]){
-    const snap = await db.collection(coll).get();
-    const batch = db.batch();
-    let n=0;
-    snap.forEach(doc=>{ if (!doc.data().businessId){ batch.update(doc.ref,{businessId:S.businessId}); n++; claimed++; } });
-    if (n) await batch.commit();
-  }
-  toast(claimed ? ("Imported "+claimed+" older record(s).") : "No older data found to import.");
-}
-
-function enterBusiness(biz){
-  S.business=biz; S.businessId=biz.id;
-  const realOwner = (biz.ownerUids && biz.ownerUids.includes(S.myUserId)) || biz.ownerUid===S.myUserId;
-  S.isOwner = S.isOwner || realOwner;
-  const headerH1 = $("#bizNameHeader");
-  if (headerH1) headerH1.firstChild.textContent = biz.name;
-  document.title = biz.name;
-  if (!booted){
-    booted=true;
-    Store.mode="db"; Store.db=firebase.firestore();
-    subscribeAll();
-  }
-  showApp(); render();
-  enablePush();
-}
-
-wireGate();
-switchGateTab("login");
-showGate();
-
-$("#bizRegBtn").addEventListener("click", async ()=>{
-  const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
-    phone=$("#bizPhone").value.trim(), city=$("#bizCity").value.trim(), state=$("#bizState").value.trim(),
-    description=$("#bizDescription").value.trim();
-  if (!name) return bizMsg("Enter your business name.");
-  try {
-    const db=firebase.firestore();
-    const similar = await findSimilarBusiness(name);
-    if (similar){
-      const proceed = confirm("A business called \""+similar.name+"\" already exists on this platform.\n\nIf that's actually your business, don't create a new one here — ask its owner to add you as a team member or co-owner instead.\n\nCreate a separate new business called \""+name+"\" anyway?");
-      if (!proceed) return;
-    }
-    const id0=slugify(name);
-    const existingDoc = await db.doc("businesses/"+id0).get();
-    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
-    const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
-    const data={name,category,phone,phoneNorm:normPhone(phone),city,state,description,
-      ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
-      status: isPlatformAdmin ? "active" : "pending"};
-    await db.doc("businesses/"+id).set(data);
-    if (isPlatformAdmin){ toast("Business registered!"); enterBusiness({id,...data}); }
-    else { toast("Submitted — waiting for approval."); showPendingApproval({id,...data}); }
-  } catch(e){ bizMsg(e.message); }
-});
-
-auth.onAuthStateChanged(async function(user){
-  if (user){
-    S.myUserId = user.uid;
-    S.myEmail = user.email;
-    S.isOwner = ADMIN_EMAILS.includes(user.email);
-    S.isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(user.email);
-    if (S.isPlatformAdmin && !platformAdminSubscribed){
-      platformAdminSubscribed = true;
-      firebase.firestore().collection("businesses").onSnapshot(snap=>{
-        S.allBusinesses = snap.docs.map(d=>({id:d.id, ...d.data()}));
-        render();
-      });
-    }
-    let myPhone = "";
-    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists) myPhone = acctDoc.data().phone||""; } catch(e){}
-    const biz = await resolveBusiness(user.uid, user.email, myPhone);
-    if (biz){
-      if ((biz.status==="pending"||biz.status==="suspended") && !S.isPlatformAdmin) showPendingApproval(biz);
-      else enterBusiness(biz);
-    }
-    else showBizOnboard();
-  } else {
-    S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
-    pendingPopupShown=false;
-    booted=false;
-    showGate();
-  }
-});
-})();
-</script>
+    <div class="facts">
+      <div class="fact"><b>Office + phone</b><span>Works in any browser, plus an Android app for the crew.</span></div>
+      <div class="fact"><b>Owners & crew</b><span>Owners see the books and settings; crew see their jobs and shifts.</span></div>
+      <div class="fact"><b>Your own space</b><span>Each business gets its own private board and records.</span></div>
+      <div class="fact"><b>Local support</b><span>Real people in West Tennessee at support@dazift.com.</span></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="q-h">
+  <div class="w">
+    <div class="eyebrow">Questions</div>
+    <h2 class="sec-h" id="q-h">Good to know.</h2>
+    <div class="faq">
+      <div><h3>Do my crew need their own logins?</h3><p>Yes, each person signs up with their own email. Add them on your Team tab first, and Dazift links them to your business when they register.</p></div>
+      <div><h3>Is location tracked all the time?</h3><p>No. A crew member’s location is shared only while they’re on shift. Ending the shift stops sharing right away.</p></div>
+      <div><h3>Is there a phone app?</h3><p>The Android app is ready for crews today, and it’s on its way to Google Play. On iPhone, Dazift works in Safari.</p></div>
+      <div><h3>Can I have more than one owner?</h3><p>Yes. Invite a partner or manager as a co-owner and they get full access, including the books.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="final" aria-labelledby="c-h" style="padding-top:0">
+  <div class="w">
+    <h2 class="sec-h" id="c-h">Ready to put your day on one board?</h2>
+    <p class="sec-p" style="margin:0 auto">Create your account, register your business, and we’ll get you approved.</p>
+    <div class="ctas">
+      <a class="btn teal" href="/app?register">Get started</a>
+      <a class="btn line" href="mailto:support@dazift.com" style="color:var(--teal)">Email us</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="w">
+    <span>© <span id="yr">2026</span> Dazift · <a href="mailto:support@dazift.com">support@dazift.com</a> · <a href="/privacy.html">Privacy</a></span>
+    <span class="sig">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener">LIT America</a></span>
+  </div>
+</footer>
+<script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
 </body>
 </html>
