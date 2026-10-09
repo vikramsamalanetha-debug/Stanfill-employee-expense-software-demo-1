@@ -310,12 +310,12 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <div id="banners"></div>
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
-    <button role="tab" data-tab="requests" aria-selected="false">Booking Requests</button>
+    <button role="tab" data-tab="requests" aria-selected="false" data-owner>Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
-    <button role="tab" data-tab="rewards" aria-selected="false">Rewards</button>
-    <button role="tab" data-tab="insights" aria-selected="false">Insights</button>
+    <button role="tab" data-tab="rewards" aria-selected="false" data-owner>Rewards</button>
+    <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
-    <button role="tab" data-tab="books" aria-selected="false">Books</button>
+    <button role="tab" data-tab="books" aria-selected="false" data-owner>Books</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main id="view"></main>
@@ -451,6 +451,9 @@ function draw(){
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
   const platformBtn = $("#platformTabBtn");
   if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
+  // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
+  document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
+  if (!S.isOwner && ["requests","rewards","insights","books"].includes(S.tab)) S.tab="board";
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
@@ -846,8 +849,9 @@ function viewPlatformAdmin(){
     if (similar) return toast("A business called \""+similar.name+"\" already exists.");
     const db=firebase.firestore();
     const id0=slugify(name);
-    const existingDoc = await db.doc("businesses/"+id0).get();
-    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
+    let taken=true;
+    try { taken = (await db.doc("businesses/"+id0).get()).exists; } catch(e){ taken=true; }   // someone else's business isn't readable
+    const id = taken ? (id0+"-"+Date.now().toString(36)) : id0;
     const data={name,category:d.category,city:d.city.trim(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),
       ownerUids:[],ownerEmails:[],createdAt:Date.now(),status:"active",
       pendingOwnerEmails: d.email.trim() ? [d.email.trim().toLowerCase()] : [],
@@ -1027,7 +1031,7 @@ function viewTeam(){
   const onDuty=S.employees.filter(e=>{const l=locFor(e.id); return l&&l.onDuty;});
   frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"}, el("b",{},String(onDuty.length)), " of ", el("b",{},String(S.employees.filter(e=>e.active!==false).length)), " on shift right now"),
-    el("button",{class:"btn",onclick:()=>openEmp()},"Add team member")));
+    S.isOwner ? el("button",{class:"btn",onclick:()=>openEmp()},"Add team member") : null));
   if (!S.employees.length){
     frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
       el("p",{class:"kv"},"Add each cleaner here with their email. When they register using that exact email, they'll be added to your team automatically.")));
@@ -1061,7 +1065,7 @@ function viewTeam(){
     if (!e.userId && S.myUserId && !m && (!e.email || e.email===(S.myEmail||"").toLowerCase())) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
     if (e.userId && e.userId===S.myUserId) acts.append(el("span",{class:"kv"},"This is you"));
     else if (e.userId) acts.append(el("span",{class:"kv"},"Account linked"));
-    acts.append(el("span",{class:"grow"}), el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit"));
+    acts.append(el("span",{class:"grow"}), S.isOwner ? el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit") : null);
     card.append(acts);
     grid.append(card);
   });
@@ -1629,8 +1633,24 @@ function maybeShowPendingPopup(){
 $("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
 $("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
 
+const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger"];
+let crewSyncT=null;
+function syncCrewAccess(){
+  // Owners keep the business's crew list (crewUids) matching the linked, active team members.
+  // The security rules use this list to let crew in, so removing someone here removes their access.
+  if (!S.isOwner || !S.business || !S.businessId) return;
+  clearTimeout(crewSyncT);
+  crewSyncT=setTimeout(async()=>{
+    const want=[...new Set(S.employees.filter(e=>e.userId && e.active!==false).map(e=>e.userId))].sort();
+    const have=[...new Set(S.business.crewUids||[])].sort();
+    if (want.join(",")===have.join(",")) return;
+    try { await firebase.firestore().doc("businesses/"+S.businessId).update({crewUids:want}); S.business.crewUids=want; }
+    catch(e){ console.warn("Couldn't update crew access", e); }
+  }, 1500);
+}
 function subscribeAll(){
-  COLLS.forEach(c=>Store.subscribe(c, arr=>{
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).forEach(c=>Store.subscribe(c, arr=>{
+    if (c==="employees") syncCrewAccess();
     S[c]=arr; render();
     if (c==="bookings") maybeShowPendingPopup();
   }, S.businessId));
@@ -1810,10 +1830,11 @@ async function resolveBusiness(uid, email, phone, verified){
   if (!ownerSnap.empty){ const d=ownerSnap.docs[0]; return {id:d.id, ...d.data()}; }
   const empSnap = await db.collection("employees").where("userId","==",uid).limit(1).get();
   if (!empSnap.empty){
-    const businessId = empSnap.docs[0].data().businessId;
+    const empDoc = empSnap.docs[0];
+    const businessId = empDoc.data().businessId;
     if (businessId){
-      const bizDoc = await db.doc("businesses/"+businessId).get();
-      if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+      const biz = await openCrewBusiness(businessId, empDoc.id, uid);
+      if (biz) return biz;
     }
   }
   // Invites below are claimed by matching email/phone, so only a confirmed email may claim them.
@@ -1833,19 +1854,36 @@ async function resolveBusiness(uid, email, phone, verified){
       return {id:d.id, ...d.data(), ownerUids:[...(d.data().ownerUids||[]), uid]};
     }
   }
-  // Not linked yet — were they pre-added by an owner using this exact email or phone?
-  for (const [field,val] of [["email",normEmail],["phoneNorm",normPh]]){
-    if (!val) continue;
-    const snap = await db.collection("employees").where(field,"==",val).limit(1).get();
-    if (snap.empty) continue;
-    const inviteDoc = snap.docs[0];
-    const businessId = inviteDoc.data().businessId;
-    if (businessId){
-      await db.doc("employees/"+inviteDoc.id).update({userId:uid});
-      const bizDoc = await db.doc("businesses/"+businessId).get();
-      if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+  // Not linked yet — did an owner add them to a team using this confirmed email?
+  if (normEmail){
+    const snap = await db.collection("employees").where("email","==",normEmail).where("userId","==",null).limit(1).get();
+    if (!snap.empty){
+      const inviteDoc = snap.docs[0];
+      const businessId = inviteDoc.data().businessId;
+      if (businessId){
+        // Link the team-member record and join the business's crew in one step (the rules check both together).
+        const batch = db.batch();
+        batch.update(db.doc("employees/"+inviteDoc.id), {userId:uid});
+        batch.update(db.doc("businesses/"+businessId), {crewUids:firebase.firestore.FieldValue.arrayUnion(uid), lastCrewJoin:inviteDoc.id});
+        await batch.commit();
+        const bizDoc = await db.doc("businesses/"+businessId).get();
+        if (bizDoc.exists) return {id:bizDoc.id, ...bizDoc.data()};
+      }
     }
   }
+  return null;
+}
+
+// Opens a crew member's business. If they're linked on the team but not yet on the business's
+// crew list (e.g. linked before this list existed), add them, which the rules allow only in that case.
+async function openCrewBusiness(businessId, empId, uid){
+  const db=firebase.firestore(), ref=db.doc("businesses/"+businessId);
+  try { const d=await ref.get(); if (d.exists && (d.data().crewUids||[]).includes(uid)) return {id:d.id, ...d.data()}; if (d.exists && d.data().ownerUids && d.data().ownerUids.includes(uid)) return {id:d.id, ...d.data()}; }
+  catch(e){ /* not on the crew list yet */ }
+  try {
+    await ref.update({crewUids:firebase.firestore.FieldValue.arrayUnion(uid), lastCrewJoin:empId});
+    const d=await ref.get(); if (d.exists) return {id:d.id, ...d.data()};
+  } catch(e){ console.warn("Couldn't join the crew list", e); }
   return null;
 }
 
@@ -1919,8 +1957,9 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
       if (!proceed) return;
     }
     const id0=slugify(name);
-    const existingDoc = await db.doc("businesses/"+id0).get();
-    const id = existingDoc.exists ? (id0+"-"+Date.now().toString(36)) : id0;
+    let taken=true;
+    try { taken = (await db.doc("businesses/"+id0).get()).exists; } catch(e){ taken=true; }   // someone else's business isn't readable
+    const id = taken ? (id0+"-"+Date.now().toString(36)) : id0;
     const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
     const data={name,category,phone,phoneNorm:normPhone(phone),city,state,description,
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
