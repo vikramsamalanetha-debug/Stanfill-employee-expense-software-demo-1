@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Dazift security rules (Storage: receipt photos)
+// Paste into Firebase console → Storage → Rules → Publish.
+// A product of LIT America — www.litamerica.net
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isPlatformAdmin() {
+      return request.auth != null && request.auth.token.email != null
+        && request.auth.token.email.lower() in ['samala_netha@yahoo.com'];
+    }
+    function isOwner(businessId) {
+      let d = firestore.get(/databases/(default)/documents/businesses/$(businessId)).data;
+      return request.auth != null && (request.auth.uid in d.get('ownerUids', []) || d.get('ownerUid', '') == request.auth.uid);
+    }
+
+    // Receipts belong to the books, so only that business's owners can see or add them.
+    match /receipts/{businessId}/{file} {
+      allow read: if isPlatformAdmin() || isOwner(businessId);
+      allow create: if (isPlatformAdmin() || isOwner(businessId))
+        && request.resource.size < 15 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow delete: if isPlatformAdmin() || isOwner(businessId);
+    }
+
+    // Nothing else is open.
+    match /{allPaths=**} {
+      allow read, write: if isPlatformAdmin();
+    }
+  }
+}

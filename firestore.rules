@@ -1,0 +1,164 @@
+rules_version = '2';
+
+// Dazift security rules (Firestore)
+// Paste into Firebase console → Firestore Database → Rules → Publish.
+// A product of LIT America — www.litamerica.net
+//
+// Who can do what:
+//   Platform admin  — everything (manages all businesses).
+//   Owners          — everything inside their own business, including the books.
+//   Crew            — their business's jobs, team and shifts. Not the books, bookings or rewards.
+//   Customers       — their own profile, their own booking requests and their own points.
+//   Everyone else   — nothing.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- who is asking ----------
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function verifiedEmail() {
+      return signedIn() && request.auth.token.email != null && request.auth.token.email_verified == true;
+    }
+    function isPlatformAdmin() {
+      return signedIn() && request.auth.token.email != null
+        && myEmail() in ['samala_netha@yahoo.com'];
+    }
+
+    // ---------- business membership ----------
+    function bizData(b) { return get(/databases/$(database)/documents/businesses/$(b)).data; }
+    function ownsData(d) { return signedIn() && (uid() in d.get('ownerUids', []) || d.get('ownerUid', '') == uid()); }
+    function crewOfData(d) { return signedIn() && uid() in d.get('crewUids', []); }
+    function isOwner(b) { return isPlatformAdmin() || (b is string && ownsData(bizData(b))); }
+    function isMember(b) {
+      return isPlatformAdmin() || (b is string && (ownsData(bizData(b)) || crewOfData(bizData(b))));
+    }
+    // The business a record belongs to may never change.
+    function sameBusiness() { return request.resource.data.get('businessId', null) == resource.data.get('businessId', null); }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    // ---------- businesses ----------
+    match /businesses/{b} {
+      function invitedOwner(d) { return verifiedEmail() && myEmail() in d.get('pendingOwnerEmails', []); }
+
+      // get on a name that isn't taken yet is allowed (used to pick a free web address); it reveals nothing.
+      allow get: if resource == null || isPlatformAdmin() || ownsData(resource.data) || crewOfData(resource.data) || invitedOwner(resource.data);
+      allow list: if isPlatformAdmin() || ownsData(resource.data) || invitedOwner(resource.data);
+
+      // New businesses start "pending" with the creator as the only owner. The platform admin can pre-register.
+      allow create: if isPlatformAdmin() || (
+        verifiedEmail()
+        && request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('ownerUids', []) == [uid()]
+        && request.resource.data.get('ownerUid', uid()) == uid()
+        && request.resource.data.get('crewUids', []).size() == 0
+      );
+
+      allow update: if isPlatformAdmin()
+        // owners run their business but can't approve or un-suspend it themselves
+        || (ownsData(resource.data)
+            && request.resource.data.get('status', '') == resource.data.get('status', ''))
+        // an invited co-owner accepts their own invite: adds only themself, removes only their invite
+        || (invitedOwner(resource.data)
+            && changedOnly(['ownerUids', 'ownerEmails', 'pendingOwnerEmails'])
+            && request.resource.data.get('ownerUids', []).toSet() == resource.data.get('ownerUids', []).toSet().union([uid()].toSet())
+            && request.resource.data.get('ownerEmails', []).toSet() == resource.data.get('ownerEmails', []).toSet().union([myEmail()].toSet())
+            && request.resource.data.get('pendingOwnerEmails', []).toSet() == resource.data.get('pendingOwnerEmails', []).toSet().difference([myEmail()].toSet()))
+        // a crew member joins: only allowed when their team-member record in this business is linked to them
+        || (signedIn()
+            && changedOnly(['crewUids', 'lastCrewJoin'])
+            && request.resource.data.get('crewUids', []).toSet() == resource.data.get('crewUids', []).toSet().union([uid()].toSet())
+            && request.resource.data.lastCrewJoin is string
+            && getAfter(/databases/$(database)/documents/employees/$(request.resource.data.lastCrewJoin)).data.get('userId', '') == uid()
+            && getAfter(/databases/$(database)/documents/employees/$(request.resource.data.lastCrewJoin)).data.get('businessId', '') == b
+            && getAfter(/databases/$(database)/documents/employees/$(request.resource.data.lastCrewJoin)).data.get('active', true) != false);
+
+      allow delete: if isPlatformAdmin();
+    }
+
+    // ---------- team members ----------
+    match /employees/{e} {
+      function inviteForMe() {
+        return verifiedEmail() && resource.data.get('email', '') == myEmail() && resource.data.get('userId', null) == null;
+      }
+      allow read: if isMember(resource.data.get('businessId', null))
+        || (signedIn() && resource.data.get('userId', null) == uid())
+        || inviteForMe();
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
+        // "This is me": a crew member links themself to an unlinked name on their team
+        || (isMember(resource.data.get('businessId', null)) && changedOnly(['userId'])
+            && resource.data.get('userId', null) == null && request.resource.data.userId == uid())
+        // accepting an invite sent to my confirmed email
+        || (inviteForMe() && changedOnly(['userId']) && request.resource.data.userId == uid());
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // ---------- day-to-day work: owners and crew ----------
+    match /jobs/{id} {
+      allow read: if isMember(resource.data.get('businessId', null));
+      allow create: if isMember(request.resource.data.get('businessId', null));
+      allow update: if isMember(resource.data.get('businessId', null)) && sameBusiness();
+      allow delete: if isMember(resource.data.get('businessId', null));
+    }
+    match /locations/{id} {
+      allow read: if isMember(resource.data.get('businessId', null));
+      allow create: if isMember(request.resource.data.get('businessId', null));
+      allow update: if isMember(resource.data.get('businessId', null)) && sameBusiness();
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // ---------- the books: owners only ----------
+    match /expenses/{id} {
+      allow read, delete: if isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+    }
+
+    // ---------- website customers ----------
+    match /customers/{c} {
+      allow read: if (signedIn() && c == uid()) || isOwner(resource.data.get('businessId', null));
+      allow create, update: if signedIn() && c == uid();
+      allow delete: if (signedIn() && c == uid()) || isPlatformAdmin();
+    }
+
+    match /bookings/{id} {
+      allow read: if (signedIn() && resource.data.get('uid', null) == uid()) || isOwner(resource.data.get('businessId', null));
+      // customers send requests as themselves, always "pending"
+      allow create: if signedIn()
+        && request.resource.data.get('uid', null) == uid()
+        && request.resource.data.get('status', '') == 'pending'
+        && request.resource.data.get('businessId', null) is string;
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // Points history is append-only: owners add entries, customers read their own.
+    match /pointsLedger/{id} {
+      allow read: if (signedIn() && resource.data.get('uid', null) == uid()) || isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // ---------- accounts and phones ----------
+    match /crewAccounts/{u} {
+      allow get, create, update: if signedIn() && u == uid();
+      allow list, delete: if isPlatformAdmin();
+    }
+
+    match /devices/{token} {
+      allow create: if signedIn() && request.resource.data.get('uid', null) == uid();
+      // a phone that changes hands re-registers under the new account
+      allow update: if signedIn() && request.resource.data.get('uid', null) == uid();
+      allow delete: if signedIn() && resource.data.get('uid', null) == uid();
+      allow read: if isPlatformAdmin();
+    }
+
+    // ---------- anything else: platform admin only ----------
+    // (Cloud Functions use the admin SDK and are not limited by these rules.)
+    match /{document=**} {
+      allow read, write: if isPlatformAdmin();
+    }
+  }
+}
