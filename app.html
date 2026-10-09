@@ -1806,8 +1806,8 @@ function friendlyAuthError(e){
   if (c==="auth/invalid-email") return "That email address doesn’t look right.";
   if (c==="auth/email-already-in-use") return "That email already has an account. Sign in instead.";
   if (c==="auth/weak-password") return "Use a password with at least 6 characters.";
-  if (c==="auth/wrong-password"||c==="auth/user-not-found"||c==="auth/invalid-credential"||c==="auth/invalid-login-credentials") return "Email or password is incorrect.";
-  if (c==="auth/too-many-requests") return "Too many tries. Wait a few minutes, or reset your password.";
+  if (c==="auth/wrong-password"||c==="auth/user-not-found"||c==="auth/invalid-credential"||c==="auth/invalid-login-credentials") return "Email or password is incorrect. Forgot it? Tap “Forgot your password?” below and we’ll email you a reset link.";
+  if (c==="auth/too-many-requests") return "Too many wrong tries, so this account is paused for a few minutes to keep it safe. Tap “Forgot your password?” below to reset it now.";
   if (c==="auth/network-request-failed") return "No connection. Check your internet and try again.";
   return (e&&e.message)||"Something went wrong. Try again.";
 }
