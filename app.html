@@ -413,19 +413,28 @@ const Store = {
     (this.listeners[coll] ||= []).push(cb); this.emit(coll); return ()=>{};
   },
   async set(coll,id,data){
+    if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).set(data);
     this.local[coll][id] = JSON.parse(JSON.stringify(data)); this.saveLocal(); this.emit(coll);
   },
   async update(coll,id,data){
+    if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).update(data);
     this.local[coll][id] = {...(this.local[coll][id]||{}), ...JSON.parse(JSON.stringify(data))}; this.saveLocal(); this.emit(coll);
   },
   async del(coll,id){
+    if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).delete();
     delete this.local[coll][id]; this.saveLocal(); this.emit(coll);
   }
 };
+function viewOnlyBlocked(){
+  if (!S.viewOnly) return false;
+  toast("View only. Tap “Turn on editing” at the top to make changes.");
+  return true;
+}
 async function write(fn, okMsg){
+  if (viewOnlyBlocked()) return;
   try { await fn(); if(okMsg) toast(okMsg); }
   catch(e){
     console.warn(e);
@@ -483,6 +492,14 @@ function drawWho(){
 
 function drawBanners(){
   const b=$("#banners"); b.replaceChildren();
+  if (S.adminView){
+    b.append(el("div",{class:"banner "+(S.viewOnly?"info":"warn")},
+      el("span",{class:"grow"}, S.viewOnly
+        ? ["Platform admin · viewing ",el("b",{},S.business.name)," · view only. Nothing you click here changes their business."]
+        : ["Platform admin · ",el("b",{},"editing is on")," for ",el("b",{},S.business.name),". Changes go live in their business right away."]),
+      el("button",{class:"btn small "+(S.viewOnly?"":"lemon"),onclick:adminToggleEditing},S.viewOnly?"Turn on editing":"Back to view only"),
+      el("button",{class:"btn small",onclick:adminBackHome},"Back to my business")));
+  }
   if (Store.mode==="local") b.append(el("div",{class:"banner info"},
     "Preview mode: changes are saved on this device only. Open the published link to share the board with your crew."));
   const m=me();
@@ -892,6 +909,7 @@ function viewPlatformAdmin(){
     card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
     card.append(el("div",{class:"kv"},"Owners: ",owners));
     card.append(el("div",{class:"acts"},
+      el("button",{class:"btn small primary",onclick:()=>adminOpenBusiness(b)},"Open board"),
       el("button",{class:"btn small",onclick:()=>openAssignDlg(b)},"Assign user"),
       el("button",{class:"btn small ghost",onclick:()=>{ const n=prompt("New name for this business:",b.name); if(n&&n.trim()) write(()=>firebase.firestore().doc("businesses/"+b.id).update({name:n.trim()}),"Renamed"); }},"Rename"),
       b.status==="suspended"
@@ -1287,6 +1305,7 @@ function viewBooks(){
         "Save photo as a PDF receipt"),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Add expense"))));
   f.onsubmit=async e=>{
+    if (viewOnlyBlocked()) { e.preventDefault(); return; }
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
     const amt=Number(d.amount); if(!(amt>0)) return toast("Enter an amount above zero.");
@@ -1557,6 +1576,7 @@ async function runPool(tasks, label){
   await Promise.all([worker(),worker(),worker(),worker()]);
 }
 async function loadSample(){
+  if (viewOnlyBlocked()) return;
   if (!confirm("Add about three months of sample jobs, expenses and three sample cleaners? You can clear them anytime.")) return;
   S.seeding=true; render();
   const R=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], cents=n=>Math.round(n*100)/100;
@@ -1605,6 +1625,7 @@ async function loadSample(){
   S.seeding=false; render();
 }
 async function clearSample(){
+  if (viewOnlyBlocked()) return;
   if (!confirm("Remove all sample jobs, expenses and sample cleaners? Your real entries stay.")) return;
   S.seeding=true; render();
   const tasks=[];
@@ -1616,14 +1637,17 @@ async function clearSample(){
 }
 
 /* ---------- wiring ---------- */
-document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{S.tab=b.dataset.tab;render();}));
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  if (b.dataset.tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
+  S.tab=b.dataset.tab; render();
+}));
 setInterval(()=>{ if(!document.querySelector("dialog[open]")) render(); },60000); // refresh "x min ago"
 let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=window.innerWidth<640; if(n!==rw){ rw=n; render(); } });
 window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
 
 let pendingPopupShown=false;
 function maybeShowPendingPopup(){
-  if (!S.isOwner || pendingPopupShown) return;
+  if (!S.isOwner || S.adminView || pendingPopupShown) return;
   const pending = S.bookings.filter(b=>(b.status||"pending")==="pending");
   if (!pending.length) return;
   pendingPopupShown=true;
@@ -1638,7 +1662,7 @@ let crewSyncT=null;
 function syncCrewAccess(){
   // Owners keep the business's crew list (crewUids) matching the linked, active team members.
   // The security rules use this list to let crew in, so removing someone here removes their access.
-  if (!S.isOwner || !S.business || !S.businessId) return;
+  if (!S.isOwner || S.adminView || !S.business || !S.businessId) return;
   clearTimeout(crewSyncT);
   crewSyncT=setTimeout(async()=>{
     const want=[...new Set(S.employees.filter(e=>e.userId && e.active!==false).map(e=>e.userId))].sort();
@@ -1648,12 +1672,17 @@ function syncCrewAccess(){
     catch(e){ console.warn("Couldn't update crew access", e); }
   }, 1500);
 }
+let unsubs=[];
 function subscribeAll(){
-  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).forEach(c=>Store.subscribe(c, arr=>{
-    if (c==="employees") syncCrewAccess();
+  unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
+  COLLS.forEach(c=>{ S[c]=[]; });
+  const bid=S.businessId;
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
+    if (S.businessId!==bid) return;          // a late update from a business we've left
     S[c]=arr; render();
+    if (c==="employees") syncCrewAccess();
     if (c==="bookings") maybeShowPendingPopup();
-  }, S.businessId));
+  }, bid)));
 }
 
 /* ---------- Firebase Auth gate ---------- */
@@ -1905,6 +1934,7 @@ async function findSimilarBusiness(name){
 }
 
 async function claimLegacyData(){
+  if (viewOnlyBlocked()) return;
   if (!confirm("Import any older data that isn't linked to your business yet? This only needs to run once.")) return;
   const db=firebase.firestore();
   let claimed=0;
@@ -1923,21 +1953,44 @@ function applyBusinessLists(biz){
   SERVICES = Array.isArray(biz.services) && biz.services.length ? biz.services.slice() : SERVICE_DEFAULTS[cat].slice();
   EXP_CATS[0] = cat==="Cleaning" ? "Cleaning supplies" : "Supplies";
 }
-function enterBusiness(biz){
+function enterBusiness(biz, opts){
+  opts=opts||{};
+  if (!opts.adminView){ S.homeBusiness=biz; }
+  S.adminView = !!opts.adminView;
+  S.viewOnly = !!opts.adminView;       // a client's business always opens read-only
   S.business=biz; S.businessId=biz.id;
   applyBusinessLists(biz);
   const realOwner = (biz.ownerUids && biz.ownerUids.includes(S.myUserId)) || biz.ownerUid===S.myUserId;
-  S.isOwner = S.isOwner || realOwner;
+  S.isOwner = S.adminView || ADMIN_EMAILS.includes(S.myEmail) || realOwner;
   const headerH1 = $("#bizNameHeader");
   if (headerH1) headerH1.firstChild.textContent = biz.name;
   document.title = biz.name;
-  if (!booted){
-    booted=true;
-    Store.mode="db"; Store.db=firebase.firestore();
-    subscribeAll();
-  }
+  booted=true;
+  Store.mode="db"; Store.db=firebase.firestore();
+  subscribeAll();
+  if (S.adminView && (S.tab==="platform"||S.tab==="settings")) S.tab="board";
   showApp(); render();
-  enablePush();
+  if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
+}
+// Platform admin: look inside a client's business (read-only unless editing is turned on).
+function adminOpenBusiness(b){
+  if (!S.isPlatformAdmin) return;
+  pendingPopupShown=true;
+  S.who="all";
+  enterBusiness(b,{adminView:true});
+  window.scrollTo(0,0);
+  toast("Viewing "+(b.name||"this business")+" (view only)");
+}
+function adminBackHome(){
+  S.tab="platform";
+  if (S.homeBusiness) enterBusiness(S.homeBusiness); else { S.adminView=false; S.viewOnly=false; render(); }
+}
+function adminToggleEditing(){
+  if (S.viewOnly){
+    if (!confirm("Turn on editing for "+(S.business.name||"this business")+"?\n\nChanges you make go straight into their live board and books.")) return;
+    S.viewOnly=false; toast("Editing is on for "+S.business.name);
+  } else { S.viewOnly=true; toast("Back to view only"); }
+  render();
 }
 
 wireGate();
