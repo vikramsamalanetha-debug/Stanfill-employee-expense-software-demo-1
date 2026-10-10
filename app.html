@@ -244,6 +244,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
 .gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
 .gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
+.gate-brand{display:flex;align-items:center;gap:10px;letter-spacing:-.03em}
+.gate-mark{width:34px;height:34px;flex:none}
 .gate-panel p{color:var(--muted);margin:0 0 18px}
 .gate-tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:18px}
 .gate-tabs button{flex:1;border:0;background:transparent;padding:8px 0;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted)}
@@ -271,7 +273,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <div id="gate" class="gate-wrap hidden">
   <div class="gate-panel">
-    <h1>Dazift</h1>
+    <h1 class="gate-brand"><svg aria-hidden="true" class="gate-mark" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dazift</h1>
     <p>Sign in to manage your business, or create an account.</p>
     <div class="gate-tabs">
       <button id="gateLoginTab" aria-selected="true">Sign In</button>
@@ -727,7 +729,7 @@ function settingsNotify(){
     setRow("Alert phone numbers (text)",ph.length?ph.join(", "):"None. Texting is off.",el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add number")),
     (em.length||ph.length)?setRow("Back to default","Send alerts to every owner again.",el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset")):null));
   let status;
-  if (!isNative()) status="Phone alerts need the Android app.";
+  if (!isNative()) status="Phone alerts need the Dazift phone app.";
   else if (pushToken) status="On for this phone.";
   else status="Not set up yet. Sign out, sign back in, and tap Allow when asked about notifications.";
   frag.append(setPanel("Phone alerts","Pop-up alerts on every phone signed in as an owner.",
@@ -2332,7 +2334,7 @@ async function enablePush(){
     const PN = window.Capacitor.Plugins.PushNotifications; if (!PN) return;
     let perm = await PN.checkPermissions();
     if (perm.receive==="prompt" || perm.receive==="prompt-with-rationale") perm = await PN.requestPermissions();
-    if (perm.receive!=="granted"){ toast("Turn on notifications for this app in Android settings to get booking alerts."); return; }
+    if (perm.receive!=="granted"){ toast("Turn on notifications for Dazift in your phone\u2019s settings to get booking alerts."); return; }
     await PN.register();
   } catch(e){ console.warn("Push setup failed", e); }
 }
