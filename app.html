@@ -209,8 +209,7 @@ table.lines .kv{font-size:12px;margin-top:2px}
 .invmore{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
 .invmore>summary{cursor:pointer;padding:2px 0}
 .invmore[open]>summary{margin-bottom:10px}
-table.lines input[type=number]{-moz-appearance:textfield}
-table.lines input[type=number]::-webkit-inner-spin-button,table.lines input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[data-num]{font-variant-numeric:tabular-nums}
 .jobpick{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-top:8px;display:grid;gap:6px;max-height:240px;overflow:auto}
 .sendgrid{display:grid;gap:10px;margin-top:12px}
 .sendopt{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
@@ -598,8 +597,36 @@ const STALE_MS = 15*60*1000;
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
+// Amount and count fields are plain text boxes that only keep number characters.
+// A real number box changes by 1 on arrow keys or the mouse wheel, and a laptop keypad
+// with Num Lock off sends arrow keys, so typing "8" there would bump the amount instead.
+function cleanNumberInput(ev){
+  const x=ev.target, v=x.value;
+  let c=v.replace(/[^0-9.\-]/g,"");                      // drops $ , spaces and letters
+  c=c.replace(/(?!^)-/g,"");                               // a minus sign only at the start
+  const dot=c.indexOf("."); if (dot>=0) c=c.slice(0,dot+1)+c.slice(dot+1).replace(/\./g,"");
+  if (x.dataset.min==="0") c=c.replace(/-/g,"");
+  if (c!==v){ const pos=Math.max(0,(x.selectionStart||c.length)-(v.length-c.length)); x.value=c; try{ x.setSelectionRange(pos,pos); }catch(e){} }
+}
+// With Num Lock off, keypad keys arrive as arrows/Home/End/Delete. In amount fields, type the digit printed on the key instead.
+function keypadDigits(ev){
+  const m=/^Numpad(\d|Decimal)$/.exec(ev.code||""); if (!m || /^[\d.]$/.test(ev.key) || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  ev.preventDefault();
+  const x=ev.target, ch=m[1]==="Decimal"?".":m[1];
+  x.setRangeText(ch, x.selectionStart??x.value.length, x.selectionEnd??x.value.length, "end");
+  x.dispatchEvent(new Event("input",{bubbles:true}));
+}
 function el(tag, props, ...kids){
   const n = document.createElement(tag); let val;
+  if (tag==="input" && props && props.type==="number"){
+    props={...props,type:"text"};
+    if (!props.inputmode) props.inputmode="decimal";
+    props.autocomplete="off"; props["data-num"]="1";
+    if (props.min!=null && Number(props.min)>=0) props["data-min"]="0";
+    delete props.min; delete props.max; delete props.step;
+    n.addEventListener("input", cleanNumberInput);   // runs before the field's own handler
+    n.addEventListener("keydown", keypadDigits);
+  }
   for (const [k,v] of Object.entries(props||{})){
     if (v==null || v===false) continue;
     if (k==="class") n.className = v;
