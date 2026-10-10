@@ -574,6 +574,7 @@ function drawWho(){
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
+  w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));
 }
 
 function drawBanners(){
@@ -2177,6 +2178,7 @@ function syncCrewAccess(){
   if (!S.isOwner || S.adminView || !S.business || !S.businessId) return;
   clearTimeout(crewSyncT);
   crewSyncT=setTimeout(async()=>{
+    if (!S.business || !S.isOwner || S.adminView || S.demo) return;   // signed out or switched business meanwhile
     const want=[...new Set(S.employees.filter(e=>e.userId && e.active!==false).map(e=>e.userId))].sort();
     const have=[...new Set(S.business.crewUids||[])].sort();
     if (want.join(",")===have.join(",")) return;
@@ -2258,14 +2260,43 @@ async function enablePush(){
     await PN.register();
   } catch(e){ console.warn("Push setup failed", e); }
 }
+// Any step that needs the network or the phone gets a few seconds at most,
+// so a bad signal or a stuck plugin can never trap someone in their account.
+function withinMs(promise, ms){ return Promise.race([Promise.resolve(promise).catch(e=>console.warn(e)), new Promise(r=>setTimeout(r,ms))]); }
+let signingOut=false;
 async function signOutApp(){
   if (S.demo) return exitDemo();
+  if (signingOut) return;
+  signingOut=true;
+  toast("Signing out…");
+  // End a running shift so location sharing stops with the session.
   try {
-    if (pushToken){ await firebase.firestore().doc("devices/"+pushToken).delete(); }
-    if (isNative() && window.Capacitor.Plugins.PushNotifications) await window.Capacitor.Plugins.PushNotifications.unregister();
+    const m=me(); const loc=m&&locFor(m.id);
+    if (bgWatcherId){ const BG=window.Capacitor&&Capacitor.Plugins.BackgroundGeolocation; if (BG) await withinMs(BG.removeWatcher({id:bgWatcherId}),1500); bgWatcherId=null; }
+    if (watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+    S.watching=false;
+    if (m && loc && loc.onDuty) await withinMs(Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}),2500);
+    syncRunnerContext(false);
   } catch(e){ console.warn(e); }
+  // This phone stops getting the business's alerts.
+  if (pushToken) await withinMs(firebase.firestore().doc("devices/"+pushToken).delete(),2500);
+  if (isNative() && window.Capacitor.Plugins.PushNotifications) await withinMs(window.Capacitor.Plugins.PushNotifications.unregister(),2000);
   pushToken=null;
-  auth.signOut();
+  resetToSignedOut();
+  try { $("#gateLoginPassword").value=""; } catch(e){}
+  try { await withinMs(auth.signOut(),4000); } catch(e){ console.warn(e); }
+  // On a bad connection, keep trying quietly; the sign-in page is already showing.
+  if (auth.currentUser) setTimeout(()=>{ auth.signOut().catch(e=>console.warn(e)); },3000);
+  signingOut=false;
+}
+function resetToSignedOut(){
+  unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
+  COLLS.forEach(c=>{ S[c]=[]; });
+  Object.assign(S,{myUserId:null,myEmail:null,isOwner:false,isPlatformAdmin:false,business:null,businessId:null,homeBusiness:null,
+    adminView:false,viewOnly:false,tab:"board",who:"all",projFilter:null,pr:null,dutyErr:null});
+  pendingPopupShown=false; booted=false; clearTimeout(crewSyncT);
+  document.title="Dazift";
+  showGate(); window.scrollTo(0,0);
 }
 window.signOutApp = signOutApp;
 let booted=false;
@@ -2823,12 +2854,7 @@ async function routeUser(user){
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
-  if (user){ await routeUser(user); } else {
-    S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
-    pendingPopupShown=false;
-    booted=false;
-    showGate();
-  }
+  if (user){ await routeUser(user); } else resetToSignedOut();
 });
 })();
 </script>
