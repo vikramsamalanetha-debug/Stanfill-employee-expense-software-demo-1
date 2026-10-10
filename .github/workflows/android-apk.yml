@@ -62,7 +62,7 @@ jobs:
 
       - name: App icon and splash screen
         continue-on-error: true
-        run: npx capacitor-assets generate --android --iconBackgroundColor '#1F7A69' --splashBackgroundColor '#1F7A69'
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#F2C230' --iconBackgroundColorDark '#F2C230' --splashBackgroundColor '#1F7A69' --splashBackgroundColorDark '#0F2A25'
 
       - name: Location permissions and version number
         run: |

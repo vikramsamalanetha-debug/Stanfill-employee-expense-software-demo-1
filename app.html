@@ -63,6 +63,8 @@ textarea{resize:vertical;min-height:70px}
 .banner.duty{background:var(--primary-soft)}
 .banner.warn{background:var(--lemon-soft)}
 .banner.demo{background:var(--ink);color:var(--bg)}
+.banner.demo .demo-type{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.banner.demo .demo-type select{background:var(--bg);color:var(--ink);border:0;border-radius:999px;padding:6px 10px;font-weight:700;font-size:14px}
 .banner.demo .seg{background:color-mix(in srgb,var(--bg) 18%,transparent)}
 .banner.demo .seg button{color:var(--bg)}
 .banner.demo .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
@@ -97,8 +99,6 @@ textarea{resize:vertical;min-height:70px}
 .stub{background:var(--bg);border-radius:var(--radius);padding:10px 12px;font-size:13px;display:grid;gap:2px;max-width:420px}
 .stub div{display:flex;justify-content:space-between;gap:10px}
 .stub .t{border-top:1px solid var(--line);margin-top:4px;padding-top:4px;font-weight:800}
-.demo-cta{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;display:grid;gap:8px}
-.demo-cta .row .btn{flex:1;justify-content:center}
 .pulse{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
@@ -244,6 +244,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
 .gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
 .gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
+.gate-brand{display:flex;align-items:center;gap:10px;letter-spacing:-.03em}
+.gate-mark{width:34px;height:34px;flex:none}
 .gate-panel p{color:var(--muted);margin:0 0 18px}
 .gate-tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:18px}
 .gate-tabs button{flex:1;border:0;background:transparent;padding:8px 0;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted)}
@@ -271,7 +273,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <div id="gate" class="gate-wrap hidden">
   <div class="gate-panel">
-    <h1>Dazift</h1>
+    <h1 class="gate-brand"><svg aria-hidden="true" class="gate-mark" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dazift</h1>
     <p>Sign in to manage your business, or create an account.</p>
     <div class="gate-tabs">
       <button id="gateLoginTab" aria-selected="true">Sign In</button>
@@ -291,10 +293,6 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <button class="btn primary" id="gateRegBtn">Create account</button>
     </div>
     <div class="gate-msg" id="gateMsg"></div>
-    <div class="demo-cta">
-      <span class="kv">Want to look around first? Sign in with <b>demo</b> and password <b>demo</b> for a contractor business, or <b>cleaning</b> / <b>demo</b> for a cleaning crew.</span>
-      <button class="btn small" type="button" id="demoFillBtn">Fill in the demo login</button>
-    </div>
   </div>
   <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
@@ -305,8 +303,9 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <p>We didn't find a business linked to your account yet. Register it below — or if you're joining an existing team, ask the owner to add you on their Team tab instead.</p>
     <div class="gate-form">
       <label class="f">Business name<input id="bizName" type="text" placeholder="e.g. Stanfill Elite Clean Pros"></label>
-      <label class="f">Category
-        <select id="bizCategory">
+      <label class="f">Type of business
+        <select id="bizCategory" required>
+          <option value="" selected disabled>Choose your type of business</option>
           <option>Cleaning</option>
           <option>Lawn Care</option>
           <option>Handyman</option>
@@ -613,6 +612,9 @@ function drawBanners(){
     b.append(el("div",{class:"banner demo"},
       el("span",{class:"grow"},el("b",{},"You're in the demo account."),
         " Every name and number is made up. Try anything; it resets when you sign out."),
+      el("label",{class:"demo-type"},"Business type",
+        el("select",{id:"demoTypeSel","aria-label":"Show the demo as this type of business",onchange:ev=>{ startDemo(ev.target.value); toast("Now showing "+S.business.name+" ("+ev.target.value+")"); window.scrollTo(0,0); }},
+          DEMO_TYPES.map(t=>el("option",{value:t,selected:t===S.demoKind},t)))),
       el("div",{class:"seg","aria-label":"View the demo as"},
         el("button",{type:"button","aria-pressed":String(!asCrew),onclick:()=>demoViewAs("owner")},"Owner view"),
         el("button",{type:"button","aria-pressed":String(asCrew),onclick:()=>demoViewAs("crew")},"Crew view")),
@@ -727,7 +729,7 @@ function settingsNotify(){
     setRow("Alert phone numbers (text)",ph.length?ph.join(", "):"None. Texting is off.",el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add number")),
     (em.length||ph.length)?setRow("Back to default","Send alerts to every owner again.",el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset")):null));
   let status;
-  if (!isNative()) status="Phone alerts need the Android app.";
+  if (!isNative()) status="Phone alerts need the Dazift phone app.";
   else if (pushToken) status="On for this phone.";
   else status="Not set up yet. Sign out, sign back in, and tap Allow when asked about notifications.";
   frag.append(setPanel("Phone alerts","Pop-up alerts on every phone signed in as an owner.",
@@ -2332,7 +2334,7 @@ async function enablePush(){
     const PN = window.Capacitor.Plugins.PushNotifications; if (!PN) return;
     let perm = await PN.checkPermissions();
     if (perm.receive==="prompt" || perm.receive==="prompt-with-rationale") perm = await PN.requestPermissions();
-    if (perm.receive!=="granted"){ toast("Turn on notifications for this app in Android settings to get booking alerts."); return; }
+    if (perm.receive!=="granted"){ toast("Turn on notifications for Dazift in your phone\u2019s settings to get booking alerts."); return; }
     await PN.register();
   } catch(e){ console.warn("Push setup failed", e); }
 }
@@ -2385,7 +2387,17 @@ function switchGateTab(which){
   $("#gateRegisterPanel").classList.toggle("hidden",which!=="register");
   gateMsg("");
 }
-const DEMO_LOGINS={"demo":"contractor","demo@dazift.com":"contractor","cleaning":"cleaning","cleaning@dazift.com":"cleaning","demo-cleaning":"cleaning"};
+// Demo logins are shared privately by LIT America. Only a fingerprint (SHA-256) of the password is kept here,
+// so reading this page's code doesn't reveal it. To change the password, replace DEMO_PASS_HASH with
+// the SHA-256 of "dazift-demo:" + the new password.
+const DEMO_LOGINS={"demo":"Construction","demo@dazift.com":"Construction","cleaning":"Cleaning","cleaning@dazift.com":"Cleaning"};
+const DEMO_PASS_HASH="f5577b960c68101119f9e0123abd9ed603a51eeb7ca7d13f74a2cf5815295fa6";
+async function demoPasswordOk(pw){
+  try {
+    const buf=await crypto.subtle.digest("SHA-256", new TextEncoder().encode("dazift-demo:"+pw.trim()));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("")===DEMO_PASS_HASH;
+  } catch(e){ return false; }
+}
 function wireGate(){
   $("#gateLoginTab").addEventListener("click",()=>switchGateTab("login"));
   $("#gateRegisterTab").addEventListener("click",()=>switchGateTab("register"));
@@ -2395,8 +2407,8 @@ function wireGate(){
     // Demo login: a ready-made business to explore. Each visitor gets a fresh private copy.
     const demoKind=DEMO_LOGINS[email.toLowerCase()];
     if (demoKind){
-      if (password.trim().toLowerCase()!=="demo") return gateMsg("The demo password is demo.");
-      gateMsg(""); return startDemo(demoKind);
+      if (!(await demoPasswordOk(password))) return gateMsg("That email or password isn\u2019t right.");
+      gateMsg(""); $("#gateLoginPassword").value=""; return startDemo(demoKind);
     }
     try { await auth.signInWithEmailAndPassword(email,password); }
     catch(e){ gateMsg(friendlyAuthError(e)); }
@@ -2651,10 +2663,184 @@ function installDemoShim(){
   firebase.firestore=fn;
 }
 function seededRandom(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-function demoSeed(kind){
-  const rnd=seededRandom(kind==="cleaning"?7:42);
+/* Demo businesses, one per type. Each is a short description fed into one of two builders:
+   "visits" for repeat-visit work (cleaning, lawn, pet care) and "trade" for project work with subs.
+   Every name, phone number and figure here is made up. Tasha Greene is in every crew so Crew view always has someone to show. */
+const DEMO_TYPES=["Construction","Plumbing","Electrical","HVAC","Roofing","Handyman","Cleaning","Lawn Care","Pet Care"];
+const DEMO_PROFILES={
+  "Cleaning":{kind:"visits",name:"Sparkle & Shine Cleaning",rewardsName:"Shine Rewards",
+    services:[["Regular cleaning",[115,165],[2,3.2],6,0],["Deep cleaning",[225,320],[3.5,5.5],2,.6],["Move-in / move-out",[275,395],[4,6],1,.6],["Commercial cleaning",[190,340],[2.5,4.5],1,.6]],
+    perDay:[2,1],weekends:"sat",
+    crew:[["eMaria","Maria Lopez","731-555-0142","Team lead"],["eTasha","Tasha Greene","731-555-0178","Cleaner"],["eJordan","Jordan Pike","731-555-0119","Cleaner"],["eAmber","Amber Cole","731-555-0133","Trainee"]],
+    rates:{eMaria:["w2","hourly",17],eTasha:["1099","percent",40,true],eJordan:["1099","perjob",55],eAmber:["w2","hourly",14]},
+    supplies:["Cleaning supplies",["Walmart","Sam’s Club","Dollar General"],"supplies",[45,110]],equipment:["Replacement vacuum",239.99],insurance:148,
+    bookings:[["Gail Owens","731-555-0164","Deep cleaning","3 bed, 2 bath. Moving my mother in next weekend.",2],["Reed home","731-555-0123","Regular cleaning","Every other Friday if you have the opening.",5],["Sunrise Realty","731-555-0145","Move-in / move-out","Rental turnover, keys in the lockbox.",8]],
+    lump:{eMaria:9850,eTasha:7420,eJordan:1480,eAmber:3910},live:["eMaria","eJordan"]},
+  "Lawn Care":{kind:"visits",name:"Greenway Lawn & Landscape",rewardsName:"Greenway Rewards",
+    services:[["Mowing & edging",[45,85],[0.75,1.5],7,0],["Yard cleanup",[180,350],[3,5],1.5,.7],["Hedge & shrub trimming",[120,240],[2,3.5],1.5,.4],["Leaf removal",[150,300],[2.5,4],1,.7],["Mulch & beds",[250,520],[3,6],1,.8]],
+    perDay:[3,2],weekends:"sat",
+    crew:[["eDerek","Derek Hollis","731-555-0151","Crew lead"],["eTasha","Tasha Greene","731-555-0178","Crew member"],["eJordan","Jordan Pike","731-555-0119","Mower operator"],["eSam","Sam Whitley","731-555-0137","Seasonal helper"]],
+    rates:{eDerek:["w2","hourly",19],eTasha:["w2","hourly",16],eJordan:["1099","perjob",30,true],eSam:["w2","hourly",13]},
+    supplies:["Supplies",["Tractor Supply","Lowe’s","Ace Hardware"],"trimmer line and fuel mix",[40,120]],equipment:["Mower blades and tune-up",289],insurance:210,
+    bookings:[["Gail Owens","731-555-0164","Mowing & edging","Weekly mowing for a half-acre lot, starting next week.",2],["Reed home","731-555-0123","Leaf removal","Big oaks out back. Leaves are piling up fast.",4],["Hall family","731-555-0168","Mulch & beds","Fresh mulch for the front beds before a graduation party.",7]],
+    lump:{eDerek:14600,eTasha:11800,eJordan:6900,eSam:3200},live:["eDerek","eJordan"]},
+  "Pet Care":{kind:"visits",name:"Happy Tails Pet Care",rewardsName:"Happy Tails Rewards",
+    services:[["Dog walking",[20,30],[0.5,1],6,0],["Drop-in visit",[25,35],[0.5,0.75],3,0],["Pet sitting",[55,85],[1,2],1.5,0],["Overnight stay",[80,120],[10,12],0.7,0],["Grooming",[55,95],[1.5,2.5],1.5,0]],
+    perDay:[4,2],weekends:"all",
+    crew:[["eKayla","Kayla Brooks","731-555-0146","Lead sitter"],["eTasha","Tasha Greene","731-555-0178","Dog walker"],["eJordan","Jordan Pike","731-555-0119","Pet sitter"],["eAmber","Amber Cole","731-555-0133","Groomer"]],
+    rates:{eKayla:["w2","hourly",15],eTasha:["1099","percent",60,true],eJordan:["1099","perjob",22],eAmber:["w2","hourly",16]},
+    supplies:["Supplies",["Chewy","PetSmart","Tractor Supply"],"treats, bags and leashes",[30,80]],equipment:["Grooming table and dryer",412],insurance:95,
+    bookings:[["Gail Owens","731-555-0164","Overnight stay","Two labs, Thursday to Sunday while we're at a wedding.",3],["Reed home","731-555-0123","Dog walking","Midday walks Monday to Friday for a young beagle.",1],["Hall family","731-555-0168","Grooming","Full groom for a shih tzu, she's nervous with clippers.",5]],
+    lump:{eKayla:12100,eTasha:8800,eJordan:5400,eAmber:9300},live:["eKayla","eJordan"]},
+
+  "Construction":{kind:"trade",name:"Ridgeline Builders",
+    services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
+    companies:[["coRay","Ray’s Drywall LLC","Drywall","Ray Duncan","731-555-0187",true,18,210],["coVolt","Volt Electric Co.","Electrical","Eli Watts","731-555-0150",true,140,320],["coTile","Precision Tile & Stone","Tile","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eMarcus","Marcus Bell","731-555-0101","Lead carpenter"],["eTasha","Tasha Greene","731-555-0178","Carpenter"],["eLuis","Luis Ortega","731-555-0164","Plumber"],["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eJordan","Jordan Pike","731-555-0119","Painter"],["eRay","Ray Duncan","731-555-0187","Drywall foreman","coRay"],["eEli","Eli Watts","731-555-0150","Electrician","coVolt"]],
+    rates:{eMarcus:["w2","hourly",28],eTasha:["w2","hourly",21],eLuis:["1099","hourly",34,true],eKendra:["w2","day",160],eJordan:["1099","percent",30]},
+    projects:[
+      {key:"pHend",name:"Henderson kitchen remodel",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-24,end:18,contract:38500,status:"active",leadId:"eMarcus",
+        notes:"Gut and rebuild. Shaker cabinets, quartz counters, tile backsplash. Family is living in the house; keep the dining room clear.",
+        phases:[["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],["Rough plumbing",-19,"done",["eLuis"],4200,7,true],["Electrical rough-in",-16,"done",["eEli"],3600,8,true],["Drywall hang & finish",0,"in_progress",["eRay","eKendra"],4400],["Cabinet install",3,"assigned",["eMarcus","eTasha"],7800],["Countertops & backsplash",9,"assigned",["eTasha"],8650],["Final punch list",16,"new",[],6000]],
+        costs:[[-26,"Permits & fees",285,"Henderson County building permit"],[-19,"Materials",1180.42,"Ferguson, PEX and fittings"],[-15,"Subcontractors",2400,"Volt Electric Co., rough-in","coVolt"],[-10,"Materials",986.17,"Lowe’s, drywall and mud"],[-5,"Materials",6214.88,"Lowe’s, shaker cabinets"],[-2,"Subcontractors",2100,"Ray’s Drywall LLC, first draw","coRay"]]},
+      {key:"pCarter",name:"Carter bathroom remodel",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:-6,end:12,contract:14200,status:"active",leadId:"eTasha",
+        notes:"Tub to walk-in shower conversion. Client picked the tile already; it's in the garage.",
+        phases:[["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],["Plumbing reroute",0,"in_progress",["eLuis"],3200],["Shower tile",4,"assigned",["eTasha"],4800],["Vanity & fixtures",10,"new",[],4800]],
+        costs:[[-7,"Permits & fees",95,"Plumbing permit"],[-6,"Materials",642.3,"Ferguson, shower valve and drain"],[-3,"Materials",1148.6,"Floor & Decor, thinset and trim"],[-1,"Tool rental",165,"Sunbelt, tile saw (3 days)"]]},
+      {key:"pBrooks",name:"Brooks rental deck",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:12,end:22,contract:9800,status:"planning",leadId:"eMarcus",
+        notes:"12x16 pressure-treated deck with stairs. Permit submitted.",
+        phases:[["Permit & layout",12,"new",[],900],["Framing",14,"new",[],4200],["Decking & rails",18,"new",[],4700]],costs:[]},
+      {key:"pDental",name:"Lexington Family Dental buildout",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:-88,end:-34,contract:62000,status:"done",leadId:"eMarcus",
+        notes:"Two new operatories and a break room.",
+        phases:[["Framing",-88,"done",["eMarcus","eTasha","eKendra"],15500,9,true],["Electrical",-78,"done",["eEli"],12400,9,true],["Drywall",-66,"done",["eRay","eKendra"],9300,8,true],["Flooring",-52,"done",["eTasha","eJordan"],11800,9,true],["Paint & trim",-40,"done",["eJordan"],8000,8,true],["Punch list",-34,"done",["eMarcus"],5000,6,false]],
+        costs:[[-90,"Materials",9840,"84 Lumber, framing package"],[-80,"Subcontractors",8200,"Volt Electric Co.","coVolt"],[-68,"Subcontractors",6100,"Ray’s Drywall LLC","coRay"],[-55,"Materials",5230.5,"Floor & Decor, LVP flooring"],[-50,"Subcontractors",1850,"Precision Tile & Stone, break room","coTile"],[-42,"Materials",912.4,"Sherwin-Williams paint"],[-36,"Tool rental",650,"Dumpster rental"]]}],
+    calls:[["Plumbing repair",[165,420],"eLuis",[1.5,3.5]],["Water heater install",[1450,2200],"eLuis",[3.5,5],"eKendra"],["Drywall & paint",[350,950],"eJordan",[3,6]],["Estimate visit",[0,0],"eMarcus",[0.75,1.25]],["Punch list",[220,520],"eTasha",[2,4]]],
+    otherCosts:[],
+    overhead:{fuel:"fuel, two trucks",supplies:[["Home Depot","Lowe’s"],"fasteners and blades"],insurance:640,equipment:["Milwaukee impact driver kit",489],vehicle:["Truck tires rotated, brakes",342.18]},
+    bookings:[["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Estimate visit","Want a quote to turn the hall bath into a walk-in shower.",4],["Hall family","731-555-0168","Decks & porches","Back deck has two soft boards and a wobbly rail.",7]],
+    lump:{eMarcus:31600,eTasha:22150,eLuis:18720,eKendra:14080,eJordan:1250},live:["eMarcus","eLuis","eRay"]},
+
+  "Plumbing":{kind:"trade",name:"Clearflow Plumbing",
+    services:["Service call","Leak repair","Water heater install","Drain cleaning","Repipe","Fixture install","Sewer line","Estimate visit"],
+    companies:[["coDig","Duncan Dirtworks LLC","Excavation","Ray Duncan","731-555-0187",true,22,190],["coDry","Precision Drywall Repair","Drywall","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eLuis","Luis Ortega","731-555-0164","Master plumber"],["eTasha","Tasha Greene","731-555-0178","Journeyman plumber"],["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eMarcus","Marcus Bell","731-555-0101","Service tech"],["eRay","Ray Duncan","731-555-0187","Excavation foreman","coDig"]],
+    rates:{eLuis:["w2","hourly",34],eTasha:["w2","hourly",26],eKendra:["w2","day",150],eMarcus:["1099","perjob",85,true]},
+    projects:[
+      {key:"pRepipe",name:"Henderson whole-house repipe",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-3,end:5,contract:9800,status:"active",leadId:"eLuis",
+        notes:"Galvanized to PEX, two baths and kitchen. Family is staying in the house; water off 8 to 4 only.",
+        phases:[["Access & prep",-3,"done",["eLuis","eKendra"],1200,7,true],["PEX repipe",-1,"done",["eLuis","eTasha","eKendra"],5200,9,false],["Pressure test & inspection",0,"in_progress",["eLuis"],2100],["Wall patches",4,"assigned",["eTasha"],1300]],
+        costs:[[-4,"Permits & fees",120,"Plumbing permit"],[-3,"Materials",1340.55,"Ferguson, PEX and fittings"],[-1,"Materials",286.4,"Ferguson, valves and stub-outs"]]},
+      {key:"pSewer",name:"Carter sewer line replacement",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:6,end:8,contract:7400,status:"planning",leadId:"eLuis",
+        notes:"Root intrusion at 40 ft. Replace 60 ft of clay with PVC. Call 811 before digging.",
+        phases:[["Locate & permit",6,"assigned",["eLuis"],600],["Excavation",7,"assigned",["eRay"],2800],["New sewer line",7,"new",[],3400],["Backfill & restore",8,"new",[],600]],
+        costs:[[-1,"Permits & fees",150,"Sewer tap permit"]]},
+      {key:"pDental",name:"Lexington Family Dental restrooms",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:-60,end:-55,contract:6200,status:"done",leadId:"eLuis",
+        notes:"Two ADA restrooms, new fixtures.",
+        phases:[["Rough-in",-60,"done",["eLuis","eKendra"],2600,8,true],["Fixture install",-56,"done",["eTasha"],2400,7,true],["Final inspection",-55,"done",["eLuis"],1200,2,true]],
+        costs:[[-61,"Materials",1890.2,"Ferguson, ADA fixtures"],[-57,"Tool rental",120,"Sunbelt, core drill"]]}],
+    calls:[["Service call",[125,250],"eMarcus",[1,2]],["Leak repair",[185,480],"eTasha",[1.5,3]],["Water heater install",[1450,2300],"eLuis",[3.5,5],"eKendra"],["Drain cleaning",[150,350],"eMarcus",[1,2]],["Fixture install",[180,520],"eTasha",[1.5,3]],["Estimate visit",[0,0],"eLuis",[0.5,1]]],
+    otherCosts:[[-40,"Subcontractors",1800,"Duncan Dirtworks, trench for gas line","coDig"],[-25,"Subcontractors",650,"Precision Drywall Repair, wall patches","coDry"]],
+    overhead:{fuel:"fuel, two service vans",supplies:[["Ferguson","Home Depot"],"fittings and solder"],insurance:520,equipment:["Drain camera",1290],vehicle:["Van brakes",410]},
+    bookings:[["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Drain cleaning","Kitchen sink backed up twice this week.",2],["Hall family","731-555-0168","Leak repair","Water stain on the ceiling under the upstairs bath.",4]],
+    lump:{eLuis:34800,eTasha:26200,eKendra:15100,eMarcus:9800},live:["eLuis","eMarcus"]},
+
+  "Electrical":{kind:"trade",name:"Brightline Electric",
+    services:["Service call","Panel upgrade","Outlet & switch work","Lighting install","Rough-in","EV charger install","Estimate visit"],
+    companies:[["coTrench","Duncan Trenching LLC","Trenching","Ray Duncan","731-555-0187",true,18,240],["coDry","Precision Drywall Repair","Drywall","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eEli","Eli Watts","731-555-0150","Master electrician"],["eTasha","Tasha Greene","731-555-0178","Journeyman electrician"],["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eJordan","Jordan Pike","731-555-0119","Low-voltage tech"],["eRay","Ray Duncan","731-555-0187","Trench foreman","coTrench"]],
+    rates:{eEli:["w2","hourly",38],eTasha:["w2","hourly",27],eKendra:["w2","day",150],eJordan:["1099","percent",35,true]},
+    projects:[
+      {key:"pShop",name:"Henderson detached shop wiring",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-8,end:6,contract:12400,status:"active",leadId:"eEli",
+        notes:"100A subpanel fed from the house, 120 ft underground. Shop lights, 240V for a welder.",
+        phases:[["Trench & conduit",-8,"done",["eRay"],2400,6,true],["Rough-in",-4,"done",["eEli","eTasha","eKendra"],4800,9,true],["Rough inspection",0,"in_progress",["eEli"],400],["Panel & devices",3,"assigned",["eTasha","eKendra"],3600],["Final inspection",6,"new",[],1200]],
+        costs:[[-9,"Permits & fees",165,"Electrical permit"],[-8,"Subcontractors",1600,"Duncan Trenching, 120 ft trench","coTrench"],[-5,"Materials",2140.75,"Graybar, wire and conduit"]]},
+      {key:"pBrooks",name:"Brooks rental panel & EV charger",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:9,end:10,contract:4200,status:"planning",leadId:"eEli",
+        notes:"200A panel upgrade and a 48A charger in the garage. Utility disconnect booked.",
+        phases:[["Permit & utility disconnect",9,"new",[],200],["200A panel upgrade",10,"new",[],2600],["EV charger",10,"new",[],1400]],costs:[]},
+      {key:"pDental",name:"Lexington Family Dental lighting retrofit",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:-50,end:-46,contract:8600,status:"done",leadId:"eEli",
+        notes:"All LED, occupancy sensors in the operatories.",
+        phases:[["LED fixture swap",-50,"done",["eTasha","eKendra"],5200,9,true],["Controls & sensors",-48,"done",["eJordan"],2400,6,true],["Punch list",-46,"done",["eEli"],1000,2,false]],
+        costs:[[-51,"Materials",3120.4,"Graybar, LED fixtures"],[-48,"Materials",640,"Occupancy sensors"]]}],
+    calls:[["Service call",[125,260],"eEli",[1,2]],["Outlet & switch work",[140,420],"eTasha",[1,2.5]],["Lighting install",[220,780],"eTasha",[2,4],"eKendra"],["Panel upgrade",[1800,3200],"eEli",[5,7],"eKendra"],["EV charger install",[900,1600],"eJordan",[3,5]],["Estimate visit",[0,0],"eEli",[0.5,1]]],
+    otherCosts:[[-30,"Subcontractors",450,"Precision Drywall Repair, patch after rewire","coDry"]],
+    overhead:{fuel:"fuel, two vans",supplies:[["Graybar","Home Depot"],"wire nuts and boxes"],insurance:560,equipment:["Fluke meter",389],vehicle:["Van tires",620]},
+    bookings:[["Gail Owens","731-555-0164","Service call","Half the kitchen outlets stopped working.",1],["Reed home","731-555-0123","EV charger install","Want a charger in the garage for a new EV.",3],["Hall family","731-555-0168","Lighting install","Recessed lights in the living room, six cans.",6]],
+    lump:{eEli:38200,eTasha:27100,eKendra:15400,eJordan:7900},live:["eEli","eRay"]},
+
+  "HVAC":{kind:"trade",name:"Comfort Air Heating & Cooling",
+    services:["Service call","System install","Maintenance visit","Duct work","Estimate visit"],
+    companies:[["coVolt","Volt Electric Co.","Electrical","Eli Watts","731-555-0150",true,140,320],["coDuct","Precision Duct Cleaning","Duct cleaning","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eMarcus","Marcus Bell","731-555-0101","Lead HVAC tech"],["eTasha","Tasha Greene","731-555-0178","HVAC tech"],["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eLuis","Luis Ortega","731-555-0164","Install lead"],["eEli","Eli Watts","731-555-0150","Electrician","coVolt"]],
+    rates:{eMarcus:["w2","hourly",32],eTasha:["w2","hourly",25],eKendra:["w2","day",140],eLuis:["1099","perjob",450,true]},
+    projects:[
+      {key:"pHend",name:"Henderson system replacement",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-2,end:2,contract:11800,status:"active",leadId:"eLuis",
+        notes:"3-ton heat pump with gas backup. Attic access through the hall closet.",
+        phases:[["Remove old system",-2,"done",["eLuis","eKendra"],1400,6,true],["New furnace & coil",-1,"done",["eLuis","eTasha"],6200,8,false],["Electrical disconnect",0,"in_progress",["eEli"],900],["Startup & test",1,"assigned",["eMarcus"],800],["Duct sealing",2,"assigned",["eTasha","eKendra"],2500]],
+        costs:[[-3,"Materials",5480.3,"Johnstone Supply, 3-ton system"],[-2,"Permits & fees",95,"Mechanical permit"],[-1,"Subcontractors",600,"Volt Electric Co., disconnect","coVolt"]]},
+      {key:"pDental",name:"Lexington Family Dental rooftop unit",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:8,end:12,contract:18500,status:"planning",leadId:"eLuis",
+        notes:"Replace 7.5-ton rooftop unit. Crane booked for Saturday morning.",
+        phases:[["Crane & set unit",8,"new",[],9500],["Curb & duct tie-in",10,"new",[],6000],["Controls & startup",12,"new",[],3000]],costs:[]},
+      {key:"pCarter",name:"Carter heat pump install",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:-40,end:-38,contract:9200,status:"done",leadId:"eLuis",
+        notes:"Replaced a 20-year-old system.",
+        phases:[["Remove old system",-40,"done",["eLuis","eKendra"],1200,5,true],["Heat pump install",-39,"done",["eLuis","eTasha"],6800,9,true],["Startup & test",-38,"done",["eMarcus"],1200,2,true]],
+        costs:[[-41,"Materials",4920,"Johnstone Supply, heat pump"],[-39,"Materials",310.6,"Line set and pad"]]}],
+    calls:[["Service call",[129,380],"eMarcus",[1,2.5]],["Maintenance visit",[89,149],"eTasha",[1,1.5]],["Duct work",[450,1800],"eLuis",[3,6],"eKendra"],["Service call",[129,380],"eTasha",[1,2.5]],["Estimate visit",[0,0],"eMarcus",[0.5,1]]],
+    otherCosts:[[-22,"Subcontractors",380,"Precision Duct Cleaning","coDuct"]],
+    overhead:{fuel:"fuel, three vans",supplies:[["Johnstone Supply","Ferguson HVAC"],"filters and refrigerant"],insurance:610,equipment:["Refrigerant recovery machine",899],vehicle:["Van AC repair",540]},
+    bookings:[["Gail Owens","731-555-0164","Service call","Upstairs isn't cooling, unit runs nonstop.",1],["Reed home","731-555-0123","Maintenance visit","Fall tune-up for two systems.",3],["Hall family","731-555-0168","Estimate visit","Quote to replace a 20-year-old furnace.",5]],
+    lump:{eMarcus:33900,eTasha:25100,eKendra:13800,eLuis:21600},live:["eMarcus","eLuis"]},
+
+  "Roofing":{kind:"trade",name:"Summit Roofing",
+    services:["Roof inspection","Repair","Full replacement","Gutters","Estimate visit"],
+    companies:[["coGut","Watts Seamless Gutters","Gutters","Eli Watts","731-555-0150",true,25,300],["coHaul","Duncan Dumpsters","Dumpster rental","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eRay","Ray Duncan","731-555-0187","Crew foreman"],["eTasha","Tasha Greene","731-555-0178","Roofer"],["eJordan","Jordan Pike","731-555-0119","Roofer"],["eKendra","Kendra Shaw","731-555-0139","Laborer"],["eMarcus","Marcus Bell","731-555-0101","Estimator"],["eEli","Eli Watts","731-555-0150","Gutter installer","coGut"]],
+    rates:{eRay:["w2","hourly",30],eTasha:["w2","hourly",22],eJordan:["1099","percent",25],eKendra:["w2","day",140],eMarcus:["1099","perjob",60,true]},
+    projects:[
+      {key:"pHend",name:"Henderson full roof replacement",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-1,end:3,contract:16800,status:"active",leadId:"eRay",
+        notes:"32 squares, architectural shingles, new ridge vent. Tarp the garden beds.",
+        phases:[["Tear-off",-1,"done",["eRay","eTasha","eJordan","eKendra"],5200,9,false],["Decking & underlayment",0,"in_progress",["eRay","eTasha","eKendra"],3800],["Shingles & ridge vent",1,"assigned",["eRay","eTasha","eJordan"],6400],["Cleanup & magnet sweep",1,"assigned",["eKendra"],400],["Gutters",3,"assigned",["eEli"],1000]],
+        costs:[[-3,"Materials",7840.5,"ABC Supply, shingles and underlayment"],[-2,"Permits & fees",110,"Roofing permit"],[-1,"Tool rental",425,"Duncan Dumpsters, 30-yard","coHaul"]]},
+      {key:"pCarter",name:"Carter storm damage repair",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:5,end:8,contract:8900,status:"planning",leadId:"eRay",
+        notes:"Insurance claim. Adjuster meeting first, then tear-off and replace the back slope.",
+        phases:[["Adjuster meeting",5,"assigned",["eMarcus"],0],["Tear-off & replace",7,"new",[],7400],["Gutters",8,"new",[],1500]],costs:[]},
+      {key:"pSunrise",name:"Sunrise Realty office metal roof",client:"Sunrise Realty office",phone:"731-555-0145",address:"140 N Broad St, Lexington, TN",start:-45,end:-38,contract:24500,status:"done",leadId:"eRay",
+        notes:"Standing seam over the old shingles.",
+        phases:[["Tear-off",-45,"done",["eRay","eTasha","eJordan","eKendra"],6800,9,true],["Metal panels",-42,"done",["eRay","eTasha","eJordan"],14200,10,true],["Trim & gutters",-38,"done",["eEli"],3500,6,false]],
+        costs:[[-47,"Materials",11420,"Metal Sales, panels and trim"],[-38,"Subcontractors",1900,"Watts Seamless Gutters","coGut"]]}],
+    calls:[["Roof inspection",[0,175],"eMarcus",[0.75,1.5]],["Repair",[350,1400],"eRay",[2,5],"eKendra"],["Repair",[350,1100],"eTasha",[2,4]],["Estimate visit",[0,0],"eMarcus",[0.5,1]],["Gutters",[600,1800],"eEli",[3,5]]],
+    otherCosts:[],
+    overhead:{fuel:"fuel, crew truck and trailer",supplies:[["ABC Supply","Beacon"],"nails and flashing"],insurance:980,equipment:["Roofing nailers (2)",640],vehicle:["Dump trailer tires",380]},
+    bookings:[["Gail Owens","731-555-0164","Repair","Shingles blew off after last week's storm.",1],["Reed home","731-555-0123","Roof inspection","Buying this house and want an inspection before closing.",3],["Hall family","731-555-0168","Gutters","Gutters overflowing at the back corner.",6]],
+    lump:{eRay:29800,eTasha:21600,eJordan:9400,eKendra:13600,eMarcus:3100},live:["eRay","eJordan"]},
+
+  "Handyman":{kind:"trade",name:"FixRight Handyman",
+    services:["Small repairs","Installations","Painting","Drywall patching","Carpentry","Estimate visit"],
+    companies:[["coPlumb","Ortega Plumbing LLC","Plumbing","Luis Ortega","731-555-0164",true,60,260],["coTile","Precision Tile & Stone","Tile","Sam Ruiz","731-555-0126",false,-12,95]],
+    crew:[["eMarcus","Marcus Bell","731-555-0101","Lead handyman"],["eTasha","Tasha Greene","731-555-0178","Handyman"],["eJordan","Jordan Pike","731-555-0119","Painter"],["eKendra","Kendra Shaw","731-555-0139","Helper"],["eLuis","Luis Ortega","731-555-0164","Plumber","coPlumb"]],
+    rates:{eMarcus:["w2","hourly",27],eTasha:["w2","hourly",21],eJordan:["1099","percent",35,true],eKendra:["w2","day",130]},
+    projects:[
+      {key:"pOwens",name:"Owens hall bath refresh",client:"Owens home",phone:"731-555-0164",address:"6 Beech Lake Rd, Lexington, TN",start:-3,end:5,contract:6400,status:"active",leadId:"eMarcus",
+        notes:"New vanity, wall tile behind the tub, paint. Dog is friendly; keep the gate closed.",
+        phases:[["Demo vanity & tile",-3,"done",["eMarcus","eKendra"],900,6,true],["Plumbing swap",-1,"done",["eLuis"],1100,4,false],["Wall tile",0,"in_progress",["eTasha"],1600],["Vanity & fixtures",2,"assigned",["eMarcus","eTasha"],1700],["Paint & trim",4,"assigned",["eJordan"],800],["Punch list",5,"new",[],300]],
+        costs:[[-4,"Materials",612.4,"Lowe’s, vanity and faucet"],[-2,"Subcontractors",650,"Ortega Plumbing, valve swap","coPlumb"],[-1,"Materials",388.2,"Floor & Decor, wall tile"]]},
+      {key:"pBrooks",name:"Brooks rental deck repair",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:9,end:10,contract:3800,status:"planning",leadId:"eMarcus",
+        notes:"Replace soft boards, new rail on the stairs, stain.",
+        phases:[["Replace soft boards",9,"new",[],1600],["New stair rail",10,"new",[],1500],["Stain",10,"new",[],700]],costs:[]},
+      {key:"pHall",name:"Hall family kitchen paint & trim",client:"Hall family",phone:"731-555-0168",address:"225 Southern Ave, Lexington, TN",start:-30,end:-27,contract:4200,status:"done",leadId:"eMarcus",
+        notes:"Cabinets and walls, new crown molding.",
+        phases:[["Prep & patch",-30,"done",["eTasha","eKendra"],900,6,true],["Paint",-29,"done",["eJordan"],2400,8,true],["Trim carpentry",-27,"done",["eMarcus"],900,5,true]],
+        costs:[[-31,"Materials",345.6,"Sherwin-Williams paint"],[-28,"Materials",210,"Lowe’s, crown molding"]]}],
+    calls:[["Small repairs",[95,260],"eTasha",[1,2.5]],["Installations",[120,380],"eMarcus",[1,3]],["Painting",[300,1100],"eJordan",[3,7]],["Drywall patching",[150,420],"eTasha",[1.5,3]],["Carpentry",[250,900],"eMarcus",[2,5],"eKendra"],["Estimate visit",[0,0],"eMarcus",[0.5,1]]],
+    otherCosts:[[-20,"Subcontractors",480,"Precision Tile & Stone, backsplash","coTile"]],
+    overhead:{fuel:"fuel, work truck",supplies:[["Home Depot","Lowe’s"],"screws, caulk and blades"],insurance:310,equipment:["Oscillating tool kit",229],vehicle:["Truck oil change",89]},
+    bookings:[["Gail Owens","731-555-0164","Small repairs","Three doors that stick and a running toilet.",1],["Reed home","731-555-0123","Installations","Mount two TVs and a ceiling fan.",3],["Hall family","731-555-0168","Carpentry","Porch step is rotting.",5]],
+    lump:{eMarcus:26800,eTasha:20900,eJordan:7100,eKendra:13200},live:["eMarcus","eJordan"]}
+};
+function demoSeed(type){
+  const P=DEMO_PROFILES[type]||DEMO_PROFILES.Construction;
+  const rnd=seededRandom(DEMO_TYPES.indexOf(type)*97+42);
   const R=(a,b)=>a+rnd()*(b-a), pick=a=>a[Math.floor(rnd()*a.length)], cents=n=>Math.round(n*100)/100;
-  const now=new Date(), D=off=>ymd(new Date(now.getFullYear(),now.getMonth(),now.getDate()+off));
+  const now=new Date(), dayOf=off=>new Date(now.getFullYear(),now.getMonth(),now.getDate()+off), D=off=>ymd(dayOf(off));
   const at=(off,h,m)=>new Date(now.getFullYear(),now.getMonth(),now.getDate()+off,h,m||0).getTime();
   const BID="demo";
   const C={}; COLLS.forEach(c=>C[c]={});
@@ -2668,131 +2854,79 @@ function demoSeed(kind){
     return put("jobs",j);
   };
   const exp=(off,category,amount,vendor,extra)=>put("expenses",{date:D(off),category,amount:cents(amount),vendor,createdAt:at(off,18),...(extra||{})});
-  const people=list=>list.map(([key,name,phone,role,companyId],i)=>{ put("employees",{name,phone,phoneNorm:normPhone(phone),email:"",role:role||"",companyId:companyId||null,active:true,userId:"demo-u"+(i+1),createdAt:at(-200,9)},key); return key; });
-  let business;
+  P.crew.forEach(([key,name,phone,role,companyId],i)=>put("employees",{name,phone,phoneNorm:normPhone(phone),email:"",role:role||"",companyId:companyId||null,active:true,userId:"demo-u"+(i+1),createdAt:at(-200,9)},key));
+  Object.entries(P.rates).forEach(([k,[cls,payType,rate,w9]])=>put("payRates",{cls,payType,rate,w9:!!w9},k));
+  const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
+    ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
+    ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],
+    ["Hall family","225 Southern Ave, Lexington, TN"],["Davis duplex","402 Poplar St, Lexington, TN"]];
+  const business={id:BID,name:P.name,category:type,city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
+    services:P.kind==="trade"?P.services.slice():P.services.map(x=>x[0]),sutaRate:2.7,
+    features:{projects:P.kind==="trade",rewards:P.kind==="visits"}};
+  if (P.rewardsName) business.rewardsName=P.rewardsName;
 
-  if (kind==="cleaning"){
-    business={id:BID,name:"Sparkle & Shine Cleaning",category:"Cleaning",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
-      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false,rewards:true}};
-    people([["eMaria","Maria Lopez","731-555-0142","Team lead"],["eTasha","Tasha Greene","731-555-0178","Cleaner"],["eJordan","Jordan Pike","731-555-0119","Cleaner"],["eAmber","Amber Cole","731-555-0133","Trainee"]]);
-    put("payRates",{cls:"w2",payType:"hourly",rate:17,w9:false},"eMaria");
-    put("payRates",{cls:"1099",payType:"percent",rate:40,w9:true},"eTasha");
-    put("payRates",{cls:"1099",payType:"perjob",rate:55,w9:false},"eJordan");
-    put("payRates",{cls:"w2",payType:"hourly",rate:14,w9:false},"eAmber");
-    const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
-      ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
-      ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"]];
-    const price={"Regular cleaning":[115,165],"Deep cleaning":[225,320],"Move-in / move-out":[275,395],"Commercial cleaning":[190,340]};
-    const hours={"Regular cleaning":[2,3.2],"Deep cleaning":[3.5,5.5],"Move-in / move-out":[4,6],"Commercial cleaning":[2.5,4.5]};
-    const crewKeys=["eMaria","eTasha","eJordan","eAmber"];
+  if (P.kind==="visits"){
+    const wsum=P.services.reduce((a,x)=>a+x[3],0);
+    const pickSvc=()=>{ let r=rnd()*wsum; for (const x of P.services){ r-=x[3]; if (r<=0) return x; } return P.services[0]; };
+    const leads=P.crew.slice(0,3).map(x=>x[0]), everyone=P.crew.map(x=>x[0]);
     for (let off=-92; off<=12; off++){
-      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(); if(dow===0) continue;
-      const count = dow===6 ? (rnd()<.5?1:0) : 2+(rnd()<.5?1:0);
+      const dow=dayOf(off).getDay();
+      if (dow===0 && P.weekends!=="all") continue;
+      const count = (dow===6||dow===0) ? (P.weekends==="all"?P.perDay[0]-1:(rnd()<.5?1:0)) : P.perDay[0]+Math.floor(rnd()*(P.perDay[1]+1));
       for (let k=0;k<count;k++){
-        const ci=Math.floor(rnd()*clients.length);
-        const service= ci===3||ci===7 ? "Commercial cleaning" : ci===4 ? "Move-in / move-out" : rnd()<.75 ? "Regular cleaning" : "Deep cleaning";
-        const lead=pick(crewKeys.slice(0,3)); const crew=[lead]; if (service!=="Regular cleaning" && rnd()<.6) crew.push(pick(crewKeys.filter(c=>c!==lead)));
+        const [service,price,hours,,multi]=pickSvc(); const c=pick(clients);
+        const lead=pick(leads); const crew=[lead]; if (multi && rnd()<multi) crew.push(pick(everyone.filter(x=>x!==lead)));
         const status = off<0 ? "done" : off===0 ? (k===0?"in_progress":"assigned") : (rnd()<.25?"new":"assigned");
-        job({service,client:clients[ci][0],address:clients[ci][1],price:Math.round(R(...price[service])/5)*5,off,time:pick(["08:00","09:00","10:00","13:00"]),
-          crew:status==="new"?[]:crew,status,hours:R(...hours[service]),paid:off<-10?rnd()<.97:off<0?rnd()<.5:false});
+        job({service,client:c[0],address:c[1],price:Math.round(R(...price)/5)*5,off,time:pick(["07:30","08:00","09:00","10:00","13:00","15:00"]),
+          crew:status==="new"?[]:crew,status,hours:R(...hours),paid:off<-10?rnd()<.97:off<0?rnd()<.5:false});
       }
     }
+    // Make sure Tasha has jobs to show in Crew view
+    job({service:P.services[0][0],client:"Webb family",address:"18 Maple St, Huntingdon, TN",price:Math.round(R(...P.services[0][1])/5)*5,off:1,time:"09:00",crew:["eTasha"],status:"assigned"});
     for (let off=-92; off<=0; off++){
-      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(), dd=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDate();
-      if (dow===1) exp(off,"Cleaning supplies",R(45,110),pick(["Walmart","Sam’s Club","Dollar General"])+" supplies");
+      const dd=dayOf(off), dow=dd.getDay();
+      if (dow===1) exp(off,P.supplies[0],R(...P.supplies[3]),pick(P.supplies[1])+", "+P.supplies[2]);
       if (dow===2||dow===5) exp(off,"Fuel & mileage",R(32,62),pick(["Murphy USA","Shell","Marathon"])+" fuel");
-      if (dd===1) exp(off,"Insurance",148,"Liability insurance");
-      if (dd===15) exp(off,"Marketing",R(40,90),"Facebook ads");
+      if (dd.getDate()===1) exp(off,"Insurance",P.insurance,"Liability insurance");
+      if (dd.getDate()===15) exp(off,"Marketing",R(40,90),"Facebook ads");
     }
-    exp(-47,"Equipment",239.99,"Replacement vacuum");
+    exp(-47,"Equipment",P.equipment[1],P.equipment[0]);
   } else {
-    business={id:BID,name:"Ridgeline Builders",category:"Construction",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
-      services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
-      features:{projects:true,rewards:false},sutaRate:2.7};
-    put("companies",{name:"Ray’s Drywall LLC",trade:"Drywall",contact:"Ray Duncan",phone:"731-555-0187",w9:true,insuranceExp:D(18),licenseExp:D(210),createdAt:at(-300,9)},"coRay");
-    put("companies",{name:"Volt Electric Co.",trade:"Electrical",contact:"Eli Watts",phone:"731-555-0150",w9:true,insuranceExp:D(140),licenseExp:D(320),createdAt:at(-300,9)},"coVolt");
-    put("companies",{name:"Precision Tile & Stone",trade:"Tile",contact:"Sam Ruiz",phone:"731-555-0126",w9:false,insuranceExp:D(-12),licenseExp:D(95),createdAt:at(-200,9)},"coTile");
-    people([["eMarcus","Marcus Bell","731-555-0101","Lead carpenter"],["eTasha","Tasha Greene","731-555-0178","Carpenter"],["eLuis","Luis Ortega","731-555-0164","Plumber"],
-      ["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eJordan","Jordan Pike","731-555-0119","Painter"],
-      ["eRay","Ray Duncan","731-555-0187","Drywall foreman","coRay"],["eEli","Eli Watts","731-555-0150","Electrician","coVolt"]]);
-    put("payRates",{cls:"w2",payType:"hourly",rate:28,w9:false},"eMarcus");
-    put("payRates",{cls:"w2",payType:"hourly",rate:21,w9:false},"eTasha");
-    put("payRates",{cls:"1099",payType:"hourly",rate:34,w9:true},"eLuis");
-    put("payRates",{cls:"w2",payType:"day",rate:160,w9:false},"eKendra");
-    put("payRates",{cls:"1099",payType:"percent",rate:30,w9:false},"eJordan");
-
-    const proj=(key,o,phases)=>{ put("projects",{...o,createdAt:at(-120,9)},key);
-      phases.forEach(([service,off,status,crew,price,hours,paid])=>job({service,client:o.client,address:o.address,phone:o.phone,price,off,status,crew,hours,paid,projectId:key,time:"07:30"})); };
-    proj("pHend",{name:"Henderson kitchen remodel",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:D(-24),end:D(18),contract:38500,status:"active",leadId:"eMarcus",
-      notes:"Gut and rebuild. Shaker cabinets, quartz counters, tile backsplash. Family is living in the house; keep the dining room clear."},[
-      ["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],
-      ["Rough plumbing",-19,"done",["eLuis"],4200,7,true],
-      ["Electrical rough-in",-16,"done",["eEli"],3600,8,true],
-      ["Drywall hang & finish",0,"in_progress",["eRay","eKendra"],4400],
-      ["Cabinet install",3,"assigned",["eMarcus","eTasha"],7800],
-      ["Countertops & backsplash",9,"assigned",["eTasha"],8650],
-      ["Final punch list",16,"new",[],6000]]);
-    proj("pCarter",{name:"Carter bathroom remodel",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:D(-6),end:D(12),contract:14200,status:"active",leadId:"eTasha",
-      notes:"Tub to walk-in shower conversion. Client picked the tile already; it's in the garage."},[
-      ["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],
-      ["Plumbing reroute",0,"in_progress",["eLuis"],3200],
-      ["Shower tile",4,"assigned",["eTasha"],4800],
-      ["Vanity & fixtures",10,"new",[],4800]]);
-    proj("pBrooks",{name:"Brooks rental deck",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:D(12),end:D(22),contract:9800,status:"planning",leadId:"eMarcus",
-      notes:"12x16 pressure-treated deck with stairs. Permit submitted."},[
-      ["Permit & layout",12,"new",[],900],["Framing",14,"new",[],4200],["Decking & rails",18,"new",[],4700]]);
-    proj("pDental",{name:"Lexington Family Dental buildout",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:D(-88),end:D(-34),contract:62000,status:"done",leadId:"eMarcus",
-      notes:"Two new operatories and a break room."},[
-      ["Framing",-88,"done",["eMarcus","eTasha","eKendra"],15500,9,true],["Electrical",-78,"done",["eEli"],12400,9,true],
-      ["Drywall",-66,"done",["eRay","eKendra"],9300,8,true],["Flooring",-52,"done",["eTasha","eJordan"],11800,9,true],
-      ["Paint & trim",-40,"done",["eJordan"],8000,8,true],["Punch list",-34,"done",["eMarcus"],5000,6,false]]);
-
-    // Day-to-day service calls between projects
-    const svc=[["Plumbing repair",[165,420],"eLuis",[1.5,3.5]],["Water heater install",[1450,2200],"eLuis",[3.5,5]],["Drywall & paint",[350,950],"eJordan",[3,6]],
-      ["Estimate visit",[0,0],"eMarcus",[0.75,1.25]],["Punch list",[220,520],"eTasha",[2,4]]];
-    const clients=[["Owens home","6 Beech Lake Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],
-      ["Hall family","225 Southern Ave, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Davis duplex","402 Poplar St, Lexington, TN"],["Gail Owens","9 Lakeview Dr, Lexington, TN"]];
+    P.companies.forEach(([key,name,trade,contact,phone,w9,ins,lic])=>put("companies",{name,trade,contact,phone,w9,insuranceExp:D(ins),licenseExp:D(lic),createdAt:at(-300,9)},key));
+    P.projects.forEach(pr=>{
+      put("projects",{name:pr.name,client:pr.client,phone:pr.phone,address:pr.address,start:D(pr.start),end:D(pr.end),contract:pr.contract,status:pr.status,leadId:pr.leadId,notes:pr.notes,createdAt:at(pr.start-20,9)},pr.key);
+      pr.phases.forEach(([service,off,status,crew,price,hours,paid])=>job({service,client:pr.client,address:pr.address,phone:pr.phone,price,off,status,crew,hours,paid,projectId:pr.key,time:"07:30"}));
+      pr.costs.forEach(([off,cat,amt,v,co])=>exp(off,cat,amt,v,{projectId:pr.key,...(co?{companyId:co}:{})}));
+    });
+    const callClients=clients.filter(c=>!P.projects.some(p=>p.client===c[0]));
     for (let off=-90; off<=7; off++){
-      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(); if(dow===0||dow===6) continue;
+      const dow=dayOf(off).getDay(); if(dow===0||dow===6) continue;
       const count=rnd()<.7?1:2;
       for (let k=0;k<count;k++){
-        const [service,pr,who,hr]=pick(svc); const c=pick(clients);
+        const [service,pr,who,hr,helper]=pick(P.calls); const c=pick(callClients);
         const status = off<0 ? "done" : off===0 ? "assigned" : (rnd()<.3?"new":"assigned");
-        const crew = status==="new" ? [] : (service==="Water heater install" ? [who,"eKendra"] : [who]);
+        const crew = status==="new" ? [] : (helper ? [who,helper] : [who]);
         job({service,client:c[0],address:c[1],price:Math.round(R(...pr)/5)*5,off,time:pick(["08:00","10:30","13:00","15:00"]),crew,status,hours:R(...hr),paid:off<-10?rnd()<.95:off<0?rnd()<.5:false});
       }
     }
-    // Project costs
-    exp(-26,"Permits & fees",285,"Henderson County building permit",{projectId:"pHend"});
-    exp(-19,"Materials",1180.42,"Ferguson, PEX and fittings",{projectId:"pHend"});
-    exp(-15,"Subcontractors",2400,"Volt Electric Co., rough-in",{projectId:"pHend",companyId:"coVolt"});
-    exp(-10,"Materials",986.17,"Lowe’s, drywall and mud",{projectId:"pHend"});
-    exp(-5,"Materials",6214.88,"Lowe’s, shaker cabinets",{projectId:"pHend"});
-    exp(-2,"Subcontractors",2100,"Ray’s Drywall LLC, first draw",{projectId:"pHend",companyId:"coRay"});
-    exp(-7,"Permits & fees",95,"Plumbing permit",{projectId:"pCarter"});
-    exp(-6,"Materials",642.3,"Ferguson, shower valve and drain",{projectId:"pCarter"});
-    exp(-3,"Materials",1148.6,"Floor & Decor, thinset and trim",{projectId:"pCarter"});
-    exp(-1,"Tool rental",165,"Sunbelt, tile saw (3 days)",{projectId:"pCarter"});
-    [[-90,"Materials",9840,"84 Lumber, framing package"],[-80,"Subcontractors",8200,"Volt Electric Co.",{companyId:"coVolt"}],[-68,"Subcontractors",6100,"Ray’s Drywall LLC",{companyId:"coRay"}],
-     [-55,"Materials",5230.5,"Floor & Decor, LVP flooring"],[-50,"Subcontractors",1850,"Precision Tile & Stone, break room",{companyId:"coTile"}],[-42,"Materials",912.4,"Sherwin-Williams paint"],[-36,"Tool rental",650,"Dumpster rental"]]
-      .forEach(([off,cat,amt,v,x])=>exp(off,cat,amt,v,{projectId:"pDental",...(x||{})}));
+    P.otherCosts.forEach(([off,cat,amt,v,co])=>exp(off,cat,amt,v,co?{companyId:co}:{}));
+    const o=P.overhead;
     for (let off=-92; off<=0; off++){
-      const dd=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off), dow=dd.getDay();
-      if (dow===1) exp(off,"Fuel & mileage",R(90,160),pick(["Murphy USA","Shell","Marathon"])+" fuel, two trucks");
-      if (dow===3 && rnd()<.6) exp(off,"Supplies",R(40,180),pick(["Home Depot","Lowe’s"])+" fasteners and blades");
-      if (dd.getDate()===1) exp(off,"Insurance",640,"General liability insurance");
+      const dd=dayOf(off), dow=dd.getDay();
+      if (dow===1) exp(off,"Fuel & mileage",R(90,160),pick(["Murphy USA","Shell","Marathon"])+" "+o.fuel);
+      if (dow===3 && rnd()<.6) exp(off,"Supplies",R(40,180),pick(o.supplies[0])+", "+o.supplies[1]);
+      if (dd.getDate()===1) exp(off,"Insurance",o.insurance,"General liability insurance");
       if (dd.getDate()===15) exp(off,"Marketing",R(120,220),"Google ads");
     }
-    exp(-33,"Equipment",489,"Milwaukee impact driver kit");
-    exp(-12,"Vehicle upkeep",342.18,"Truck tires rotated, brakes");
+    exp(-33,"Equipment",o.equipment[1],o.equipment[0]);
+    exp(-12,"Vehicle upkeep",o.vehicle[1],o.vehicle[0]);
   }
 
   // Payroll already recorded: a summary for earlier in the year, then each week up to two weeks ago.
   const rates=C.payRates;
-  const firstWeekly=weekStart(new Date(now.getFullYear(),now.getMonth(),now.getDate()-63));
+  const firstWeekly=weekStart(dayOf(-63));
   const lumpEnd=ymd(new Date(firstWeekly.getFullYear(),firstWeekly.getMonth(),firstWeekly.getDate()-1));
-  const lump=kind==="cleaning"?{eMaria:9850,eTasha:7420,eJordan:1480,eAmber:3910}:{eMarcus:31600,eTasha:22150,eLuis:18720,eKendra:14080,eJordan:1250};
-  const lumpPeople=Object.entries(lump).map(([k,paid])=>({empId:k,name:C.employees[k].name,cls:rates[k].cls,paid,net:rates[k].cls==="w2"?cents(paid*.86):paid,erTax:rates[k].cls==="w2"?cents(paid*.1):0}));
+  const lumpPeople=Object.entries(P.lump).map(([k,paid])=>({empId:k,name:C.employees[k].name,cls:rates[k].cls,paid,net:rates[k].cls==="w2"?cents(paid*.86):paid,erTax:rates[k].cls==="w2"?cents(paid*.1):0}));
   put("expenses",{date:lumpEnd,category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
     payrollRun:{start:now.getFullYear()+"-01-01",end:lumpEnd,people:lumpPeople},createdAt:at(-64,18)});
   const jobsArr=Object.values(C.jobs);
@@ -2812,49 +2946,48 @@ function demoSeed(kind){
     if (ppl.length) put("expenses",{date:E0,category:"Payroll",amount:cents(ppl.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Crew payroll "+niceDate(S0)+" – "+niceDate(E0),payrollRun:{start:S0,end:E0,people:ppl},createdAt:e.getTime()});
   }
 
-  // Website booking requests and rewards members
-  const bk=kind==="cleaning"
-    ? [["Gail Owens","731-555-0164","Deep cleaning","3 bed, 2 bath. Moving my mother in next weekend.",2],["Reed home","731-555-0123","Regular cleaning","Every other Friday if you have the opening.",5],["Sunrise Realty","731-555-0145","Move-in / move-out","Rental turnover, keys in the lockbox.",8]]
-    : [["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Estimate visit","Want a quote to turn the hall bath into a walk-in shower.",4],["Hall family","731-555-0168","Decks & porches","Back deck has two soft boards and a wobbly rail.",7]];
-  bk.forEach(([name,phone,service,details,off],i)=>put("bookings",{name,phone,service,details,requestedDate:D(off),status:"pending",uid:"demo-c"+i,createdAt:at(-1,8+i),ownerNotifiedAt:at(-1,8+i),reminderCount:i===0?2:0}));
-  // Rewards members only for the cleaning demo; the contractor demo has rewards turned off.
-  (kind==="cleaning" ? [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
+  // Website booking requests
+  P.bookings.forEach(([name,phone,service,details,off],i)=>put("bookings",{name,phone,service,details,requestedDate:D(off),status:"pending",uid:"demo-c"+i,createdAt:at(-1,8+i),ownerNotifiedAt:at(-1,8+i),reminderCount:i===0?2:0}));
+  // Rewards members for repeat-visit businesses only
+  if (P.kind==="visits") [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: $30 off next booking"],[180,"Paid job"]]],
    ["Dr. Patel","731-555-0147",[[155,"Paid job"],[160,"Paid job"],[150,"Paid job"]]],
    ["Carter home","731-555-0172",[[640,"Paid job"],[300,"Paid job"],[50,"Bonus points: referral"]]],
-   ["Owens home","731-555-0164",[[85,"Paid job"]]]] : []).forEach(([name,phone,log],i)=>{
+   ["Owens home","731-555-0164",[[85,"Paid job"]]]].forEach(([name,phone,log],i)=>{
     const cid="demo-c"+(10+i); put("customers",{name,phone,email:"",rewardsMember:true},cid);
     log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
   });
 
   // Crew out on jobs right now
-  const live=kind==="cleaning"
-    ? [["eMaria",35.6612,-88.4021,90,3.5],["eJordan",35.6475,-88.4011,240,2]]
-    : [["eMarcus",35.6612,-88.4021,80,5],["eLuis",35.6475,-88.4011,190,3],["eRay",35.6606,-88.4030,400,4.5]];
-  live.forEach(([k,lat,lng,secAgo,hrs])=>put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since:Date.now()-hrs*36e5},k));
+  const spots=[[35.6612,-88.4021,80,5],[35.6475,-88.4011,190,3],[35.6606,-88.4030,400,4.5]];
+  P.live.forEach((k,i)=>{ const [lat,lng,secAgo,hrs]=spots[i]; put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since:Date.now()-hrs*36e5},k); });
   return {business,colls:C};
 }
-function startDemo(kind){
-  kind = kind==="cleaning" ? "cleaning" : "contractor";
-  S.demo=true; S.demoKind=kind;
+function startDemo(type){
+  if (type==="cleaning") type="Cleaning";
+  if (!DEMO_PROFILES[type]) type="Construction";
+  const keepView = S.demo && !S.isOwner;   // switching type keeps Crew view if that's what was showing
+  const switching = S.demo;                // the booking-requests popup only shows on the first load
+  S.demo=true; S.demoKind=type;
   installDemoShim();
   Store.useDemo();
-  const seed=demoSeed(kind);
+  const seed=demoSeed(type);
   Object.entries(seed.colls).forEach(([c,docs])=>{ Store.local[c]=docs; });
   const biz=seed.business;
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false;
-  S.tab="board"; S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; pendingPopupShown=false;
+  if (!["board","projects","team","payroll","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="board";
+  S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
   document.title=biz.name+" · Dazift demo";
   booted=true;
-  subscribeAll(); showApp(); render();
+  subscribeAll(); showApp();
+  if (keepView) demoViewAs("crew"); else render();
 }
 function demoViewAs(role){
   if (!S.demo) return;
   if (role==="crew"){
-    const crew=S.demoKind==="cleaning"?"eTasha":"eTasha";
-    const e=(Store.local.employees||{})[crew];
+    const e=(Store.local.employees||{}).eTasha;
     S.isOwner=false; S.myUserId=e?e.userId:"demo-u2"; S.myEmail=null;
     toast("Now seeing what "+(e?e.name.split(" ")[0]:"a crew member")+" sees on her phone");
   } else {
@@ -2869,22 +3002,14 @@ function exitDemo(){ location.href=location.pathname; }
 
 wireGate();
 switchGateTab(/[?&]register\b/.test(location.search) ? "register" : "login");
-function fillDemoLogin(kind){
-  switchGateTab("login");
-  $("#gateLoginEmail").value = kind==="cleaning" ? "cleaning" : "demo";
-  $("#gateLoginPassword").value = "demo";
-  $("#gateLoginBtn").focus();
-}
-$("#demoFillBtn").addEventListener("click",()=>fillDemoLogin("contractor"));
 showGate();
-// A link to /app?demo (or ?demo=cleaning) opens the sign-in page with the demo login filled in.
-{ const m=location.search.match(/[?&]demo(?:=([a-z]+))?/); if (m) fillDemoLogin(m[1]); }
 
 $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
     phone=$("#bizPhone").value.trim(), city=$("#bizCity").value.trim(), state=$("#bizState").value.trim(),
     description=$("#bizDescription").value.trim();
   if (!name) return bizMsg("Enter your business name.");
+  if (!CATEGORIES.includes(category)) return bizMsg("Choose your type of business. It sets up the right tools for your work.");
   try {
     const db=firebase.firestore();
     const similar = await findSimilarBusiness(name);
