@@ -81,7 +81,7 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
   const place = [b.city, b.state].filter(Boolean).join(", ");
   await alertAdmin(
     `Approve on Dazift: ${b.name || "new business"}`, "A business is waiting for your approval",
-    [["Business", b.name], ["Type", b.category], ["Location", place], ["Phone", b.phone], ["Owner email", (b.ownerEmails || [])[0]], ["About", b.description], ["Submitted", when(b.createdAt)]],
+    [["Business", b.name], ["Type", b.category], ["Location", place], ["Phone", b.phone], ["Business email", b.email], ["Owner email", (b.ownerEmails || [])[0]], ["About", b.description], ["Submitted", when(b.createdAt)]],
     "They can't use Dazift until you approve them in Platform Admin.",
     "Approve: " + (b.name || "new business"), [b.category, place].filter(Boolean).join(" · ") || "Waiting for your approval");
 });

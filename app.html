@@ -340,6 +340,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <div class="gate-panel">
     <h1>Set up your business</h1>
     <p>We didn't find a business linked to your account yet. Register it below — or if you're joining an existing team, ask the owner to add you on their Team tab instead.</p>
+    <p class="kv" id="bizWho">Signed in as <b id="bizWhoEmail"></b>. Not you? <a href="#" onclick="signOutApp();return false">Sign out</a></p>
     <div class="gate-form">
       <label class="f">Business name<input id="bizName" type="text" placeholder="e.g. Stanfill Elite Clean Pros"></label>
       <label class="f">Type of business
@@ -357,13 +358,15 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
           <option>Other</option>
         </select>
       </label>
-      <label class="f">Phone<input id="bizPhone" type="tel"></label>
+      <label class="f">Business email<input id="bizEmail" type="email" autocomplete="email" placeholder="you@yourbusiness.com"></label>
+      <label class="f">Phone<input id="bizPhone" type="tel" autocomplete="tel"></label>
       <div class="row">
         <label class="f grow">City<input id="bizCity" type="text"></label>
         <label class="f" style="width:80px">State<input id="bizState" type="text" maxlength="2" placeholder="TN"></label>
       </div>
       <label class="f">Short description<textarea id="bizDescription" placeholder="What you do, and for whom"></textarea></label>
       <button class="btn primary" id="bizRegBtn">Create my business</button>
+      <button class="btn ghost" type="button" onclick="signOutApp()">Sign out</button>
     </div>
     <div class="gate-msg" id="bizMsg"></div>
   </div>
@@ -2726,9 +2729,12 @@ function showVerify(user){
 }
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(category, bizName){
+function showBizOnboard(category, bizName, email, phone){
+  $("#bizWhoEmail").textContent=S.myEmail||email||"";
   if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
   if (bizName && !$("#bizName").value) $("#bizName").value=bizName;
+  if (email && !$("#bizEmail").value) $("#bizEmail").value=email;
+  if (phone && !$("#bizPhone").value) $("#bizPhone").value=phone;
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showPendingApproval(biz){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
@@ -3320,8 +3326,9 @@ showGate();
 $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
     phone=$("#bizPhone").value.trim(), city=$("#bizCity").value.trim(), state=$("#bizState").value.trim(),
-    description=$("#bizDescription").value.trim();
+    description=$("#bizDescription").value.trim(), email=$("#bizEmail").value.trim().toLowerCase();
   if (!name) return bizMsg("Enter your business name.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bizMsg("Enter your business email, so we can reach you about your account.");
   if (!CATEGORIES.includes(category)) return bizMsg("Choose your type of business. It sets up the right tools for your work.");
   try {
     const db=firebase.firestore();
@@ -3335,7 +3342,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     try { taken = (await db.doc("businesses/"+id0).get()).exists; } catch(e){ taken=true; }   // someone else's business isn't readable
     const id = taken ? (id0+"-"+Date.now().toString(36)) : id0;
     const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
-    const data={name,category,phone,phoneNorm:normPhone(phone),city,state,description,
+    const data={name,category,email,phone,phoneNorm:normPhone(phone),city,state,description,
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
@@ -3374,7 +3381,7 @@ async function routeUser(user){
     }
     else if (acct.role==="crew" && !user.emailVerified) showVerify(user);
     else if (acct.role==="crew") showCrewWaiting(user.email);
-    else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName);
+    else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName, acct.email||user.email, acct.phone);
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
