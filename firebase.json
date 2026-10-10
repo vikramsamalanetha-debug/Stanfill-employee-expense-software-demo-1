@@ -5,5 +5,8 @@
       "codebase": "alerts",
       "runtime": "nodejs22"
     }
-  ]
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
 }

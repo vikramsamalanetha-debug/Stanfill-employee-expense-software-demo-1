@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Invoice</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<!-- A client's view of one invoice, opened from the link the business sent.
+     Dazift never takes payments: "Pay online" goes to the business's own payment page.
+     A product of LIT America (www.litamerica.net). -->
+<style>
+:root{--bg:#F7F6F3;--ink:#1D1B18;--muted:#6A655D;--line:#E3E0D9;--primary:#D9480F;--ok:#2F8A4E;--danger:#B42318;--sun:#F2C230;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Nunito Sans","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:28px 16px 48px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:16px}
+.due{font:750 15px var(--display)}
+.due b{font-size:22px}
+.btn{border:1px solid var(--line);background:#fff;padding:10px 18px;border-radius:999px;font-weight:800;cursor:pointer;text-decoration:none;color:var(--ink);font-size:15px;display:inline-flex;align-items:center;gap:6px}
+.btn.pay{background:var(--primary);border-color:var(--primary);color:#fff}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.doc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:32px}
+.ih{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.ibiz{font:750 24px var(--display);letter-spacing:-.01em}
+.kv{color:var(--muted)}
+.inum{text-align:right;font-weight:700}
+.it{font:750 28px var(--display);letter-spacing:-.01em}
+.stamp{display:inline-block;margin-top:6px;border:2px solid var(--ok);color:var(--ok);border-radius:6px;padding:2px 10px;font-weight:800;letter-spacing:.1em}
+.stamp.void{border-color:var(--danger);color:var(--danger)}
+.imeta{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:18px 0}
+.imeta>div{display:grid;gap:1px}
+.imeta>div:last-child{text-align:right}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--ink)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tot{margin:16px 0 0 auto;max-width:320px;display:grid;gap:4px}
+.tot div{display:flex;justify-content:space-between;gap:14px}
+.tot .t{border-top:1px solid var(--line);padding-top:4px;font-weight:800}
+.tot .dueRow{background:var(--bg);border-radius:8px;padding:8px 10px;font-size:17px;font-weight:800;margin-top:4px}
+.note{margin:18px 0 0;white-space:pre-wrap}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin:20px 0 0}
+.foot a{color:inherit}
+.msg{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center}
+@media (max-width:560px){ .doc{padding:20px} .imeta>div:last-child,.inum{text-align:left} thead{display:none}
+  tr{display:grid;grid-template-columns:1fr auto;border-bottom:1px solid var(--line);padding:8px 0} td{border:0;padding:1px 0} td.q,td.p{display:none} }
+@media print{ body{background:#fff} .bar,.noprint{display:none!important} .wrap{padding:0;max-width:none} .doc{border:0;padding:0} }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="msg">Loading your invoice…</div></div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+const root=document.getElementById("root");
+const money=n=>{ const v=Number(n)||0; return (v<0?"−$":"$")+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+const niceDate=s=>{ if(!s) return ""; const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); };
+function el(tag,props,...kids){ const n=document.createElement(tag);
+  for (const [k,v] of Object.entries(props||{})){ if(v==null||v===false) continue; if(k==="class") n.className=v; else if(k.startsWith("on")) n.addEventListener(k.slice(2),v); else n.setAttribute(k,v); }
+  kids.flat().forEach(c=>{ if(c!=null&&c!==false) n.append(c instanceof Node?c:document.createTextNode(String(c))); }); return n; }
+function show(msg){ root.replaceChildren(el("div",{class:"msg"},msg)); }
+const key=new URLSearchParams(location.search).get("k");
+if (!key || !/^[A-Za-z0-9_-]{6,64}$/.test(key)) return show("This invoice link isn't complete. Check the link you were sent, or contact the business.");
+let db;
+// Same project settings as firebase-config.js (that file also starts sign-in, which this page doesn't need).
+const firebaseConfig={apiKey:"AIzaSyDYko5NB-FkjcBpc3fre-3oVbhiF6KKdiw",authDomain:"stanfill-clean-pros.firebaseapp.com",projectId:"stanfill-clean-pros",
+  storageBucket:"stanfill-clean-pros.firebasestorage.app",messagingSenderId:"711004999611",appId:"1:711004999611:web:061f428e7d8e679e43be9e"};
+try { firebase.initializeApp(firebaseConfig); db=firebase.firestore(); } catch(e){ return show("Couldn't load the invoice. Please try again in a moment."); }
+db.doc("publicInvoices/"+key).get().then(snap=>{
+  if (!snap.exists) return show("We couldn't find this invoice. It may have been replaced; contact the business for a new link.");
+  const p=snap.data(); render(p);
+  // Let the business know their client opened it (once).
+  if (!p.viewedAt && p.status!=="void" && !/[?&]preview\b/.test(location.search)) db.doc("publicInvoices/"+key).update({viewedAt:Date.now()}).catch(()=>{});
+}).catch(()=>show("Couldn't load the invoice. Check your connection and try again."));
+
+function render(p){
+  document.title=(p.kind==="deposit"?"Deposit invoice ":"Invoice ")+(p.number||"")+" · "+(p.biz&&p.biz.name||"");
+  const open=p.status==="open", amt=p.dueNowBal;
+  const bar=el("div",{class:"bar"},
+    el("div",{class:"due"},p.status==="paid"?"Paid in full. Thank you!":p.status==="void"?"This invoice was cancelled.":["Amount due ",el("b",{},money(amt)),p.dueDate&&p.terms!=="Due on receipt"?" by "+niceDate(p.dueDate):""]),
+    el("div",{class:"btns"},
+      open&&amt>0&&p.payLink&&/^https:\/\//i.test(p.payLink)?el("a",{class:"btn pay",href:p.payLink,rel:"noopener nofollow"},"Pay online"):null,
+      el("button",{class:"btn",onclick:()=>window.print()},"Print or save PDF")));
+  const b=p.biz||{}, c=p.client||{};
+  const doc=el("div",{class:"doc"});
+  doc.append(el("div",{class:"ih"},
+    el("div",{},el("div",{class:"ibiz"},b.name||""),el("div",{class:"kv"},[b.address,[b.city,b.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")),
+      el("div",{class:"kv"},[b.phone,b.email].filter(Boolean).join(" · "))),
+    el("div",{class:"inum"},el("div",{class:"it"},p.kind==="deposit"?"Deposit invoice":"Invoice"),el("div",{},p.number||""),
+      p.status==="paid"?el("div",{class:"stamp"},"PAID"):p.status==="void"?el("div",{class:"stamp void"},"VOID"):null)));
+  doc.append(el("div",{class:"imeta"},
+    el("div",{},el("span",{class:"kv"},"Bill to"),el("b",{},c.name||""),c.address?el("div",{},c.address):null),
+    el("div",{},el("span",{class:"kv"},"Invoice date"),el("b",{},niceDate(p.issueDate)),el("span",{class:"kv"},"Due"),el("b",{},p.terms==="Due on receipt"?"On receipt":niceDate(p.dueDate)))));
+  const tb=el("tbody"); (p.lines||[]).forEach(l=>tb.append(el("tr",{},el("td",{},l.desc),el("td",{class:"num q"},String(l.qty)),el("td",{class:"num p"},money(l.unitPrice)),el("td",{class:"num"},money(l.amount)))));
+  doc.append(el("table",{},el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{class:"num"},"Qty"),el("th",{class:"num"},"Price"),el("th",{class:"num"},"Amount"))),tb));
+  const T=el("div",{class:"tot"}); const L=(a,v,c2)=>T.append(el("div",{class:c2||""},el("span",{},a),el("b",{},v)));
+  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L("Sales tax ("+p.taxRate+"%)",money(p.tax));
+  L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
+  if (p.paid) L("Paid","−"+money(p.paid)); L(p.status==="paid"?"Balance":"Amount due",money(p.status==="paid"?0:amt),"dueRow");
+  doc.append(T);
+  if (p.notes) doc.append(el("p",{class:"note"},p.notes));
+  if (open && p.payNote) doc.append(el("p",{class:"note"},el("b",{},"How to pay: "),p.payNote));
+  if (p.footer) doc.append(el("p",{class:"foot"},p.footer));
+  root.replaceChildren(bar,doc,
+    el("p",{class:"foot noprint"},"Questions about this invoice? Contact "+(b.name||"the business")+(b.phone?" at "+b.phone:"")+(b.email?" or "+b.email:"")+"."),
+    el("p",{class:"foot"},"Sent with Dazift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
+}
+})();
+</script>
+</body>
+</html>

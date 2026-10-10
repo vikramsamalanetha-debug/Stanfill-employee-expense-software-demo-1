@@ -43,7 +43,8 @@ footer b a{font-weight:800}
   <ul>
     <li><b>Account details:</b> name, email address, phone number and password (passwords are handled by Google Firebase Authentication; we never see them).</li>
     <li><b>Business details:</b> business name, trade, city, phone, and settings such as alert contacts.</li>
-    <li><b>Work records:</b> jobs, booking requests, client names, addresses and phone numbers, prices, payment status, expenses, receipt photos, and rewards points.</li>
+    <li><b>Work records:</b> jobs, booking requests, client names, addresses and phone numbers, prices, payment status, job costs such as materials, expenses, receipt photos, and rewards points.</li>
+    <li><b>Invoices:</b> the client’s name, email, phone and billing address, the invoice lines and totals, and payments the business records. Dazift does not process payments or store card or bank details.</li>
     <li><b>Location during shifts:</b> when a crew member starts a shift, their device’s location is shared with their business until they end the shift. In the phone app this can continue while the app is in the background during a shift. Location is not collected when the person is off shift.</li>
     <li><b>Shift log:</b> each shift’s start and end time, a location point about every five minutes during the shift, and where the device was when a job was started or finished. The business’s owners and that crew member can see it. Owners use it to check hours against pay, and can correct a shift’s times; a correction is recorded with the original times.</li>
     <li><b>Device information:</b> a notification token so owners can receive booking alerts on their phone, and basic technical logs needed to keep the service running.</li>
@@ -53,6 +54,7 @@ footer b a{font-weight:800}
   <ul>
     <li>To run the service: show the job board, crew shifts, books and insights to the right people in each business.</li>
     <li>To send notices the business has turned on, such as booking-request emails, texts and phone notifications.</li>
+    <li>To email invoices and overdue reminders to a business’s clients when the business asks us to.</li>
     <li>To keep accounts secure, prevent abuse, and provide support.</li>
   </ul>
   <p>We do not sell personal information, and we do not use it for advertising.</p>
@@ -60,6 +62,7 @@ footer b a{font-weight:800}
   <h2>Who can see it</h2>
   <ul>
     <li><b>Inside a business:</b> owners can see everything in their business, including the shift log. Crew members see only their own jobs, their own shift and their own shift log; their location is visible to the business owners while they’re on shift.</li>
+    <li><b>A business’s clients:</b> each invoice has a private link the business sends to its client. Anyone with that link can see that one invoice, and the business can see when it was first opened.</li>
     <li><b>Service providers:</b> we store data with Google Firebase (Google Cloud) and use providers that deliver email, text messages and phone notifications. They process data only to provide those services to us.</li>
     <li><b>When required:</b> we may disclose information if the law requires it, or to protect people’s safety or the security of the service.</li>
   </ul>
