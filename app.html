@@ -180,6 +180,60 @@ tr.inc td.num{color:var(--ok)}
 .expform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .expform .full{grid-column:1/-1}
 
+/* job costs */
+.jobmoney{display:flex;gap:14px;flex-wrap:wrap;width:100%;margin:6px 0 2px;padding:6px 10px;border:1px dashed var(--line);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;font-size:13px;color:var(--muted);text-align:left}
+.jobmoney b{color:var(--ink);font-variant-numeric:tabular-nums}
+.jobmoney b.neg{color:var(--danger)}
+.jobmoney:hover{border-color:var(--primary)}
+.invpill{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:6px;padding:5px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-weight:700;font-size:13px}
+.invpill:hover{border-color:var(--primary)}
+.costlist{display:grid;gap:2px}
+.costrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.costrow .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.labor{background:var(--bg);border-radius:var(--radius);padding:10px 12px}
+.labor summary{cursor:pointer;font-weight:700}
+.addcost{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px 12px;margin:0}
+.addcost legend{font-weight:800;padding:0 4px}
+/* invoices */
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--bg)}
+table.lines td{padding:6px 4px;vertical-align:middle}
+table.lines input{width:100%}
+table.lines td.qty{width:72px} table.lines td.price{width:110px} table.lines td.tx{width:40px;text-align:center}
+table.lines .kv{font-size:12px;margin-top:2px}
+.invtot{margin:12px 0 0 auto;max-width:340px}
+.jobpick{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-top:8px;display:grid;gap:6px;max-height:240px;overflow:auto}
+.sendgrid{display:grid;gap:10px;margin-top:12px}
+.sendopt{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.sendopt input[type=email]{flex:1;min-width:180px}
+.linkbox input{width:100%;font-size:13px;background:var(--bg)}
+@media (max-width:620px){ table.lines thead{display:none} table.lines tr{display:grid;grid-template-columns:1fr 70px 96px 32px;gap:4px;border-bottom:1px solid var(--line);padding:6px 0}
+  table.lines td{border:0;padding:2px} table.lines td:first-child{grid-column:1/-1} table.lines td.num{align-self:center} table.lines td.tx{display:none} }
+.invdoc{background:#fff;color:#1D1B18;border:1px solid var(--line);border-radius:var(--radius);padding:28px;font-size:14px;max-width:760px;margin:auto}
+.invdoc .ih{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid #1D1B18;padding-bottom:14px}
+.invdoc .ibiz{font:750 22px var(--display)}
+.invdoc .inum{text-align:right;font-weight:700}
+.invdoc .it{font:750 26px var(--display);letter-spacing:-.01em}
+.invdoc .istamp{display:inline-block;margin-top:6px;border:2px solid var(--ok);color:var(--ok);border-radius:6px;padding:2px 10px;font-weight:800;letter-spacing:.1em}
+.invdoc .istamp.void{border-color:var(--danger);color:var(--danger)}
+.invdoc .imeta{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:16px 0}
+.invdoc .imeta>div{display:grid;gap:1px}
+.invdoc .imeta>div:last-child{text-align:right}
+.invdoc .ilines th{border-bottom:1px solid #1D1B18;color:#1D1B18}
+.invdoc .itot{margin:14px 0 0 auto;max-width:300px;display:grid;gap:3px}
+.invdoc .itot div{display:flex;justify-content:space-between;gap:14px}
+.invdoc .itot .t{border-top:1px solid var(--line);padding-top:4px;font-weight:800}
+.invdoc .itot .due{background:var(--bg);border-radius:8px;padding:6px 8px;font-size:16px;margin-top:4px}
+.invdoc .inote{margin:16px 0 0;white-space:pre-wrap}
+.invdoc .ifoot,#printArea>.ifoot{color:#6A655D;font-size:12px;margin:18px 0 0;text-align:center}
+#printArea{display:none}
+@media print{
+  body.print-inv>*{display:none!important}
+  body.print-inv>#printArea{display:block!important}
+  body.print-inv{background:#fff}
+  #printArea .invdoc{border:0;padding:0;max-width:none}
+}
+
 dialog{border:0;border-radius:var(--radius-lg);padding:0;background:var(--surface);color:var(--ink);width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
 dialog.wide{width:min(720px,calc(100vw - 24px))}
 .shiftrow{border-top:1px solid var(--line);padding:10px 0}
@@ -467,6 +521,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="rewards" aria-selected="false" data-owner data-feature="rewards">Rewards</button>
     <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
+    <button role="tab" data-tab="invoices" aria-selected="false" data-owner>Invoices</button>
     <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
     <button role="tab" data-tab="books" aria-selected="false" data-owner>Books</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
@@ -477,6 +532,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
 <dialog id="empDlg"><form method="dialog" id="empForm"></form></dialog>
+<dialog id="invDlg" class="wide"><div id="invBody" style="padding:20px"></div></dialog>
 <dialog id="shiftDlg" class="wide"><div id="shiftDlgBody" style="padding:20px"></div></dialog>
 <dialog id="assignDlg"><div id="assignDlgBody" style="padding:20px;"></div></dialog>
 <dialog id="pendingDlg">
@@ -563,7 +619,7 @@ function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-
 let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices"];
 // Firestore sentinels (server time, delete field) have no meaning in the on-device store.
 function localClean(data){
   const out={}; const FV=firebase.firestore.FieldValue;
@@ -652,7 +708,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -674,7 +730,7 @@ function draw(){
   const tag=$("#appTagline"); if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
   const teamTab=document.querySelector('.tabs button[data-tab="team"]'); if (teamTab) teamTab.textContent = S.isOwner ? "Team & locations" : "My shift";
   document.querySelectorAll(".tabs button[data-feature=rewards]").forEach(b=>{ b.hidden = !S.isOwner || !hasRewards(); });
-  if (!S.isOwner && ["requests","rewards","insights","books","payroll"].includes(S.tab)) S.tab="board";
+  if (!S.isOwner && ["requests","rewards","insights","books","payroll","invoices"].includes(S.tab)) S.tab="board";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
   if (S.tab==="rewards" && !hasRewards()) S.tab="board";
   drawWho(); drawBanners();
@@ -682,6 +738,7 @@ function draw(){
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="projects") v.append(viewProjects());
   else if (S.tab==="payroll") v.append(viewPayroll());
+  else if (S.tab==="invoices") v.append(viewInvoices());
   else if (S.tab==="requests") v.append(viewRequests());
   else if (S.tab==="rewards") v.append(viewRewards());
   else if (S.tab==="board") v.append(viewBoard());
@@ -911,12 +968,12 @@ function settingsBusiness(){
 function viewSettings(){
   const frag=document.createDocumentFragment();
   const secs=S.isOwner&&S.business
-    ?[["business","Business"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
+    ?[["business","Business"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
     ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
-  const body={business:settingsBusiness,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  const body={business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
   frag.append(body());
   return frag;
 }
@@ -1269,6 +1326,14 @@ function jobCard(j){
     S.isOwner ? el("span",{class:"price"},money(j.price)) : null));
   if (j.phone) card.append(el("div",{class:"kv"},"Client phone: ", el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)));
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
+  // Costs: owners see profit; crew see the materials logged on their job.
+  if (S.isOwner){
+    const jm=jobMoney(j);
+    if (jm.materials+jm.linked>0 || st==="done") card.append(el("button",{type:"button",class:"jobmoney",onclick:()=>openCosts(j),title:"Costs and profit"},
+      el("span",{},"Costs ",el("b",{},money(jm.costs))),el("span",{},"Profit ",el("b",{class:jm.profit<0?"neg":""},money(jm.profit)))));
+  } else if (jobCosts(j).length){
+    card.append(el("div",{class:"kv"},"Materials logged: "+jobCosts(j).length+" item"+(jobCosts(j).length===1?"":"s")));
+  }
 
   if (st!=="done" && !S.isOwner){
     // Crew see who they're working with, but only the owner changes who's on a job.
@@ -1295,14 +1360,21 @@ function jobCard(j){
     const names=jobCrew(j).map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
     card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},names.length?names.join(", "):"—")),
       el("span",{class:"grow"}), S.isOwner ? el("span",{class:"paid "+(j.paid?"yes":"no")}, j.paid?"Paid":"Unpaid") : null));
+    const inv=S.isOwner&&invoiceFor(j.id);
+    if (inv){ const s2=invStatus(inv); card.append(el("button",{type:"button",class:"invpill",onclick:()=>openInvoice(inv)},el("span",{},inv.number||"Draft invoice"),el("span",{class:"pill "+s2.cls},s2.label))); }
   }
   const acts=el("div",{class:"acts"});
   if (st==="assigned") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
   if (st==="in_progress") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"done")},"Mark done"));
   if (st==="done" && S.isOwner){
-    acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
+    const inv=invoiceFor(j.id);
+    if (!inv && !j.paid && (Number(j.price)||0)>0) acts.append(el("button",{class:"btn small primary",onclick:()=>openInvoice(invoiceFromJobs([j]))},"Invoice"));
+    if (inv && inv.status==="sent" && invTotals(inv).balance>0.004) acts.append(el("button",{class:"btn small",onclick:()=>openPayment(JSON.parse(JSON.stringify(inv)))},"Record payment"));
+    else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
     acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
   }
+  if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"+ Materials"));
+  if (S.isOwner && !(jobMoney(j).materials+jobMoney(j).linked>0 || st==="done")) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"Costs"));
   if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
   card.append(acts);
   return card;
@@ -1510,7 +1582,7 @@ function projectNumbers(p){
   const done=jobs.filter(j=>j.status==="done");
   const billed=done.reduce((n,j)=>n+(Number(j.price)||0),0);
   const collected=done.filter(j=>j.paid).reduce((n,j)=>n+(Number(j.price)||0),0);
-  const costs=S.expenses.filter(x=>x.projectId===p.id).reduce((n,x)=>n+(Number(x.amount)||0),0);
+  const costs=allExpenses().filter(x=>x.projectId===p.id).reduce((n,x)=>n+(Number(x.amount)||0),0);
   const contract=Number(p.contract)||0;
   return {jobs,done,billed,collected,costs,contract,margin:contract-costs,pct:jobs.length?done.length/jobs.length:0};
 }
@@ -1549,7 +1621,7 @@ function viewProjects(){
       el("div",{class:"progress",role:"progressbar","aria-valuenow":String(Math.round(k.pct*100)),"aria-valuemin":"0","aria-valuemax":"100"},el("i",{style:"width:"+(k.pct*100).toFixed(1)+"%"}))));
     if (S.isOwner) card.append(el("div",{class:"mini"},
       el("div",{},"Contract",el("b",{},money(k.contract))),
-      el("div",{},"Billed",el("b",{},money(k.billed))),
+      el("div",{},"Invoiced",el("b",{},money(S.invoices.filter(i=>i.projectId===p.id&&i.status==="sent"&&i.kind!=="deposit").reduce((n,i)=>n+invTotals(i).total,0)))),
       el("div",{},"Costs so far",el("b",{},money(k.costs)))));
     if (S.isOwner && k.contract) card.append(el("div",{class:"kv"},"Margin if costs stop here: ",el("b",{style:"color:"+(k.margin>=0?"var(--ok)":"var(--danger)")},money(k.margin)),
       k.contract?" ("+Math.round(k.margin/k.contract*100)+"%)":""));
@@ -1566,6 +1638,7 @@ function viewProjects(){
     card.append(phases);
     card.append(el("div",{class:"acts",style:"display:flex;gap:6px;flex-wrap:wrap"},
       S.isOwner?el("button",{class:"btn small primary",onclick:()=>openJob(null,{projectId:p.id,client:p.client||p.name,address:p.address||"",assigneeId:p.leadId||null})},"Add phase"):null,
+      S.isOwner?el("button",{class:"btn small",onclick:()=>openProjectBilling(p)},"Bill"):null,
       el("button",{class:"btn small",onclick:()=>{S.projFilter=p.id;S.who="all";S.range="all";S.tab="board";render();}},"See on board"),
       S.isOwner?el("button",{class:"btn small ghost",onclick:()=>openProject(p)},"Edit"):null));
     grid.append(card);
@@ -1896,11 +1969,14 @@ async function uploadReceipt(file, businessId){
 
 function monthRows(){
   const mo=S.month;
-  const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>({
-    kind:"income", id:j.id, date:j.date, cat:j.service||SERVICES[0], desc:j.client+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid}));
+  const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>{ const inv=invoiceFor(j.id); return {
+    kind:"income", id:j.id, date:j.date, cat:j.service||SERVICES[0], desc:j.client+(inv&&inv.number?" · "+inv.number:"")+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid, inv}; });
+  // Billed materials and fees on invoices are income on top of the job prices. Deposits and sales tax are not.
+  S.invoices.filter(i=>i.status==="sent"&&(i.issueDate||"").startsWith(mo)).forEach(i=>{ const t=invTotals(i); if (Math.abs(t.extras)<0.005) return;
+    income.push({kind:"income",id:i.id,date:i.issueDate,cat:"Invoice extras",desc:(i.number||"")+" · "+((i.client||{}).name||"")+" · billed materials and fees"+(t.balance>0.004?" (unpaid)":""),amount:t.extras,paid:t.balance<=0.004,invRow:i}); });
   const pName=id=>{ const p=id&&S.projects.find(x=>x.id===id); return p?" · "+p.name:""; };
-  const exp=S.expenses.filter(x=>(x.date||"").startsWith(mo)).map(x=>({
-    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
+  const exp=allExpenses().filter(x=>(x.date||"").startsWith(mo)).map(x=>({
+    kind:"expense", id:x.id, fromJob:x.fromJob||null, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
     receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
 }
@@ -1915,8 +1991,10 @@ function viewBooks(){
     el("span",{class:"grow"}),
     el("button",{class:"btn",onclick:exportCsv},"Export month as CSV")));
 
+  const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&(i.issueDate||"").startsWith(S.month)).reduce((n,i)=>n+invTotals(i).tax,0));
+  if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},"Sales tax on this month's invoices: ",el("b",{},money(salesTax)),". It isn't counted as income. Set it aside for the state.")));
   frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Money in (finished jobs)"),el("div",{class:"v"},money(inc))),
+    el("div",{class:"stat"},el("div",{class:"l"},"Money in (jobs and invoices)"),el("div",{class:"v"},money(inc))),
     el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
     el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net))),
     el("div",{class:"stat"},el("div",{class:"l"},"Still owed by clients"),el("div",{class:"v"},money(unpaid)))));
@@ -1994,8 +2072,10 @@ function viewBooks(){
       el("td",{},r.desc||"—", r.receiptUrl ? el("a",{href:r.receiptUrl,target:"_blank",rel:"noopener",class:"kv",style:"display:block;margin-top:2px;"},"📎 Receipt") : null),
       el("td",{class:"num"},(r.kind==="income"?"+":"−")+money(r.amount)),
       el("td",{}, r.kind==="expense"
-        ? el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete")
-        : (!r.paid ? el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid") : el("span",{class:"paid yes"},"Paid"))))));
+        ? (r.fromJob ? el("button",{class:"btn small ghost",onclick:()=>{ const j=S.jobs.find(x=>x.id===r.fromJob); if(j) openCosts(j); }},"On job")
+          : el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete"))
+        : r.invRow ? el("button",{class:"btn small ghost",onclick:()=>openInvoice(r.invRow)},r.paid?"Paid":"Open")
+        : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
     tp.append(el("div",{class:"tablewrap"},el("table",{},
       el("thead",{},el("tr",{},el("th",{},"Date"),el("th",{},"Category"),el("th",{},"Details"),el("th",{class:"num"},"Amount"),el("th",{}))),tbody)));
   }
@@ -2014,6 +2094,635 @@ async function exportCsv(){
     document.body.append(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   } catch(e){ toast("The download didn’t start."); }
+}
+
+/* ---- job costs ----
+   Materials and other costs live on the job itself, so the crew can log what they bought on site.
+   Owners also see subcontractor and hired-help payments linked to the job (kept in the books)
+   and an estimate of the crew's labor from each person's pay rule. Crew never see pay or prices. */
+const COST_KINDS=[
+  {id:"material",label:"Materials",cat:"Materials"},
+  {id:"equipment",label:"Equipment & rentals",cat:"Tool rental"},
+  {id:"permit",label:"Permits & fees",cat:"Permits & fees"},
+  {id:"disposal",label:"Dump & disposal",cat:"Other"},
+  {id:"travel",label:"Fuel & travel",cat:"Fuel & mileage"},
+  {id:"other",label:"Other",cat:"Other"}];
+const OWNER_COST_KINDS=[{id:"sub",label:"Subcontractor",cat:"Subcontractors"},{id:"help",label:"Hired help (paid by the job)",cat:"Labor (hired help)"}];
+function costKind(id){
+  const k=COST_KINDS.find(x=>x.id===id)||OWNER_COST_KINDS.find(x=>x.id===id)||COST_KINDS[COST_KINDS.length-1];
+  if (k.id==="material" && !TRADE_CATS.includes((S.business||{}).category)) return {...k,label:"Supplies & materials",cat:"Supplies"};
+  return k;
+}
+const jobCosts = j => Array.isArray(j&&j.costs) ? j.costs : [];
+const costAmt = c => r2((Number(c.qty)||1)*(Number(c.unitCost)||0));
+const jobLinkedExp = j => S.expenses.filter(x=>x.jobId===j.id);
+// Hours each person spent on the job: the owner's number if set, otherwise start to finish.
+function jobHours(j){
+  if (Number(j.laborHours)>0) return Number(j.laborHours);
+  return (j.startedAt&&j.completedAt&&j.completedAt>j.startedAt) ? Math.min(16,(j.completedAt-j.startedAt)/36e5) : 0;
+}
+function laborFor(j){
+  const n=Math.max(1,jobCrew(j).length), h=jobHours(j);
+  return jobCrew(j).map(empById).filter(e=>e && !e.companyId).map(e=>{
+    const r=payRateFor(e.id); if (!r) return {e,amt:0,how:"No pay rule set"};
+    const rate=Number(r.rate)||0; let amt=0, how="";
+    if (r.payType==="hourly"){ amt=h*rate; how=h?hrs(h)+" × "+money(rate):"No time on this job yet"; }
+    else if (r.payType==="perjob"){ amt=rate; how="Per job"; }
+    else if (r.payType==="percent"){ amt=(Number(j.price)||0)/n*rate/100; how=rate+"% of their share"; }
+    else if (r.payType==="day"){ amt=rate; how="Day rate"; }
+    else how="Paid by "+((PAY_TYPES.find(t=>t.id===r.payType)||{}).label||"another rule").toLowerCase()+", not per job";
+    if (amt && r.cls==="w2"){ amt*=1.0765; how+=" + employer taxes"; }
+    return {e,amt:r2(amt),how};
+  });
+}
+function jobMoney(j){
+  const materials=r2(jobCosts(j).reduce((n,c)=>n+(Number(c.amount)||costAmt(c)),0));
+  const linked=r2(jobLinkedExp(j).reduce((n,x)=>n+(Number(x.amount)||0),0));
+  const labor=r2(laborFor(j).reduce((n,x)=>n+x.amt,0));
+  const price=Number(j.price)||0, costs=r2(materials+linked+labor), profit=r2(price-costs);
+  return {price,materials,linked,labor,costs,profit,margin:price?profit/price*100:0};
+}
+// Job costs count as expenses everywhere money is added up (books, insights, project costs).
+function jobCostExpenses(){
+  const out=[];
+  S.jobs.forEach(j=>jobCosts(j).forEach(c=>out.push({id:"jc:"+j.id+":"+c.id,fromJob:j.id,costId:c.id,date:c.date||j.date,
+    amount:Number(c.amount)||costAmt(c),category:costKind(c.kind).cat,vendor:(j.client||"Job")+" · "+(c.desc||costKind(c.kind).label),projectId:j.projectId||null,jobId:j.id})));
+  return out;
+}
+const allExpenses = () => S.expenses.concat(jobCostExpenses());
+
+function openCosts(j){
+  const f=$("#jobForm"); f.replaceChildren();
+  const own=S.isOwner, mine=me();
+  const m=own?jobMoney(j):null;
+  f.append(el("h2",{},own?"Costs and profit":"Materials for this job"),
+    el("p",{class:"kv full",style:"margin:-6px 0 0"},(j.service||"Job")+" · "+(j.client||"")+(j.date?" · "+niceDate(j.date):"")));
+  if (own) f.append(el("div",{class:"mini full"},
+    el("div",{},"Price",el("b",{},money(m.price))),
+    el("div",{},"Costs",el("b",{},money(m.costs))),
+    el("div",{},"Profit",el("b",{style:"color:"+(m.profit>=0?"var(--ok)":"var(--danger)")},money(m.profit)+(m.price?" ("+Math.round(m.margin)+"%)":"")))));
+  const list=el("div",{class:"full costlist"});
+  const lines=jobCosts(j);
+  if (!lines.length && !(own && jobLinkedExp(j).length)) list.append(el("div",{class:"empty"},own?"No materials or other costs on this job yet.":"Nothing logged yet. Add what you bought for this job."));
+  lines.forEach(c=>{
+    const canDel = own || (c.by && c.by===S.myUserId);
+    list.append(el("div",{class:"costrow"},
+      el("div",{class:"grow"},el("b",{},c.desc||costKind(c.kind).label),
+        el("div",{class:"kv"},costKind(c.kind).label+((Number(c.qty)||1)!==1?" · "+c.qty+" × "+money(c.unitCost):"")+(c.byName?" · added by "+c.byName:"")+(c.date?" · "+niceDate(c.date):""),
+          own&&c.billable?el("span",{class:"pill ok",style:"margin-left:6px"},"Bill to client"+(Number(c.markup)?" +"+c.markup+"%":"")):null,
+          own&&c.invoiceId?el("span",{class:"pill",style:"margin-left:6px"},"On "+((S.invoices.find(i=>i.id===c.invoiceId)||{}).number||"an invoice")):null)),
+      el("b",{class:"num"},money(Number(c.amount)||costAmt(c))),
+      canDel&&!c.invoiceId?el("button",{type:"button",class:"btn small ghost danger","aria-label":"Remove "+(c.desc||"cost"),onclick:()=>{
+        const costs=jobCosts(j).filter(x=>x.id!==c.id); write(()=>Store.update("jobs",j.id,{costs}),"Removed"); openCosts({...j,costs}); }},"×"):null));
+  });
+  if (own) jobLinkedExp(j).forEach(x=>list.append(el("div",{class:"costrow"},
+    el("div",{class:"grow"},el("b",{},x.vendor||x.category),el("div",{class:"kv"},x.category+" · "+niceDate(x.date)+" · in the books")),
+    el("b",{class:"num"},money(x.amount)),
+    el("button",{type:"button",class:"btn small ghost danger","aria-label":"Remove",onclick:()=>{ if(confirm("Remove this from the job and the books?")){ write(()=>Store.del("expenses",x.id),"Removed"); setTimeout(()=>openCosts(S.jobs.find(y=>y.id===j.id)||j),150); } }},"×"))));
+  f.append(list);
+
+  if (own){
+    const lab=laborFor(j);
+    const box=el("details",{class:"full labor"},el("summary",{},"Crew labor (estimate) ",el("b",{},money(m.labor))));
+    if (!lab.length) box.append(el("div",{class:"kv"},"Nobody from your crew is on this job."));
+    lab.forEach(x=>box.append(el("div",{class:"costrow"},el("div",{class:"grow"},el("b",{},x.e.name),el("div",{class:"kv"},x.how)),el("b",{class:"num"},money(x.amt)))));
+    box.append(el("label",{class:"f",style:"margin-top:8px;max-width:260px"},"Hours each person worked (optional)",
+      el("input",{type:"number",min:"0",step:"0.25",inputmode:"decimal",value:j.laborHours||"",placeholder:jobHours(j)?String(Math.round(jobHours(j)*4)/4):"",
+        onchange:ev=>{ const v=Number(ev.target.value)||0; write(()=>Store.update("jobs",j.id,{laborHours:v||null}),"Hours saved"); openCosts({...j,laborHours:v||null}); }})),
+      el("p",{class:"kv",style:"margin:6px 0 0"},"From each person's pay rule. Only owners see this. Crew pay reaches the books when you record payroll, so it isn't added twice."));
+    f.append(box);
+  }
+
+  const kinds=own?[...COST_KINDS,...OWNER_COST_KINDS]:COST_KINDS;
+  const add=el("fieldset",{class:"full addcost"},el("legend",{},own?"Add a cost":"Add materials"));
+  const kindSel=el("select",{name:"kind"},kinds.map(k=>el("option",{value:k.id},costKind(k.id).label)));
+  const coSel=el("select",{name:"companyId"},el("option",{value:""},"Choose a subcontractor"),S.companies.map(c=>el("option",{value:c.id},c.name)));
+  const coWrap=el("label",{class:"f full hidden"},"Subcontractor",coSel);
+  const billWrap=el("div",{class:"row full"+(own?"":" hidden")},
+    el("label",{class:"row",style:"gap:8px;font-weight:400;color:var(--ink)"},el("input",{type:"checkbox",name:"billable",checked:!!(own && hasProjects()),style:"width:auto;margin:0"}),"Bill this to the client"),
+    el("label",{class:"f",style:"width:110px"},"Markup %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(invSettings().markup||0)})));
+  kindSel.onchange=()=>{ const k=kindSel.value; coWrap.classList.toggle("hidden",k!=="sub"); billWrap.classList.toggle("hidden",!own||k==="sub"||k==="help"); };
+  add.append(el("div",{class:"expform"},
+    el("label",{class:"f"},"Type",kindSel),
+    el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date&&j.date<=today()?j.date:today()})),
+    coWrap,
+    el("label",{class:"f full"},"What was it",el("input",{name:"desc",placeholder:hasProjects()?"2x4s and deck screws, Lowe’s":"Degreaser and microfiber cloths",autocomplete:"off"})),
+    el("label",{class:"f"},"Quantity",el("input",{name:"qty",type:"number",min:"0",step:"any",inputmode:"decimal",value:"1"})),
+    el("label",{class:"f"},"Cost each $",el("input",{name:"unitCost",type:"number",min:"0",step:"0.01",inputmode:"decimal",placeholder:"0.00"})),
+    billWrap,
+    el("div",{class:"full"},el("button",{type:"button",class:"btn primary",onclick:()=>{
+      const g=n=>add.querySelector("[name="+n+"]");
+      const qty=Number(g("qty").value)||1, unit=Number(g("unitCost").value);
+      if (!(unit>0)) return toast("Enter what it cost.");
+      const kind=kindSel.value, desc=g("desc").value.trim(), date=g("date").value||today(), amount=r2(qty*unit);
+      if (kind==="sub"||kind==="help"){
+        const co=S.companies.find(c=>c.id===coSel.value);
+        if (kind==="sub" && !co) return toast("Choose the subcontractor.");
+        const x={date,amount,category:costKind(kind).cat,vendor:(co?co.name+(desc?", ":""):"")+(desc||(kind==="help"?"Hired help":"")),jobId:j.id,createdAt:Date.now(),businessId:S.businessId};
+        if (j.projectId) x.projectId=j.projectId; if (co) x.companyId=co.id;
+        write(()=>Store.set("expenses",newId(),x),"Added to the job and the books");
+        setTimeout(()=>openCosts(S.jobs.find(y=>y.id===j.id)||j),150); return;
+      }
+      const line={id:newId(),kind,desc,qty,unitCost:r2(unit),amount,date,by:S.myUserId||null,byName:(mine&&mine.name)||(own?"Owner":""),at:Date.now()};
+      if (own && g("billable").checked){ line.billable=true; line.markup=Number(g("markup").value)||0; }
+      const costs=[...jobCosts(j),line];
+      write(()=>Store.update("jobs",j.id,{costs}),own?"Cost added":"Added. Thanks!");
+      openCosts({...j,costs});
+    }},own?"Add cost":"Add"))));
+  f.append(add);
+  f.append(el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Done")));
+  f.onsubmit=e=>e.preventDefault();
+  if (!$("#jobDlg").open) $("#jobDlg").showModal();
+}
+
+/* ---- invoices ----
+   Dazift writes the invoice, sends the link, tracks it and records payments.
+   It never takes or moves money: "Pay online" is the owner's own Stripe, Square or PayPal link.
+   Job prices stay the income in the books. Extra lines (billed materials, fees) add to income;
+   deposits are held and taken off later invoices, and retainage is just billed later. */
+const INV_TERMS=[["receipt","Due on receipt",0],["net7","Net 7",7],["net15","Net 15",15],["net30","Net 30",30]];
+const PAY_METHODS=["Cash","Check","Zelle","Venmo","Card","Bank transfer","Other"];
+function invSettings(){
+  const b=S.business||{};
+  return {terms:"receipt",taxRate:0,markup:0,retainage:0,payLink:"",payNote:"",footer:"Thank you for your business!",
+    address:"",email:(b.ownerEmails||[])[0]||"",phone:b.phone||"",autoRemind:true,startAt:1000,...(b.invoice||{})};
+}
+function addDays(s,n){ const d=parseYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
+const invLineAmt = l => r2((Number(l.qty)||0)*(Number(l.unitPrice)||0));
+function invTotals(inv){
+  const lines=inv.lines||[];
+  const subtotal=r2(lines.reduce((n,l)=>n+invLineAmt(l),0));
+  const discount=Math.max(0,Math.min(subtotal,r2(inv.discount)));
+  const taxable=r2(lines.filter(l=>l.taxable).reduce((n,l)=>n+invLineAmt(l),0));
+  const tax=r2((subtotal?taxable*(1-discount/subtotal):0)*(Number(inv.taxRate)||0)/100);
+  const total=r2(subtotal-discount+tax);
+  const credit=Math.max(0,Math.min(total,r2(inv.depositApplied)));
+  const owed=r2(total-credit);
+  const retainage=inv.kind==="deposit"?0:r2((subtotal-discount)*(Number(inv.retainagePct)||0)/100);
+  const held=inv.retainageReleased?0:Math.min(owed,retainage);
+  const dueNow=r2(owed-held);
+  const paid=r2((inv.payments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0));
+  const balance=r2(owed-paid), dueNowBal=r2(Math.max(0,dueNow-paid));
+  const extras=r2(lines.filter(l=>l.type!=="job"&&l.type!=="deposit").reduce((n,l)=>n+invLineAmt(l),0)-discount);
+  return {subtotal,discount,taxable,tax,total,credit,owed,retainage,held,dueNow,paid,balance,dueNowBal,extras};
+}
+const pubFor = inv => inv.publicKey ? S.publicInvoices.find(p=>p.id===inv.publicKey) : null;
+function invStatus(inv,t){
+  t=t||invTotals(inv);
+  if (inv.status==="void") return {id:"void",label:"Void",cls:""};
+  if (inv.status!=="sent") return {id:"draft",label:"Draft",cls:""};
+  if (t.balance<=0.004) return {id:"paid",label:"Paid",cls:"ok"};
+  if (t.dueNowBal<=0.004 && t.held>0) return {id:"retainage",label:"Retainage held",cls:"warn"};
+  if (inv.dueDate && inv.dueDate<today()) return {id:"overdue",label:"Overdue",cls:"bad"};
+  if (t.paid>0) return {id:"partial",label:"Partly paid",cls:"active"};
+  const p=pubFor(inv); if (p&&p.viewedAt) return {id:"viewed",label:"Viewed",cls:"active"};
+  return {id:"sent",label:"Sent",cls:"active"};
+}
+function invoiceFor(jobId){ return S.invoices.find(i=>i.status!=="void"&&(i.jobIds||[]).includes(jobId)); }
+function unbilledJobs(exceptId){
+  const used=new Set(); S.invoices.filter(i=>i.status!=="void"&&i.id!==exceptId).forEach(i=>(i.jobIds||[]).forEach(x=>used.add(x)));
+  return S.jobs.filter(j=>j.status==="done"&&!j.paid&&!used.has(j.id)&&(Number(j.price)||0)>0);
+}
+function nextInvoiceSeq(){ return Math.max(Number(invSettings().startAt)||1000, ...S.invoices.map(i=>Number(i.seq)||0))+1; }
+function depositsAvailable(clientName, projectId, exceptId){
+  const same=i=>projectId ? i.projectId===projectId : (!i.projectId && normName(i.client&&i.client.name)===normName(clientName));
+  const got=S.invoices.filter(i=>i.kind==="deposit"&&i.status==="sent"&&same(i)).reduce((n,i)=>n+invTotals(i).paid,0);
+  const used=S.invoices.filter(i=>i.kind!=="deposit"&&i.status!=="void"&&i.id!==exceptId&&same(i)).reduce((n,i)=>n+(Number(i.depositApplied)||0),0);
+  return r2(Math.max(0,got-used));
+}
+// Best guess at a client's contact details from earlier invoices, requests and rewards members.
+function clientInfo(name, j){
+  const n=normName(name);
+  const prev=S.invoices.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).find(i=>normName(i.client&&i.client.name)===n);
+  const c=S.customers.find(x=>normName(x.name)===n), bk=S.bookings.find(x=>normName(x.name)===n);
+  return {name:name||"",email:(prev&&prev.client.email)||(c&&c.email)||(bk&&bk.email)||"",phone:(j&&j.phone)||(prev&&prev.client.phone)||(c&&c.phone)||(bk&&bk.phone)||"",
+    address:(j&&j.address)||(prev&&prev.client.address)||""};
+}
+function jobLine(j){ return {id:newId(),type:"job",jobId:j.id,desc:(j.service||"Service")+(j.date?" · "+niceDate(j.date):"")+(j.address?" · "+j.address:""),qty:1,unitPrice:Number(j.price)||0,taxable:false}; }
+function costLines(j){ return jobCosts(j).filter(c=>c.billable&&!c.invoiceId).map(c=>({id:newId(),type:"material",jobId:j.id,costId:c.id,
+  desc:(c.desc||costKind(c.kind).label),qty:Number(c.qty)||1,unitPrice:r2((Number(c.unitCost)||0)*(1+(Number(c.markup)||0)/100)),taxable:true})); }
+function draftInvoice(base){
+  const st=invSettings(), issue=today(), term=INV_TERMS.find(t=>t[0]===st.terms)||INV_TERMS[0];
+  return {kind:"standard",status:"draft",lines:[],discount:0,taxRate:Number(st.taxRate)||0,depositApplied:0,retainagePct:0,
+    terms:term[0],issueDate:issue,dueDate:addDays(issue,term[2]),notes:"",payments:[],autoRemind:st.autoRemind!==false,client:{name:"",email:"",phone:"",address:""},...base};
+}
+function invoiceFromJobs(jobs){
+  const j0=jobs[0]||{};
+  const inv=draftInvoice({client:clientInfo(j0.client,j0),projectId:j0.projectId||null});
+  jobs.forEach(j=>{ inv.lines.push(jobLine(j)); inv.lines.push(...costLines(j)); });
+  if (inv.projectId){ inv.retainagePct=Number(invSettings().retainage)||0; }
+  const dep=depositsAvailable(inv.client.name,inv.projectId);
+  if (dep>0) inv.depositApplied=Math.min(dep,invTotals(inv).total);
+  return inv;
+}
+const invUrl = inv => ((location.protocol.startsWith("http") && !isNative()) ? location.origin : "https://dazift.com")+"/invoice.html?k="+inv.publicKey;
+function randomKey(){ const b=new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
+// What the client sees, kept in a separate record that anyone with the link can open.
+// "Sales tax (9.75%)", or "Sales tax (9.75% on $312.50)" when only some lines are taxed.
+function taxLabel(rate,base,net){ return "Sales tax ("+rate+"%"+(base!=null && Math.abs((Number(net)||0)-(Number(base)||0))>0.004 ? " on "+money(base) : "")+")"; }
+function publicCopy(inv){
+  const t=invTotals(inv), st=invSettings(), b=S.business||{};
+  return {businessId:S.businessId,invoiceId:inv.id,number:inv.number,kind:inv.kind||"standard",
+    biz:{name:b.name||"",email:st.email||"",phone:st.phone||"",address:st.address||"",city:b.city||"",state:b.state||""},
+    client:inv.client,issueDate:inv.issueDate,dueDate:inv.dueDate,terms:(INV_TERMS.find(x=>x[0]===inv.terms)||INV_TERMS[0])[1],
+    lines:(inv.lines||[]).map(l=>({desc:l.desc||"",qty:Number(l.qty)||0,unitPrice:Number(l.unitPrice)||0,amount:invLineAmt(l)})),
+    subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,taxBase:t.subtotal?Math.round(t.taxable*(1-t.discount/t.subtotal)*100)/100:0,total:t.total,credit:t.credit,
+    retainagePct:inv.kind==="deposit"?0:Number(inv.retainagePct)||0,held:t.held,dueNow:t.dueNow,paid:t.paid,balance:t.balance,dueNowBal:t.dueNowBal,
+    status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
+    viewedAt:(pubFor(inv)||{}).viewedAt||null,updatedAt:Date.now()};
+}
+async function saveInvoice(inv){
+  const t=invTotals(inv);
+  if (!inv.id) inv.id=newId();
+  if (!inv.seq){ inv.seq=nextInvoiceSeq(); inv.number="INV-"+inv.seq; }
+  if (!inv.createdAt) inv.createdAt=Date.now();
+  inv.jobIds=[...new Set((inv.lines||[]).filter(l=>l.jobId&&l.type==="job").map(l=>l.jobId))];
+  Object.assign(inv,{businessId:S.businessId,total:t.total,balance:t.balance,dueNowBal:t.dueNowBal,open:inv.status==="sent"&&t.balance>0.004,updatedAt:Date.now()});
+  if (inv.status==="sent" && !inv.publicKey) inv.publicKey=randomKey();
+  const clean=JSON.parse(JSON.stringify(inv)); delete clean.id;
+  await Store.set("invoices",inv.id,clean);
+  // A job's price follows its line on the invoice, so the books and the invoice agree.
+  for (const l of inv.lines||[]){
+    const j=l.type==="job"&&S.jobs.find(x=>x.id===l.jobId);
+    if (j && Math.abs(invLineAmt(l)-(Number(j.price)||0))>0.004) await Store.update("jobs",j.id,{price:invLineAmt(l)});
+  }
+  // Billed materials are marked so they aren't billed twice.
+  const byJob={}; (inv.lines||[]).filter(l=>l.costId).forEach(l=>(byJob[l.jobId] ||= new Set()).add(l.costId));
+  for (const j of S.jobs){
+    const want=byJob[j.id]||new Set(); let changed=false;
+    const costs=jobCosts(j).map(c=>{
+      if (want.has(c.id) && c.invoiceId!==inv.id){ changed=true; return {...c,invoiceId:inv.id}; }
+      if (!want.has(c.id) && c.invoiceId===inv.id){ changed=true; const x={...c}; delete x.invoiceId; return x; }
+      return c; });
+    if (changed) await Store.update("jobs",j.id,{costs});
+  }
+  // Paid in full: every job on it is paid.
+  if (inv.status==="sent" && t.balance<=0.004) for (const id of inv.jobIds){ const j=S.jobs.find(x=>x.id===id); if (j&&!j.paid) await Store.update("jobs",id,{paid:true}); }
+  if (inv.publicKey) await Store.set("publicInvoices",inv.publicKey,publicCopy(inv));
+  return inv;
+}
+async function releaseInvoiceCosts(inv){
+  for (const j of S.jobs){ if (!jobCosts(j).some(c=>c.invoiceId===inv.id)) continue;
+    await Store.update("jobs",j.id,{costs:jobCosts(j).map(c=>{ if(c.invoiceId!==inv.id) return c; const x={...c}; delete x.invoiceId; return x; })}); }
+}
+
+function viewInvoices(){
+  const frag=document.createDocumentFragment();
+  const f=S.invFilter||"open";
+  const rows=S.invoices.map(i=>({i,t:invTotals(i)})).map(x=>({...x,s:invStatus(x.i,x.t)}));
+  const q=(S.invSearch||"").toLowerCase();
+  const show=rows.filter(({i,s})=>{
+    if (q && !((i.number||"")+" "+((i.client||{}).name||"")).toLowerCase().includes(q)) return false;
+    if (f==="all") return true;
+    if (f==="open") return ["sent","viewed","partial","overdue","retainage"].includes(s.id);
+    return s.id===f;
+  }).sort((a,b)=>(b.i.issueDate||"").localeCompare(a.i.issueDate||"")||(b.i.seq||0)-(a.i.seq||0));
+  const openRows=rows.filter(r=>["sent","viewed","partial","overdue","retainage"].includes(r.s.id));
+  const outstanding=r2(openRows.reduce((n,r)=>n+r.t.balance,0));
+  const overdue=r2(rows.filter(r=>r.s.id==="overdue").reduce((n,r)=>n+r.t.dueNowBal,0));
+  const since=Date.now()-30*864e5;
+  const paid30=r2(S.invoices.filter(i=>i.status==="sent").flatMap(i=>i.payments||[]).filter(p=>p.date&&parseYmd(p.date).getTime()>=since).reduce((n,p)=>n+(Number(p.amount)||0),0));
+  const ready=unbilledJobs();
+  const readyAmt=r2(ready.reduce((n,j)=>n+(Number(j.price)||0),0));
+
+  frag.append(el("div",{class:"toolbar"},
+    el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
+      el("button",{class:"chip","aria-pressed":String(f===id),onclick:()=>{S.invFilter=id;render();}},l))),
+    el("span",{class:"grow"}),
+    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:"max-width:220px",
+      oninput:ev=>{ S.invSearch=ev.target.value; clearTimeout(S.invSearchT); S.invSearchT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=document.querySelector('input[aria-label="Search invoices"]'); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }}),
+    el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice")));
+  frag.append(el("div",{class:"sum"},
+    el("div",{class:"stat"},el("div",{class:"l"},"Outstanding"),el("div",{class:"v"},money(outstanding))),
+    el("div",{class:"stat"+(overdue?" neg net":"")},el("div",{class:"l"},"Overdue"),el("div",{class:"v"},money(overdue))),
+    el("div",{class:"stat"},el("div",{class:"l"},"Paid in the last 30 days"),el("div",{class:"v"},money(paid30))),
+    el("div",{class:"stat"},el("div",{class:"l"},"Finished, not billed yet"),el("div",{class:"v"},money(readyAmt)))));
+
+  if (ready.length){
+    const groups={}; ready.forEach(j=>{ const k=normName(j.client)||j.id; (groups[k] ||= []).push(j); });
+    const p=el("div",{class:"panel"},el("h2",{},"Ready to bill"),el("div",{class:"sub"},"Finished jobs that aren't paid or on an invoice yet. Billable materials logged on them come along."));
+    Object.values(groups).sort((a,b)=>b.length-a.length||(a[0].client||"").localeCompare(b[0].client||"")).slice(0,S.invReadyAll?99:6).forEach(js=>{
+      const amt=r2(js.reduce((n,j)=>n+(Number(j.price)||0)+costLines(j).reduce((m,l)=>m+invLineAmt(l),0),0));
+      p.append(el("div",{class:"srow"},
+        el("div",{class:"sinfo"},el("b",{},js[0].client||"Client"),el("span",{class:"kv"},js.length+" job"+(js.length===1?"":"s")+" · "+js.map(j=>j.service).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(", "))),
+        el("div",{class:"row",style:"gap:8px"},el("b",{},money(amt)),el("button",{class:"btn small primary",onclick:()=>openInvoice(invoiceFromJobs(js))},"Create invoice"))));
+    });
+    if (Object.keys(groups).length>6) p.append(el("button",{class:"btn small ghost",onclick:()=>{S.invReadyAll=!S.invReadyAll;render();}},S.invReadyAll?"Show fewer":"Show all "+Object.keys(groups).length+" clients"));
+    frag.append(p);
+  }
+
+  const tp=el("div",{class:"panel"},el("h2",{},"Invoices"));
+  if (!show.length) tp.append(el("div",{class:"empty"},S.invoices.length?"No invoices match.":"No invoices yet. Create one from finished jobs above, or with New invoice."));
+  else {
+    const tb=el("tbody");
+    show.forEach(({i,t,s})=>tb.append(el("tr",{class:"click",tabindex:"0",onclick:()=>openInvoice(i),onkeydown:ev=>{ if(ev.key==="Enter") openInvoice(i); }},
+      el("td",{},el("b",{},i.number||"Draft"),i.kind==="deposit"?el("div",{class:"kv"},"Deposit"):null),
+      el("td",{},(i.client||{}).name||"—",i.projectId?el("div",{class:"kv"},(S.projects.find(p=>p.id===i.projectId)||{}).name||""):null),
+      el("td",{},niceDate(i.issueDate)),
+      el("td",{},i.status==="sent"?niceDate(i.dueDate):"—"),
+      el("td",{class:"num"},money(t.total)),
+      el("td",{class:"num"},i.status==="sent"?money(t.balance):"—"),
+      el("td",{},el("span",{class:"pill "+s.cls},s.label)))));
+    tp.append(el("div",{class:"tablewrap"},el("table",{class:"invtable"},
+      el("thead",{},el("tr",{},el("th",{},"Invoice"),el("th",{},"Client"),el("th",{},"Issued"),el("th",{},"Due"),el("th",{class:"num"},"Total"),el("th",{class:"num"},"Balance"),el("th",{},"Status"))),tb)));
+  }
+  frag.append(tp);
+  return frag;
+}
+
+function openInvoice(inv){
+  const d=JSON.parse(JSON.stringify(inv));
+  if (d.status==="sent"||d.status==="void") return invoiceDetail(d);
+  invoiceEditor(d);
+}
+function invDlg(){ const dl=$("#invDlg"); if (!dl.open) dl.showModal(); return $("#invBody"); }
+function invoiceEditor(d){
+  const body=invDlg(); body.replaceChildren();
+  const isNew=!d.id, st=invSettings();
+  const num=d.number||("INV-"+nextInvoiceSeq());
+  const hdr=el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},(d.kind==="deposit"?"Deposit invoice ":"Invoice ")+num),
+    el("span",{class:"pill"},d.status==="sent"?"Sent":"Draft"));
+  const set=(path,v)=>{ const ks=path.split("."); let o=d; ks.slice(0,-1).forEach(k=>o=o[k]); o[ks[ks.length-1]]=v; };
+  const inp=(label,path,attrs,cls)=>{ const val=path.split(".").reduce((o,k)=>o&&o[k],d);
+    return el("label",{class:"f "+(cls||"")},label,el("input",{value:val==null?"":String(val),...(attrs||{}),oninput:ev=>{ set(path,attrs&&attrs.type==="number"?Number(ev.target.value)||0:ev.target.value); upd(); }})); };
+  const termSel=el("select",{onchange:ev=>{ d.terms=ev.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); d.dueDate=addDays(d.issueDate||today(),t?t[2]:0); dueIn.value=d.dueDate; }},
+    INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===d.terms},l)));
+  const dueIn=el("input",{type:"date",value:d.dueDate||"",oninput:ev=>{ d.dueDate=ev.target.value; }});
+  const projSel=hasProjects()?el("label",{class:"f"},"Project",el("select",{onchange:ev=>{ d.projectId=ev.target.value||null; invoiceEditor(d); }},
+    el("option",{value:""},"None"),S.projects.map(p=>el("option",{value:p.id,selected:p.id===d.projectId},p.name)))):null;
+  const nameIn=el("input",{value:d.client.name||"",required:true,autocomplete:"off",list:"invClients",oninput:ev=>{ d.client.name=ev.target.value; }, onchange:ev=>{
+    const ci=clientInfo(ev.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]) d.client[k]=ci[k]; }); invoiceEditor(d); }});
+  const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).filter(Boolean))].sort();
+  body.append(hdr,
+    el("div",{class:"expform",style:"margin-top:12px"},
+      el("label",{class:"f"},"Client",nameIn,el("datalist",{id:"invClients"},clients.map(c=>el("option",{value:c})))),
+      inp("Client email","client.email",{type:"email",placeholder:"For emailing the invoice"}),
+      inp("Client phone","client.phone",{type:"tel"}),
+      inp("Billing address","client.address",{autocomplete:"off"}),
+      projSel,
+      el("label",{class:"f"},"Invoice date",el("input",{type:"date",value:d.issueDate||today(),oninput:ev=>{ d.issueDate=ev.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); if(t&&ev.target.value){ d.dueDate=addDays(ev.target.value,t[2]); dueIn.value=d.dueDate; } }})),
+      el("label",{class:"f"},"Payment terms",termSel),
+      el("label",{class:"f"},"Due date",dueIn)));
+
+  // Lines
+  const tb=el("tbody");
+  const amtCells={};
+  (d.lines||[]).forEach((l,ix)=>{
+    const a=el("td",{class:"num"},money(invLineAmt(l))); amtCells[l.id]=a;
+    tb.append(el("tr",{},
+      el("td",{},el("input",{value:l.desc||"","aria-label":"Description",placeholder:"Description",oninput:ev=>{ l.desc=ev.target.value; }}),
+        l.type==="job"?el("div",{class:"kv"},"Job price. Changing it here updates the job."):l.type==="material"?el("div",{class:"kv"},"Billed materials"):null),
+      el("td",{class:"qty"},el("input",{type:"number",step:"any",min:"0",inputmode:"decimal",value:String(l.qty??1),"aria-label":"Quantity",oninput:ev=>{ l.qty=Number(ev.target.value)||0; a.textContent=money(invLineAmt(l)); upd(); }})),
+      el("td",{class:"price"},el("input",{type:"number",step:"0.01",inputmode:"decimal",value:String(l.unitPrice??""),"aria-label":"Price",oninput:ev=>{ l.unitPrice=Number(ev.target.value)||0; a.textContent=money(invLineAmt(l)); upd(); }})),
+      a,
+      el("td",{class:"tx"},el("input",{type:"checkbox",checked:!!l.taxable,"aria-label":"Taxable",title:"Charge sales tax on this line",style:"width:auto",onchange:ev=>{ l.taxable=ev.target.checked; upd(); }})),
+      el("td",{},el("button",{type:"button",class:"btn small ghost danger","aria-label":"Remove line",onclick:()=>{ d.lines.splice(ix,1); invoiceEditor(d); }},"×"))));
+  });
+  if (!(d.lines||[]).length) tb.append(el("tr",{},el("td",{colspan:"6",class:"empty"},"No lines yet. Add finished jobs or a line below.")));
+  const avail=unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id) && (!d.client.name || normName(j.client)===normName(d.client.name)));
+  const availMat=S.jobs.filter(j=>d.lines.some(l=>l.type==="job"&&l.jobId===j.id)).flatMap(j=>costLines(j).filter(cl=>!d.lines.some(l=>l.costId===cl.costId)));
+  const pick=el("div",{class:"jobpick hidden"});
+  avail.slice(0,30).forEach(j=>pick.append(el("label",{class:"row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",value:j.id,style:"width:auto"}),
+    el("span",{class:"grow"},(j.client||"")+" · "+(j.service||"")+" · "+niceDate(j.date)),el("b",{},money(j.price)))));
+  pick.append(el("button",{type:"button",class:"btn small primary",onclick:()=>{
+    const ids=[...pick.querySelectorAll("input:checked")].map(x=>x.value); const js=S.jobs.filter(j=>ids.includes(j.id));
+    if (!d.client.name && js[0]){ d.client=clientInfo(js[0].client,js[0]); }
+    js.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); if(!d.projectId&&j.projectId) d.projectId=j.projectId; });
+    invoiceEditor(d); }},"Add selected"));
+  body.append(el("div",{class:"tablewrap",style:"margin-top:14px"},el("table",{class:"lines"},
+    el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{},"Qty"),el("th",{},"Price"),el("th",{class:"num"},"Amount"),el("th",{title:"Taxable"},"Tax"),el("th",{}))),tb)),
+    el("div",{class:"row",style:"margin-top:8px"},
+      el("button",{type:"button",class:"btn small",onclick:()=>{ d.lines.push({id:newId(),type:"item",desc:"",qty:1,unitPrice:0,taxable:false}); invoiceEditor(d); setTimeout(()=>{ const ins=body.querySelectorAll('table.lines input[aria-label="Description"]'); if(ins.length) ins[ins.length-1].focus(); },0); }},"+ Add a line"),
+      d.kind!=="deposit"&&avail.length?el("button",{type:"button",class:"btn small",onclick:()=>pick.classList.toggle("hidden")},"+ Finished jobs ("+avail.length+")"):null,
+      d.kind!=="deposit"&&availMat.length?el("button",{type:"button",class:"btn small",onclick:()=>{ d.lines.push(...availMat); invoiceEditor(d); }},"+ Billable materials ("+availMat.length+")"):null),
+    pick);
+
+  // Adjustments and totals
+  const dep=d.kind==="deposit"?0:depositsAvailable(d.client.name,d.projectId,d.id);
+  const adj=el("div",{class:"expform",style:"margin-top:14px"},
+    inp("Discount $","discount",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
+    inp("Sales tax %","taxRate",{type:"number",min:"0",step:"0.001",inputmode:"decimal"}),
+    d.kind!=="deposit"&&(hasProjects()||Number(d.retainagePct))?inp("Retainage %","retainagePct",{type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",title:"Held back until the work is accepted"}):null,
+    d.kind!=="deposit"&&(dep>0||Number(d.depositApplied))?el("div",{},inp("Deposit to take off $","depositApplied",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
+      el("div",{class:"kv",style:"margin-top:4px"},money(dep)+" in paid deposits available. ",dep>0?el("a",{href:"#",onclick:ev=>{ev.preventDefault(); d.depositApplied=Math.min(dep,invTotals({...d,depositApplied:0}).total); invoiceEditor(d);}},"Use it"):null)):null);
+  const tot=el("div",{class:"stub invtot"});
+  body.append(adj, tot,
+    el("label",{class:"f",style:"margin-top:12px"},"Note to the client",el("textarea",{rows:"2",placeholder:"Thanks for choosing us! Warranty: 1 year on labor.",oninput:ev=>{ d.notes=ev.target.value; }},d.notes||"")),
+    el("label",{class:"row",style:"gap:8px;margin-top:10px;font-weight:400"},el("input",{type:"checkbox",checked:d.autoRemind!==false,style:"width:auto",onchange:ev=>{ d.autoRemind=ev.target.checked; }}),
+      "Email a friendly reminder if it's overdue (every 3 days, up to 3 times)"));
+  function upd(){
+    const t=invTotals(d); tot.replaceChildren();
+    const L=(a,b,c)=>el("div",{class:c||""},el("span",{},a),el("b",{},b));
+    tot.append(L("Subtotal",money(t.subtotal)));
+    if (t.discount) tot.append(L("Discount","−"+money(t.discount)));
+    if (t.tax) tot.append(L(taxLabel(Number(d.taxRate)||0,t.subtotal?t.taxable*(1-t.discount/t.subtotal):0,t.subtotal-t.discount),money(t.tax)));
+    tot.append(L("Total",money(t.total),"t"));
+    if (t.credit) tot.append(L("Less deposit received","−"+money(t.credit)));
+    if (t.held) tot.append(L("Retainage held ("+(Number(d.retainagePct)||0)+"%)","−"+money(t.held)));
+    if (t.credit||t.held) tot.append(L("Due now",money(t.dueNow),"t"));
+  }
+  upd();
+  const err=el("div",{class:"gate-msg"});
+  const go=async send=>{
+    if (viewOnlyBlocked()) return;
+    if (!d.client.name.trim()) return err.textContent="Enter the client's name.";
+    if (!(d.lines||[]).length) return err.textContent="Add at least one line.";
+    if (d.lines.some(l=>!String(l.desc||"").trim())) return err.textContent="Every line needs a description.";
+    if (invTotals(d).total<=0) return err.textContent="The total is zero. Check the prices.";
+    d.client.email=(d.client.email||"").trim();
+    if (send) d.status="sent";
+    if (send && !d.sentAt) d.sentAt=Date.now();
+    try { await saveInvoice(d); } catch(e){ console.warn(e); return err.textContent="That didn't save. Check your connection and try again."; }
+    toast(send?"Invoice ready to send":"Draft saved");
+    if (send) openSend(d); else $("#invDlg").close();
+  };
+  body.append(err, el("div",{class:"row",style:"margin-top:14px"},
+    !isNew&&d.status!=="sent"?el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(!confirm("Delete this draft?")) return; $("#invDlg").close();
+      write(async()=>{ await releaseInvoiceCosts(d); await Store.del("invoices",d.id); },"Draft deleted"); }},"Delete draft"):null,
+    el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn",onclick:()=>$("#invDlg").close()},"Cancel"),
+    el("button",{type:"button",class:"btn",onclick:()=>printInvoice({...d,number:num})},"Preview"),
+    d.status!=="sent"?el("button",{type:"button",class:"btn",onclick:()=>go(false)},"Save draft"):null,
+    el("button",{type:"button",class:"btn primary",onclick:()=>go(true)},d.status==="sent"?"Save changes":"Save and send")));
+}
+
+function invoiceDetail(d){
+  const body=invDlg(); body.replaceChildren();
+  const t=invTotals(d), s=invStatus(d,t), pub=pubFor(d);
+  const proj=d.projectId&&S.projects.find(p=>p.id===d.projectId);
+  body.append(el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},(d.kind==="deposit"?"Deposit invoice ":"Invoice ")+(d.number||"")),el("span",{class:"pill "+s.cls},s.label)),
+    el("p",{class:"kv",style:"margin:4px 0 12px"},(d.client.name||"")+(proj?" · "+proj.name:"")+(d.client.email?" · "+d.client.email:"")));
+  const F=(a,b)=>el("div",{},a,el("b",{},b));
+  body.append(el("div",{class:"mini",style:"grid-template-columns:repeat(auto-fit,minmax(120px,1fr))"},
+    F("Total",money(t.total)),t.credit?F("Deposit taken off",money(t.credit)):null,F("Paid",money(t.paid)),F(t.held&&t.dueNowBal<=0?"Retainage held":"Balance due",money(t.held&&t.dueNowBal<=0?t.balance:t.dueNowBal)),
+    F("Due",niceDate(d.dueDate)),F("Opened by client",pub&&pub.viewedAt?new Date(pub.viewedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"Not yet")));
+  const acts=el("div",{class:"row",style:"margin:14px 0"});
+  if (d.status==="sent" && t.balance>0.004) acts.append(el("button",{class:"btn primary",onclick:()=>openPayment(d)},"Record a payment"));
+  if (d.status==="sent") acts.append(el("button",{class:"btn",onclick:()=>openSend(d)},t.balance>0.004?"Send or share":"Share receipt"));
+  if (d.status==="sent" && t.held>0 && t.dueNowBal<=0.004) acts.append(el("button",{class:"btn lemon",onclick:()=>{
+    if (!confirm("Bill the "+money(t.held)+" retainage now? The client will see it as due.")) return;
+    d.retainageReleased=true; d.dueDate=addDays(today(),(INV_TERMS.find(x=>x[0]===d.terms)||INV_TERMS[0])[2]);
+    write(async()=>{ await saveInvoice(d); openSend(d); },"Retainage billed"); }},"Bill the retainage"));
+  acts.append(el("button",{class:"btn",onclick:()=>printInvoice(d)},"Print or PDF"));
+  if (d.status==="sent") acts.append(el("button",{class:"btn ghost",onclick:()=>invoiceEditor(d)},"Edit"));
+  if (d.status==="sent" && !t.paid) acts.append(el("button",{class:"btn ghost danger",onclick:()=>{ if(!confirm("Void "+d.number+"? The client's link will show it as void, and its jobs can be billed again.")) return;
+    d.status="void"; write(async()=>{ await releaseInvoiceCosts(d); await saveInvoice(d); $("#invDlg").close(); },"Invoice voided"); }},"Void"));
+  body.append(acts);
+  const pays=el("div",{class:"panel",style:"margin:0 0 12px;padding:12px 14px"},el("h3",{style:"margin:0 0 6px;font-size:16px"},"Payments"));
+  if (!(d.payments||[]).length) pays.append(el("div",{class:"kv"},"No payments recorded yet."));
+  (d.payments||[]).forEach(p=>pays.append(el("div",{class:"costrow"},el("div",{class:"grow"},el("b",{},money(p.amount)),el("div",{class:"kv"},(p.method||"")+" · "+niceDate(p.date)+(p.note?" · "+p.note:""))),
+    el("button",{class:"btn small ghost danger","aria-label":"Remove payment",onclick:()=>{ if(!confirm("Remove this payment?")) return;
+      d.payments=d.payments.filter(x=>x.id!==p.id); write(async()=>{ await saveInvoice(d); invoiceDetail(d); },"Payment removed"); }},"×"))));
+  body.append(pays);
+  const lines=el("div",{class:"stub",style:"max-width:none"});
+  (d.lines||[]).forEach(l=>lines.append(el("div",{},el("span",{},(l.desc||"")+((Number(l.qty)||1)!==1?" ("+l.qty+" × "+money(l.unitPrice)+")":"")),el("b",{},money(invLineAmt(l))))));
+  if (t.discount) lines.append(el("div",{},el("span",{},"Discount"),el("b",{},"−"+money(t.discount))));
+  if (t.tax) lines.append(el("div",{},el("span",{},"Sales tax"),el("b",{},money(t.tax))));
+  lines.append(el("div",{class:"t"},el("span",{},"Total"),el("b",{},money(t.total))));
+  body.append(lines);
+  if (d.lastEmailAt||d.sentAt) body.append(el("p",{class:"kv",style:"margin:10px 0 0"},d.lastEmailAt?"Last emailed "+new Date(d.lastEmailAt).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+". ":"",
+    d.reminders?d.reminders+" reminder"+(d.reminders===1?"":"s")+" sent. ":"",d.autoRemind!==false&&t.dueNowBal>0?"Automatic reminders are on.":""));
+  body.append(el("div",{class:"row",style:"margin-top:14px"},el("span",{class:"grow"}),el("button",{class:"btn",onclick:()=>$("#invDlg").close()},"Close")));
+}
+
+function openPayment(d){
+  const body=invDlg(); body.replaceChildren();
+  const t=invTotals(d);
+  const f=el("form",{class:"expform"});
+  f.append(el("h2",{class:"full",style:"margin:0"},"Record a payment"),
+    el("p",{class:"kv full",style:"margin:0"},(d.number||"")+" · "+(d.client.name||"")+" · "+money(t.dueNowBal>0?t.dueNowBal:t.balance)+" due. Dazift doesn't take payments; this records money you received."),
+    el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,value:String(t.dueNowBal>0?t.dueNowBal:t.balance)})),
+    el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
+    el("label",{class:"f"},"How they paid",el("select",{name:"method"},PAY_METHODS.map(m=>el("option",{},m)))),
+    el("label",{class:"f"},"Note (check number, etc.)",el("input",{name:"note",autocomplete:"off"})),
+    el("div",{class:"full row"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>invoiceDetail(d)},"Back"),el("button",{type:"submit",class:"btn primary"},"Save payment")));
+  f.onsubmit=ev=>{ ev.preventDefault(); const x=Object.fromEntries(new FormData(f)); const amount=r2(x.amount);
+    if (!(amount>0)) return toast("Enter the amount.");
+    if (amount>t.balance+0.004 && !confirm("That's more than the "+money(t.balance)+" balance. Record it anyway?")) return;
+    d.payments=[...(d.payments||[]),{id:newId(),amount,date:x.date||today(),method:x.method,note:x.note.trim(),at:Date.now()}];
+    write(async()=>{ await saveInvoice(d); invoiceDetail(d); }, invTotals(d).balance<=0.004?"Paid in full. Its jobs are marked paid.":"Payment recorded"); };
+  body.append(f);
+}
+
+function openSend(d){
+  const body=invDlg(); body.replaceChildren();
+  const t=invTotals(d), url=invUrl(d), st=invSettings(), b=S.business||{};
+  const due=t.dueNowBal>0?t.dueNowBal:t.balance;
+  const msg=(t.balance>0.004?"Hi "+((d.client.name||"").split(" ")[0]||"there")+", here's invoice "+d.number+" from "+(b.name||"us")+" for "+money(due)+(d.dueDate&&d.dueDate>today()?", due "+niceDate(d.dueDate):"")+": ":"Thanks! Here's your paid receipt "+d.number+" from "+(b.name||"us")+": ")+url;
+  const note=el("div",{class:"kv",style:"min-height:1.4em"});
+  const stamp=via=>{ if (d.sentVia!==via){ d.sentVia=via; write(()=>Store.update("invoices",d.id,{sentVia:via}),null); } };
+  body.append(el("h2",{style:"margin:0"},"Send "+d.number),
+    el("p",{class:"kv",style:"margin:4px 0 12px"},"Your client opens a link to see the invoice, print it"+(st.payLink?", and pay online with your payment link":"")+". Dazift never handles the money."),
+    el("div",{class:"linkbox"},el("input",{readonly:true,value:S.demo?"Links are live in your own account, not the demo":url,"aria-label":"Invoice link",onfocus:ev=>ev.target.select()})));
+  const emailIn=el("input",{type:"email",value:d.client.email||"",placeholder:"client@email.com","aria-label":"Client email"});
+  body.append(el("div",{class:"sendgrid"},
+    el("div",{class:"sendopt"},el("b",{},"Email it from Dazift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via Dazift. Replies come to "+(st.email||"you")+"."),
+      el("div",{class:"row",style:"margin-top:6px"},emailIn,el("button",{class:"btn primary",onclick:async()=>{
+        const to=emailIn.value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return note.textContent="Enter the client's email address.";
+        if (S.demo){ note.textContent="In the demo nothing is emailed. In your account, "+to+" gets the invoice in a few seconds."; return; }
+        if (Store.mode!=="db") return note.textContent="Email works in the live app.";
+        try {
+          if (to!==(d.client.email||"")){ d.client.email=to; await saveInvoice(d); }
+          await firebase.firestore().collection("mail").add({businessId:S.businessId,kind:"invoice",invoiceId:d.id,key:d.publicKey,to,createdBy:S.myUserId,createdAt:Date.now()});
+          stamp("email"); note.textContent="Sending to "+to+". It usually arrives within a minute.";
+        } catch(e){ console.warn(e); note.textContent="Couldn't send it. Check your connection and try again."; }
+      }},"Send email"))),
+    el("div",{class:"sendopt"},el("b",{},"Text the link"),el("div",{class:"kv"},"Opens your phone's messages with the link ready."),
+      el("a",{class:"btn",style:"margin-top:6px",href:"sms:"+(d.client.phone||"").replace(/[^\d+]/g,"")+"?&body="+encodeURIComponent(msg),onclick:()=>stamp("text")},"Text "+(d.client.phone||"the client"))),
+    el("div",{class:"sendopt"},el("b",{},"Copy or share"),el("div",{class:"kv"},"Paste it into your own email, Facebook or WhatsApp."),
+      el("div",{class:"row",style:"margin-top:6px"},
+        el("button",{class:"btn",onclick:async()=>{ try{ await navigator.clipboard.writeText(S.demo?"(demo link)":msg); stamp("link"); note.textContent="Copied the message and link."; }catch(e){ note.textContent="Copy didn't work. Select the link above and copy it."; } }},"Copy message"),
+        navigator.share?el("button",{class:"btn",onclick:async()=>{ try{ await navigator.share({title:d.number,text:msg}); stamp("share"); }catch(e){} }},"Share…"):null))),
+    note,
+    el("div",{class:"row",style:"margin-top:14px"},el("button",{class:"btn ghost",onclick:()=>printInvoice(d)},"Print or PDF"),el("span",{class:"grow"}),
+      el("button",{class:"btn",onclick:()=>invoiceDetail(d)},"Invoice details"),el("button",{class:"btn primary",onclick:()=>$("#invDlg").close()},"Done")));
+}
+
+// The invoice as a page, the same layout the client sees at their link.
+function invoiceDocEl(inv){
+  const p=inv.biz?inv:publicCopy(inv);
+  const doc=el("div",{class:"invdoc"});
+  const status=p.status==="void"?"VOID":p.status==="paid"?"PAID":"";
+  doc.append(el("div",{class:"ih"},
+    el("div",{},el("div",{class:"ibiz"},p.biz.name),el("div",{class:"kv"},[p.biz.address,[p.biz.city,p.biz.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")),
+      el("div",{class:"kv"},[p.biz.phone,p.biz.email].filter(Boolean).join(" · "))),
+    el("div",{class:"inum"},el("div",{class:"it"},p.kind==="deposit"?"Deposit invoice":"Invoice"),el("div",{},p.number||""),status?el("div",{class:"istamp "+p.status},status):null)));
+  doc.append(el("div",{class:"imeta"},
+    el("div",{},el("span",{class:"kv"},"Bill to"),el("b",{},p.client.name||""),p.client.address?el("div",{},p.client.address):null,p.client.email?el("div",{class:"kv"},p.client.email):null),
+    el("div",{},el("span",{class:"kv"},"Invoice date"),el("b",{},niceDate(p.issueDate)),el("span",{class:"kv"},"Due"),el("b",{},p.terms==="Due on receipt"?"On receipt":niceDate(p.dueDate)))));
+  const tb=el("tbody"); p.lines.forEach(l=>tb.append(el("tr",{},el("td",{},l.desc),el("td",{class:"num"},String(l.qty)),el("td",{class:"num"},money(l.unitPrice)),el("td",{class:"num"},money(l.amount)))));
+  doc.append(el("table",{class:"ilines"},el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{class:"num"},"Qty"),el("th",{class:"num"},"Price"),el("th",{class:"num"},"Amount"))),tb));
+  const T=el("div",{class:"itot"}); const L=(a,b,c)=>T.append(el("div",{class:c||""},el("span",{},a),el("b",{},b)));
+  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L(taxLabel(p.taxRate,p.taxBase,p.subtotal-(p.discount||0)),money(p.tax));
+  L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
+  if (p.paid) L("Paid","−"+money(p.paid)); L(p.status==="paid"?"Balance":"Amount due",money(p.status==="paid"?0:p.dueNowBal),"due");
+  doc.append(T);
+  if (p.notes) doc.append(el("p",{class:"inote"},p.notes));
+  if (p.payNote && p.status==="open") doc.append(el("p",{class:"inote"},el("b",{},"How to pay: "),p.payNote));
+  if (p.footer) doc.append(el("p",{class:"ifoot"},p.footer));
+  return doc;
+}
+function printInvoice(inv){
+  const area=el("div",{id:"printArea"},invoiceDocEl(inv),el("p",{class:"ifoot",style:"margin-top:24px"},"Made with Dazift · A product of LIT America"));
+  document.body.append(area); document.body.classList.add("print-inv");
+  const done=()=>{ document.body.classList.remove("print-inv"); area.remove(); window.removeEventListener("afterprint",done); };
+  window.addEventListener("afterprint",done);
+  if (isNative()){ done(); return toast("Use Send or share to give the client their link. They can print or save it as a PDF from there."); }
+  setTimeout(()=>{ window.print(); setTimeout(()=>{ if (document.body.classList.contains("print-inv")) done(); },1500); },50);
+}
+
+// From a project card: ask for a deposit, bill the finished phases, or bill held retainage.
+function openProjectBilling(p){
+  const body=invDlg(); body.replaceChildren();
+  const k=projectNumbers(p);
+  const invs=S.invoices.filter(i=>i.projectId===p.id&&i.status!=="void");
+  const invoiced=r2(invs.filter(i=>i.kind!=="deposit").reduce((n,i)=>n+invTotals(i).total,0));
+  const dep=depositsAvailable(p.client,p.id);
+  const ready=unbilledJobs().filter(j=>j.projectId===p.id);
+  const readyAmt=r2(ready.reduce((n,j)=>n+(Number(j.price)||0),0));
+  const held=invs.filter(i=>{ const t=invTotals(i); return i.status==="sent"&&t.held>0&&t.dueNowBal<=0.004; });
+  body.append(el("h2",{style:"margin:0"},"Bill "+p.name),
+    el("div",{class:"mini",style:"margin:12px 0"},el("div",{},"Contract",el("b",{},money(k.contract))),el("div",{},"Invoiced",el("b",{},money(invoiced))),el("div",{},"Deposit on hand",el("b",{},money(dep)))));
+  const depIn=el("input",{type:"number",min:"1",step:"0.01",inputmode:"decimal",value:invoiced>0?"":String(r2((k.contract||0)*0.3)||""),placeholder:"Amount",style:"max-width:140px","aria-label":"Deposit amount"});
+  body.append(el("div",{class:"sendgrid"},
+    el("div",{class:"sendopt"},el("b",{},"Ask for a deposit"),el("div",{class:"kv"},"Paid deposits come off the next invoices for this project."),
+      el("div",{class:"row",style:"margin-top:6px"},depIn,el("button",{class:"btn",onclick:()=>{ const a=r2(depIn.value); if(!(a>0)) return toast("Enter the deposit amount.");
+        openInvoice(draftInvoice({kind:"deposit",projectId:p.id,client:clientInfo(p.client||p.name,{phone:p.phone,address:p.address}),taxRate:0,
+          lines:[{id:newId(),type:"deposit",desc:"Deposit for "+p.name,qty:1,unitPrice:a,taxable:false}]})); }},"Create deposit invoice"))),
+    el("div",{class:"sendopt"},el("b",{},"Bill finished phases"),el("div",{class:"kv"},ready.length?ready.length+" finished phase"+(ready.length===1?"":"s")+" not billed yet · "+money(readyAmt):"No finished phases waiting to be billed."),
+      ready.length?el("button",{class:"btn primary",style:"margin-top:6px",onclick:()=>openInvoice(invoiceFromJobs(ready))},"Create progress invoice"):null),
+    held.length?el("div",{class:"sendopt"},el("b",{},"Retainage held"),el("div",{class:"kv"},held.map(i=>i.number+" · "+money(invTotals(i).held)).join(", ")),
+      el("button",{class:"btn",style:"margin-top:6px",onclick:()=>invoiceDetail(JSON.parse(JSON.stringify(held[0])))},"Open "+held[0].number)):null),
+    invs.length?el("div",{style:"margin-top:12px"},el("b",{},"Invoices for this project"),...invs.sort((a,b)=>(a.seq||0)-(b.seq||0)).map(i=>{ const s=invStatus(i);
+      return el("div",{class:"costrow",style:"cursor:pointer",onclick:()=>openInvoice(i)},el("span",{class:"grow"},(i.number||"Draft")+(i.kind==="deposit"?" · deposit":"")),el("b",{},money(invTotals(i).total)),el("span",{class:"pill "+s.cls},s.label)); })):null,
+    el("div",{class:"row",style:"margin-top:14px"},el("span",{class:"grow"}),el("button",{class:"btn",onclick:()=>$("#invDlg").close()},"Close")));
+}
+
+function settingsInvoices(){
+  const st=invSettings(), b=S.business;
+  const f=el("form",{class:"panel",style:"max-width:720px;"});
+  f.append(el("h2",{},"Invoices"),el("div",{class:"sub"},"What your clients see on every invoice, and your usual terms."),
+    el("div",{class:"expform"},
+      el("label",{class:"f full"},"Street address on invoices",el("input",{name:"address",value:st.address,placeholder:"123 Main St",autocomplete:"off"})),
+      el("label",{class:"f"},"Email on invoices (client replies go here)",el("input",{name:"email",type:"email",value:st.email})),
+      el("label",{class:"f"},"Phone on invoices",el("input",{name:"phone",type:"tel",value:st.phone})),
+      el("label",{class:"f"},"Usual payment terms",el("select",{name:"terms"},INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===st.terms},l)))),
+      el("label",{class:"f"},"Sales tax % (on taxable lines)",el("input",{name:"taxRate",type:"number",min:"0",step:"0.001",inputmode:"decimal",value:String(st.taxRate||0)})),
+      el("label",{class:"f"},"Markup on billed materials %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(st.markup||0)})),
+      hasProjects()?el("label",{class:"f"},"Retainage on project invoices %",el("input",{name:"retainage",type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",value:String(st.retainage||0)})):null,
+      el("label",{class:"f full"},"Online payment link (optional)",el("input",{name:"payLink",type:"url",value:st.payLink,placeholder:"Your Stripe, Square or PayPal payment link"})),
+      el("p",{class:"kv full",style:"margin:-4px 0 0"},"Clients see a Pay online button that opens your own payment page. The money goes straight to you; Dazift never touches it. Record the payment here when it arrives."),
+      el("label",{class:"f full"},"How to pay (shown on invoices)",el("textarea",{name:"payNote",rows:"2",placeholder:"Checks payable to "+(b.name||"us")+". Zelle: 731-555-0100. Cash on completion."},st.payNote)),
+      el("label",{class:"f full"},"Footer note",el("input",{name:"footer",value:st.footer})),
+      el("label",{class:"full row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",name:"autoRemind",checked:st.autoRemind!==false,style:"width:auto"}),"Turn on overdue reminders for new invoices"),
+      el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Save"))));
+  f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
+    const link=(d.payLink||"").trim();
+    if (link && !/^https:\/\//i.test(link)) return toast("The payment link should start with https://");
+    const invoice={...(b.invoice||{}),address:d.address.trim(),email:d.email.trim(),phone:d.phone.trim(),terms:d.terms,taxRate:Math.max(0,Number(d.taxRate)||0),markup:Math.max(0,Number(d.markup)||0),
+      retainage:Math.max(0,Math.min(50,Number(d.retainage)||0)),payLink:link,payNote:d.payNote.trim(),footer:d.footer.trim(),autoRemind:!!f.querySelector("[name=autoRemind]").checked};
+    write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({invoice}); S.business.invoice=invoice; render(); },"Invoice settings saved"); };
+  return f;
 }
 
 /* ---- payroll ----
@@ -2281,7 +2990,7 @@ function makeBuckets(gran){
   const idx=new Map(out.map((b,i)=>[b.key,i]));
   out.forEach(b=>{b.inc=0;b.exp=0;b.jobs=0;});
   doneJobs().forEach(j=>{ const i=idx.get(keyOf(j.date)); if(i!=null){ out[i].inc+=Number(j.price)||0; out[i].jobs++; } });
-  S.expenses.forEach(x=>{ if(!x.date) return; const i=idx.get(keyOf(x.date)); if(i!=null) out[i].exp+=Number(x.amount)||0; });
+  allExpenses().forEach(x=>{ if(!x.date) return; const i=idx.get(keyOf(x.date)); if(i!=null) out[i].exp+=Number(x.amount)||0; });
   out.forEach(b=>b.net=b.inc-b.exp);
   return out;
 }
@@ -2343,7 +3052,7 @@ function viewInsights(){
   const inLast = s => s && s.startsWith(lastMo) && s<=cut;
   const jm=dj.filter(j=>j.date.startsWith(thisMo)), jl=dj.filter(j=>inLast(j.date));
   const inc=sum(jm,j=>j.price), incL=sum(jl,j=>j.price);
-  const exp=sum(S.expenses.filter(x=>(x.date||"").startsWith(thisMo)),x=>x.amount), expL=sum(S.expenses.filter(x=>inLast(x.date)),x=>x.amount);
+  const allX=allExpenses(); const exp=sum(allX.filter(x=>(x.date||"").startsWith(thisMo)),x=>x.amount), expL=sum(allX.filter(x=>inLast(x.date)),x=>x.amount);
   const net=inc-exp, netL=incL-expL;
   const avg=jm.length?inc/jm.length:0, avgL=jl.length?incL/jl.length:0;
   const paid=sum(jm.filter(j=>j.paid),j=>j.price);
@@ -2436,7 +3145,7 @@ function viewInsights(){
       el("div",{},"Need a cleaner",el("b",{style:unassigned?"color:var(--danger)":""},String(unassigned)),"unassigned jobs"),
       el("div",{},"Overdue",el("b",{style:overdue?"color:var(--danger)":""},String(overdue)),"past date, not done")));
 
-  const cats={}; S.expenses.forEach(x=>{ const m=(x.date||"").slice(0,7); if(m!==thisMo&&m!==lastMo) return; const c=(cats[x.category] ||= {cur:0,prev:0}); if(m===thisMo) c.cur+=Number(x.amount)||0; else c.prev+=Number(x.amount)||0; });
+  const cats={}; allExpenses().forEach(x=>{ const m=(x.date||"").slice(0,7); if(m!==thisMo&&m!==lastMo) return; const c=(cats[x.category] ||= {cur:0,prev:0}); if(m===thisMo) c.cur+=Number(x.amount)||0; else c.prev+=Number(x.amount)||0; });
   const ce=Object.entries(cats).sort((a,b)=>b[1].cur-a[1].cur);
   const exP=el("section",{class:"panel"},el("h2",{},"Spending by category"),el("p",{class:"sub"},"This month so far, compared with all of last month"));
   if (!ce.length) exP.append(el("div",{class:"empty"},"No expenses in the last two months."));
@@ -2541,7 +3250,7 @@ $("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close();
   if ($("#pendingViewBtn").dataset.admin){ if (S.adminView) return adminBackHome(); S.tab="platform"; } else S.tab="requests";
   render(); });
 
-const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates"];
+const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates","invoices","publicInvoices"];
 let crewSyncT=null;
 function syncCrewAccess(){
   // Owners keep the business's crew list (crewUids) matching the linked, active team members.
@@ -3329,6 +4038,82 @@ function demoSeed(type){
     for (let tt=since; tt<Date.now()-secAgo*1000; tt+=6*60e3) pts.push({t:Math.round(tt),lat:+(lat+(rnd()-.5)*.004).toFixed(5),lng:+(lng+(rnd()-.5)*.004).toFixed(5),acc:10});
     const sid=put("shifts",{empId:k,userId:C.employees[k].userId,name:C.employees[k].name,start:since,end:null,points:pts,events:[],createdAt:since});
     put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since,shiftId:sid},k); });
+
+  // Job costs and invoices
+  const slug=P.name.toLowerCase().replace(/[^a-z]+/g,"");
+  const trade=P.kind==="trade";
+  business.invoice={address:"410 S Broad St",email:"office@"+slug+".example",phone:"731-555-0100",terms:trade?"net15":"net7",taxRate:trade?9.75:0,
+    markup:trade?15:0,retainage:trade?10:0,payLink:"",payNote:"Checks payable to "+P.name+". Zelle: 731-555-0100. Cards by phone.",footer:"Thank you for your business!",autoRemind:true,startAt:1000};
+  const BIG=[[/water heater/i,"50-gallon gas water heater, Ferguson",[640,820]],[/ev charger/i,"48A EV charger and breaker",[520,690]],[/panel/i,"200A panel and breakers, Graybar",[480,760]],
+    [/system install|heat pump|furnace/i,"Condenser pad, line set and fittings",[280,420]],[/replacement|tear-off|shingle/i,"Ridge vent and drip edge",[180,320]],[/gutter/i,"Seamless gutter coil and hangers",[160,260]]];
+  const MATS=trade?[["material","Fittings, fasteners and sealant",[18,95]],["material","Drywall, mud and tape",[40,140]],["material","Paint and supplies, Sherwin-Williams",[60,190]],["equipment","Tool rental, Sunbelt",[65,180]],["disposal","Dump fee",[25,60]],["permit","Permit fee",[45,120]]]
+    : type==="Lawn Care"?[["material","Mulch, 12 bags",[42,72]],["material","Fertilizer and weed killer",[28,65]],["disposal","Green waste dump fee",[15,30]]]
+    : type==="Pet Care"?[["material","Treats and waste bags",[6,18]],["material","Shampoo and conditioner",[9,22]]]
+    : [["material","Degreaser and oven cleaner",[9,24]],["material","Microfiber cloths and mop heads",[14,38]],["equipment","Carpet cleaner rental",[35,45]]];
+  const addCost=(jid,kind,desc,amt,billable)=>{ const j=C.jobs[jid]; const lead=C.employees[jobCrew(j)[0]];
+    const line={id:"c"+(++n).toString(36),kind,desc,qty:1,unitCost:cents(amt),amount:cents(amt),date:j.date,by:lead?lead.userId:null,byName:lead?lead.name:"Owner",at:at(0,12)};
+    if (billable){ line.billable=true; line.markup=business.invoice.markup; }
+    (j.costs ||= []).push(line); return line; };
+  Object.entries(C.jobs).forEach(([jid,j])=>{
+    if (!["done","in_progress"].includes(j.status) || j.date<D(-60) || !(j.price>0)) return;
+    const big=trade&&!j.projectId&&BIG.find(b=>b[0].test(j.service));
+    if (big) addCost(jid,"material",big[1],R(...big[2]),true);
+    if (rnd()<(trade?.5:.15)){ const m=pick(MATS); addCost(jid,m[0],m[1],R(...m[2]),trade&&m[0]==="material"&&rnd()<.6); }
+  });
+  const tj=Object.entries(C.jobs).find(([,j])=>["in_progress","assigned"].includes(j.status)&&jobCrew(j).includes("eTasha"));
+  if (tj && !(tj[1].costs||[]).length) addCost(tj[0],MATS[0][0],MATS[0][1],R(...MATS[0][2]),trade);
+
+  const invs=[]; const used=new Set();
+  const terms=business.invoice.terms, termDays={receipt:0,net7:7,net15:15,net30:30}[terms];
+  const lineOf=(jid)=>{ const j=C.jobs[jid]; used.add(jid);
+    const ls=[{id:"l"+(++n).toString(36),type:"job",jobId:jid,desc:j.service+" · "+niceDate(j.date)+(j.address?" · "+j.address:""),qty:1,unitPrice:j.price,taxable:false}];
+    (j.costs||[]).filter(c=>c.billable).forEach(c=>ls.push({id:"l"+(++n).toString(36),type:"material",jobId:jid,costId:c.id,desc:c.desc,qty:1,unitPrice:cents(c.unitCost*(1+(c.markup||0)/100)),taxable:true}));
+    return ls; };
+  const mk=(o)=>{ const inv={kind:"standard",status:"sent",discount:0,taxRate:business.invoice.taxRate,depositApplied:0,retainagePct:0,terms,notes:"",payments:[],autoRemind:true,
+      client:{name:o.client,email:o.client.toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@example.com",phone:o.phone||"",address:o.address||""},
+      issueDate:D(o.issue),dueDate:D(o.issue+termDays),createdAt:at(o.issue,17),sentAt:at(o.issue,17),...o.extra};
+    inv.lines=o.lines; invs.push({inv,o}); return inv; };
+  const pay=(inv,off,amt)=>{ inv.payments.push({id:"p"+(++n).toString(36),amount:cents(amt),date:D(Math.min(0,off)),method:pick(["Check","Zelle","Card","Cash","Venmo"]),note:"",at:at(Math.min(0,off),15)}); };
+  if (trade) P.projects.forEach(pr=>{
+    const ph=Object.entries(C.jobs).filter(([,j])=>j.projectId===pr.key&&j.status==="done");
+    if (pr.status==="planning") return;
+    let dep=0;
+    if (pr.status==="active"){ dep=Math.round(pr.contract*.25/100)*100;
+      const di=mk({client:pr.client,phone:pr.phone,address:pr.address,issue:pr.start-4,lines:[{id:"l"+(++n).toString(36),type:"deposit",desc:"Deposit for "+pr.name,qty:1,unitPrice:dep,taxable:false}],extra:{kind:"deposit",projectId:pr.key,taxRate:0}});
+      pay(di,pr.start-2,dep); }
+    const paidPh=ph.filter(([,j])=>j.paid), openPh=ph.filter(([,j])=>!j.paid);
+    if (paidPh.length){ const last=Math.max(...paidPh.map(([,j])=>Math.round((parseYmd(j.date)-parseYmd(D(0)))/864e5)));
+      const iv=mk({client:pr.client,phone:pr.phone,address:pr.address,issue:last+1,lines:paidPh.flatMap(([jid])=>lineOf(jid)),extra:{projectId:pr.key,depositApplied:0}});
+      const t0=invTotals(iv); iv.depositApplied=Math.min(dep,t0.total); dep-=iv.depositApplied; pay(iv,last+6,invTotals(iv).owed); }
+    if (openPh.length){ const last=Math.max(...openPh.map(([,j])=>Math.round((parseYmd(j.date)-parseYmd(D(0)))/864e5)));
+      const iv=mk({client:pr.client,phone:pr.phone,address:pr.address,issue:last+1>0?0:last+1,lines:openPh.flatMap(([jid])=>lineOf(jid)),extra:{projectId:pr.key,retainagePct:pr.status==="active"?10:0,depositApplied:0,viewed:true}});
+      if (dep>0){ iv.depositApplied=Math.min(dep,invTotals(iv).total); dep=0; } }
+  });
+  const calls=Object.entries(C.jobs).filter(([,j])=>j.status==="done"&&j.price>0&&!j.projectId&&j.date>=D(-40)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+  const step=Math.max(1,Math.floor(calls.length/12)); let partial=false, k2=0;
+  calls.forEach(([jid,j],i)=>{ if (i%step || used.has(jid)) return; k2++;
+    const off=Math.round((parseYmd(j.date)-parseYmd(D(0)))/864e5);
+    const iv=mk({client:j.client,phone:j.phone,address:j.address,issue:off,lines:lineOf(jid),extra:{viewed:rnd()<.6}});
+    if (j.paid) pay(iv,off+Math.round(R(0,8)),invTotals(iv).owed);
+    else if (!partial && invTotals(iv).total>150){ partial=true; pay(iv,off+3,Math.round(invTotals(iv).total/2)); }
+  });
+  // A few recent unpaid jobs already invoiced, so every demo has open and overdue invoices to show.
+  calls.filter(([jid,j])=>!j.paid&&!used.has(jid)).slice(-5,-2).forEach(([jid,j],i)=>{
+    const off=Math.round((parseYmd(j.date)-parseYmd(D(0)))/864e5);
+    mk({client:j.client,phone:j.phone,address:j.address,issue:off,lines:lineOf(jid),extra:{viewed:i!==1}}); });
+  const draftJob=calls.slice().reverse().find(([jid,j])=>!j.paid&&!used.has(jid));
+  if (draftJob){ const [jid,j]=draftJob; const iv=mk({client:j.client,phone:j.phone,address:j.address,issue:0,lines:lineOf(jid)}); iv.status="draft"; delete iv.sentAt; }
+  invs.sort((a,b)=>a.inv.issueDate.localeCompare(b.inv.issueDate)||a.inv.createdAt-b.inv.createdAt).forEach(({inv},i)=>{
+    inv.seq=1001+i; inv.number="INV-"+inv.seq;
+    const viewed=inv.viewed; delete inv.viewed;
+    inv.jobIds=[...new Set(inv.lines.filter(l=>l.type==="job").map(l=>l.jobId))];
+    const key="iv"+(++n).toString(36); const t=invTotals(inv);
+    Object.assign(inv,{total:t.total,balance:t.balance,dueNowBal:t.dueNowBal,open:inv.status==="sent"&&t.balance>0.004,updatedAt:inv.createdAt});
+    if (inv.status==="sent"){ inv.publicKey="pk"+key; if (viewed||t.paid) put("publicInvoices",{invoiceId:key,viewedAt:inv.createdAt+Math.round(R(1,30))*36e5},inv.publicKey); }
+    put("invoices",inv,key);
+    inv.lines.filter(l=>l.costId).forEach(l=>{ const c=(C.jobs[l.jobId].costs||[]).find(x=>x.id===l.costId); if (c) c.invoiceId=key; });
+    if (inv.status==="sent" && t.balance<=0.004) inv.jobIds.forEach(id=>{ C.jobs[id].paid=true; });
+  });
   return {business,colls:C};
 }
 function startDemo(type){
@@ -3345,7 +4130,7 @@ function startDemo(type){
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false;
-  if (!["board","projects","team","payroll","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="board";
+  if (!["board","projects","team","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="board";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
   document.title=biz.name+" · Dazift demo";

@@ -6,9 +6,10 @@ rules_version = '2';
 //
 // Who can do what:
 //   Platform admin  — everything (manages all businesses).
-//   Owners          — everything inside their own business, including the books.
+//   Owners          — everything inside their own business, including the books and invoices.
 //   Crew            — their business's jobs, team and shifts. Not the books, bookings or rewards.
 //   Customers       — their own profile, their own booking requests and their own points.
+//   Clients         — one invoice each, through the private link the business sends them.
 //   Everyone else   — nothing.
 
 service cloud.firestore {
@@ -168,6 +169,34 @@ service cloud.firestore {
       allow read, delete: if isOwner(resource.data.get('businessId', null));
       allow create: if isOwner(request.resource.data.get('businessId', null));
       allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+    }
+
+    // ---------- invoices: owners only ----------
+    match /invoices/{id} {
+      allow read, delete: if isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+    }
+    // The client's copy of an invoice. Its id is a long random key that only the link carries,
+    // so anyone with the link can open that one invoice, and nobody can list them.
+    // The client's browser may only stamp the time they first opened it.
+    match /publicInvoices/{key} {
+      allow get: if true;
+      allow list: if isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null)) && key.size() >= 20;
+      allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
+        || (changedOnly(['viewedAt']) && resource.data.get('viewedAt', null) == null
+            && request.resource.data.viewedAt is int && request.resource.data.viewedAt <= request.time.toMillis() + 120000);
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+    // Emails waiting to go out (sent by a Cloud Function, which also checks the sender is an owner).
+    match /mail/{id} {
+      allow create: if isOwner(request.resource.data.get('businessId', null))
+        && request.resource.data.get('createdBy', '') == uid()
+        && request.resource.data.get('to', '') is string && request.resource.data.to.size() < 200
+        && request.resource.data.get('kind', '') == 'invoice';
+      allow read: if isOwner(resource.data.get('businessId', null));
+      allow update, delete: if false;
     }
 
     // ---------- website customers ----------
