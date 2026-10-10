@@ -340,6 +340,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <div class="gate-panel">
     <h1>Set up your business</h1>
     <p>We didn't find a business linked to your account yet. Register it below — or if you're joining an existing team, ask the owner to add you on their Team tab instead.</p>
+    <p class="kv" id="bizWho">Signed in as <b id="bizWhoEmail"></b>. Not you? <a href="#" onclick="signOutApp();return false">Sign out</a></p>
     <div class="gate-form">
       <label class="f">Business name<input id="bizName" type="text" placeholder="e.g. Stanfill Elite Clean Pros"></label>
       <label class="f">Type of business
@@ -2729,6 +2730,7 @@ function showVerify(user){
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showBizOnboard(category, bizName, email, phone){
+  $("#bizWhoEmail").textContent=S.myEmail||email||"";
   if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
   if (bizName && !$("#bizName").value) $("#bizName").value=bizName;
   if (email && !$("#bizEmail").value) $("#bizEmail").value=email;
