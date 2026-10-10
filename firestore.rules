@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Dazift security rules (Firestore)
+// Dayzift security rules (Firestore)
 // Paste into Firebase console → Firestore Database → Rules → Publish.
 // A product of LIT America — www.litamerica.net
 //

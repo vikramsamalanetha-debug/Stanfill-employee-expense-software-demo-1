@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Dazift security rules (Storage: receipt photos)
+// Dayzift security rules (Storage: receipt photos)
 // Paste into Firebase console → Storage → Rules → Publish.
 // A product of LIT America — www.litamerica.net
 

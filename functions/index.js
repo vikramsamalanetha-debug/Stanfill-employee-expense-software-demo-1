@@ -1,4 +1,4 @@
-// Dazift email: admin alerts, plus invoices and overdue reminders for every business.
+// Dayzift email: admin alerts, plus invoices and overdue reminders for every business.
 // Admin alerts tell the platform admin by email and phone notification when
 //  1) someone creates an owner account (even if they never confirm their email), and
 //  2) a business is submitted and is waiting for approval.
@@ -29,18 +29,18 @@ async function sendEmail(subject, heading, rows, note) {
   const table = rows.filter(([, v]) => v).map(([k, v]) =>
     `<tr><td style="padding:6px 14px 6px 0;color:#56706B;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#16302C"><b>${esc(v)}</b></td></tr>`).join("");
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;color:#16302C">
-    <div style="background:#1F7A69;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-size:20px;font-weight:800">Dazift</div>
+    <div style="background:#1F7A69;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-size:20px;font-weight:800">Dayzift</div>
     <div style="border:1px solid #E2E8E4;border-top:0;border-radius:0 0 12px 12px;padding:20px">
       <h2 style="margin:0 0 6px;font-size:20px">${esc(heading)}</h2>
       <p style="margin:0 0 14px;color:#56706B">${esc(note)}</p>
       <table style="border-collapse:collapse;font-size:15px">${table}</table>
       <p style="margin:20px 0 0"><a href="${APP_URL}" style="background:#F2C230;color:#2A2305;padding:10px 18px;border-radius:999px;font-weight:800;text-decoration:none">Open Platform Admin</a></p>
-      <p style="margin:22px 0 0;font-size:12px;color:#8A9B97">Dazift · A product of <a href="https://www.litamerica.net" style="color:#8A9B97">LIT America</a></p>
+      <p style="margin:22px 0 0;font-size:12px;color:#8A9B97">Dayzift · A product of <a href="https://www.litamerica.net" style="color:#8A9B97">LIT America</a></p>
     </div></div>`;
   const text = `${heading}\n${note}\n\n` + rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\nOpen Platform Admin: ${APP_URL}`;
   const port = Number(SMTP_PORT.value()) || 465;
   const transport = nodemailer.createTransport({ host: SMTP_HOST.value(), port, secure: port === 465, auth: { user: SMTP_USER.value(), pass: SMTP_PASS.value() } });
-  await transport.sendMail({ from: `Dazift <${SMTP_USER.value()}>`, to: ADMIN_EMAIL.value(), subject, text, html });
+  await transport.sendMail({ from: `Dayzift <${SMTP_USER.value()}>`, to: ADMIN_EMAIL.value(), subject, text, html });
 }
 
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
@@ -70,7 +70,7 @@ exports.notifyNewSignup = onDocumentCreated({ document: "crewAccounts/{uid}", se
   const a = event.data && event.data.data(); if (!a || a.role !== "owner") return;   // crew sign-ups don't need an alert
   const biz = a.plannedBusinessName || "a new business";
   await alertAdmin(
-    `New Dazift sign-up: ${biz}`, "New sign-up",
+    `New Dayzift sign-up: ${biz}`, "New sign-up",
     [["Business", a.plannedBusinessName], ["Type", a.plannedCategory], ["Name", a.name], ["Email", a.email], ["Phone", a.phone], ["Signed up", when(a.createdAt)]],
     "They still need to confirm their email and submit the business. If they don't, it'll show under \"Signed up, no business yet\" in Platform Admin.",
     "New sign-up: " + biz, [a.name, a.plannedCategory, a.phone || a.email].filter(Boolean).join(" · "));
@@ -81,16 +81,16 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
   const b = event.data && event.data.data(); if (!b || b.status !== "pending") return;   // businesses you pre-register start active
   const place = [b.city, b.state].filter(Boolean).join(", ");
   await alertAdmin(
-    `Approve on Dazift: ${b.name || "new business"}`, "A business is waiting for your approval",
+    `Approve on Dayzift: ${b.name || "new business"}`, "A business is waiting for your approval",
     [["Business", b.name], ["Type", b.category], ["Location", place], ["Phone", b.phone], ["Business email", b.email], ["Owner email", (b.ownerEmails || [])[0]], ["About", b.description], ["Submitted", when(b.createdAt)]],
-    "They can't use Dazift until you approve them in Platform Admin.",
+    "They can't use Dayzift until you approve them in Platform Admin.",
     "Approve: " + (b.name || "new business"), [b.category, place].filter(Boolean).join(" · ") || "Waiting for your approval");
 });
 
 // ---------- Invoices ----------
 // The app drops a request in "mail" when an owner taps "Send email"; this sends the invoice link
-// to the client from "<Business> via Dazift", with replies going to the business.
-// Dazift never takes payments: "Pay online" is the business's own payment link.
+// to the client from "<Business> via Dayzift", with replies going to the business.
+// Dayzift never takes payments: "Pay online" is the business's own payment link.
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const INVOICE_BASE = "https://dazift.com/invoice.html?k=";
 const money = (n) => "$" + (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -129,17 +129,17 @@ function invoiceEmail(p, key, reminder) {
       ${p.payNote ? `<p style="margin:16px 0 0;color:#1D1B18"><b>How to pay:</b> ${esc(p.payNote)}</p>` : ""}
       <p style="margin:18px 0 0;color:#6A655D;font-size:14px">Questions? Reply to this email${b.phone ? " or call " + esc(b.phone) : ""}.</p>
     </div>
-    <p style="margin:16px 0 0;font-size:12px;color:#8A8278;text-align:center">Sent with Dazift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></div>`;
+    <p style="margin:16px 0 0;font-size:12px;color:#8A8278;text-align:center">Sent with Dayzift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></div>`;
   const text = `Hi ${first},\n\n${intro}\n\nView invoice: ${url}\n` + (p.payLink ? `Pay online: ${p.payLink}\n` : "") + (p.payNote ? `How to pay: ${p.payNote}\n` : "")
-    + `\nQuestions? Reply to this email${b.phone ? " or call " + b.phone : ""}.\n\n${b.name}\nSent with Dazift · A product of LIT America`;
+    + `\nQuestions? Reply to this email${b.phone ? " or call " + b.phone : ""}.\n\n${b.name}\nSent with Dayzift · A product of LIT America`;
   return { subject, html, text };
 }
 
 async function mailInvoice(p, key, to, reminder) {
   const b = p.biz || {};
-  const name = String(b.name || "Dazift").replace(/["<>\r\n]/g, "").slice(0, 80);
+  const name = String(b.name || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
   const msg = invoiceEmail(p, key, reminder);
-  await transport().sendMail({ from: `"${name} via Dazift" <${SMTP_USER.value()}>`, to, replyTo: okEmail(b.email) ? b.email : undefined, ...msg });
+  await transport().sendMail({ from: `"${name} via Dayzift" <${SMTP_USER.value()}>`, to, replyTo: okEmail(b.email) ? b.email : undefined, ...msg });
 }
 
 // Same rule as the app: only businesses waiting for approval or suspended are blocked.
