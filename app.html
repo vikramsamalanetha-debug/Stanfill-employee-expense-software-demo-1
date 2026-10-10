@@ -43,6 +43,7 @@ a{color:var(--primary)}
 .tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:20px;width:max-content;max-width:100%;overflow-x:auto}
 .tabs button{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap}
 .tabs button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
+.settings-btn[aria-pressed="true"]{background:var(--surface-2);color:var(--ink)}
 
 /* buttons & fields */
 .btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font-size:14px}
@@ -533,7 +534,6 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="invoices" aria-selected="false" data-owner>Invoices</button>
     <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
     <button role="tab" data-tab="books" aria-selected="false" data-owner>Books</button>
-    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main id="view"></main>
   <footer class="lit-credit app-foot">Dayzift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
@@ -797,7 +797,8 @@ function drawWho(){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
   if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
-  w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
+  // Settings lives here only (not also as a tab), so it's always in reach, even on a phone.
+  if (!S.adminView) w.append(el("button",{class:"btn ghost settings-btn","aria-pressed":String(S.tab==="settings"),onclick:()=>{S.tab="settings";render();window.scrollTo(0,0);}},"\u2699 Settings"));
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
