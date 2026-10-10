@@ -128,6 +128,13 @@ textarea{resize:vertical;min-height:70px}
 .card .price{font-weight:800}
 .card .notes{font-size:13px;color:var(--muted);background:var(--bg);border-radius:var(--radius-sm);padding:6px 8px;margin:6px 0;white-space:pre-wrap}
 .card select{width:100%;padding:6px 8px;font-size:14px}
+.crewbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.crewbox .who{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;padding:3px 4px 3px 3px;font-size:13px;font-weight:700}
+.crewbox .av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font:750 10px var(--display)}
+.crewbox small{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.crewbox .x{border:0;background:transparent;color:var(--muted);font-size:16px;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0}
+.crewbox .x:hover{background:var(--danger-soft);color:var(--danger)}
+.card .crewbox select.add{width:auto;flex:1 1 130px;min-width:0;padding:5px 8px;font-size:13px;border-radius:999px}
 .card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .paid{font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
 .paid.yes{background:var(--primary-soft);color:var(--primary)}
@@ -579,7 +586,7 @@ function drawWho(){
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
-  w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));
+  if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
 function drawBanners(){
@@ -1094,12 +1101,20 @@ function jobCard(j){
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
 
   if (st!=="done"){
-    const sel=el("select",{"aria-label":"Assign to", value:j.assigneeId||"", onchange:e=>assign(j,e.target.value)},
-      el("option",{value:""},"Unassigned"),
-      S.employees.filter(e=>e.active!==false || e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)));
-    card.append(sel);
-    const extra=jobCrew(j).filter(id=>id!==j.assigneeId).map(empById).filter(Boolean);
-    if (extra.length) card.append(el("div",{class:"kv",style:"margin-top:6px"},"With ",el("b",{},extra.map(e=>e.name.split(" ")[0]).join(", "))));
+    // Everyone on the job, lead first. Tap × to take someone off; pick from the list to add more.
+    const crew=jobCrew(j).map(empById).filter(Boolean);
+    const box=el("div",{class:"crewbox"});
+    crew.forEach((e,i)=>box.append(el("span",{class:"who"},
+      el("span",{class:"av",style:"background:"+colorFor(e),"aria-hidden":"true"},initials(e.name)),
+      e.name.split(" ")[0], i===0&&crew.length>1?el("small",{},"lead"):null,
+      el("button",{type:"button",class:"x","aria-label":"Take "+e.name+" off this job",onclick:()=>removeFromJob(j,e.id)},"×"))));
+    const others=S.employees.filter(e=>e.active!==false && !jobCrew(j).includes(e.id));
+    if (others.length) box.append(el("select",{class:"add","aria-label":crew.length?"Add another person to this job":"Assign this job",
+        onchange:ev=>{ if(ev.target.value) addToJob(j,ev.target.value); }},
+      el("option",{value:""},crew.length?"+ Add person":"Assign someone"),
+      others.map(e=>el("option",{value:e.id},e.name))));
+    if (!crew.length && !others.length) box.append(el("span",{class:"kv"},"Add your crew on the Team tab"));
+    card.append(box);
   } else {
     const names=jobCrew(j).map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
     card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},names.length?names.join(", "):"—")),
@@ -1122,6 +1137,21 @@ function assign(j, empId){
   const who = empById(empId);
   write(()=>Store.update("jobs",j.id,{assigneeId:empId||null,status}), who?("Assigned to "+who.name):"Unassigned");
 }
+// The first person on a job is its lead; everyone after is extra crew.
+function addToJob(j, empId){
+  const who=empById(empId); if(!who) return;
+  if (!j.assigneeId) return assign(j, empId);
+  const crewIds=[...new Set([...(j.crewIds||[]),empId])].filter(id=>id!==j.assigneeId);
+  write(()=>Store.update("jobs",j.id,{crewIds}), who.name+" added to this job");
+}
+function removeFromJob(j, empId){
+  const who=empById(empId);
+  const rest=jobCrew(j).filter(id=>id!==empId);
+  const st=j.status||"new";
+  const patch={assigneeId:rest[0]||null, crewIds:rest.slice(1)};
+  if (!rest.length && st==="assigned") patch.status="new";
+  write(()=>Store.update("jobs",j.id,patch), (who?who.name:"They")+" taken off this job");
+}
 function setStatus(j,status){
   const patch={status};
   if (status==="in_progress") patch.startedAt=Date.now();
@@ -1142,10 +1172,10 @@ function openJob(j, preset){
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
     el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
     el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
-    el("label",{class:"f"},hasProjects()?"Lead":"Assign to",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
+    el("label",{class:"f"},"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
     hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||""},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
     activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
-      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Extra crew on this job"),
+      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Also on this job"),
       el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null,
     el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:hasProjects()?"Materials on site, lockbox code, inspection time…":"Gate code, pets, rooms to skip…"},j.notes||"")),
     el("div",{class:"acts"},
@@ -2025,9 +2055,10 @@ function viewInsights(){
   // crew performance (last 30 days)
   const since30=daysAgo(30), since90=daysAgo(90);
   const d30=dj.filter(j=>j.date>=since30), d90=dj.filter(j=>j.date>=since90);
-  const crew=S.employees.map(e=>{ const js=d30.filter(j=>j.assigneeId===e.id);
+  // Everyone on a job gets credit for it; revenue is split evenly between them so the total still adds up.
+  const crew=S.employees.map(e=>{ const js=d30.filter(j=>jobCrew(j).includes(e.id));
     const timed=js.filter(j=>j.startedAt&&j.completedAt&&j.completedAt>j.startedAt&&j.completedAt-j.startedAt<12*3600e3);
-    return {e, n:js.length, rev:sum(js,j=>j.price), hrs: timed.length? sum(timed,j=>j.completedAt-j.startedAt)/timed.length/3600e3 : null}; })
+    return {e, n:js.length, rev:sum(js,j=>(Number(j.price)||0)/Math.max(1,jobCrew(j).length)), hrs: timed.length? sum(timed,j=>j.completedAt-j.startedAt)/timed.length/3600e3 : null}; })
     .filter(c=>c.n||c.e.active!==false).sort((a,b)=>b.rev-a.rev);
   const crewMax=Math.max(1,...crew.map(c=>c.rev));
   const crewP=el("section",{class:"panel"},el("h2",{},"Crew performance"),el("p",{class:"sub"},"Last 30 days, by money brought in"));
