@@ -100,7 +100,7 @@ function render(p){
   const tb=el("tbody"); (p.lines||[]).forEach(l=>tb.append(el("tr",{},el("td",{},l.desc),el("td",{class:"num q"},String(l.qty)),el("td",{class:"num p"},money(l.unitPrice)),el("td",{class:"num"},money(l.amount)))));
   doc.append(el("table",{},el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{class:"num"},"Qty"),el("th",{class:"num"},"Price"),el("th",{class:"num"},"Amount"))),tb));
   const T=el("div",{class:"tot"}); const L=(a,v,c2)=>T.append(el("div",{class:c2||""},el("span",{},a),el("b",{},v)));
-  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L("Sales tax ("+p.taxRate+"%)",money(p.tax));
+  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L("Sales tax ("+p.taxRate+"%"+(p.taxBase!=null && Math.abs((p.subtotal-(p.discount||0))-p.taxBase)>0.004?" on "+money(p.taxBase):"")+")",money(p.tax));
   L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
   if (p.paid) L("Paid","−"+money(p.paid)); L(p.status==="paid"?"Balance":"Amount due",money(p.status==="paid"?0:amt),"dueRow");
   doc.append(T);

@@ -2318,13 +2318,15 @@ function invoiceFromJobs(jobs){
 const invUrl = inv => ((location.protocol.startsWith("http") && !isNative()) ? location.origin : "https://dazift.com")+"/invoice.html?k="+inv.publicKey;
 function randomKey(){ const b=new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
 // What the client sees, kept in a separate record that anyone with the link can open.
+// "Sales tax (9.75%)", or "Sales tax (9.75% on $312.50)" when only some lines are taxed.
+function taxLabel(rate,base,net){ return "Sales tax ("+rate+"%"+(base!=null && Math.abs((Number(net)||0)-(Number(base)||0))>0.004 ? " on "+money(base) : "")+")"; }
 function publicCopy(inv){
   const t=invTotals(inv), st=invSettings(), b=S.business||{};
   return {businessId:S.businessId,invoiceId:inv.id,number:inv.number,kind:inv.kind||"standard",
     biz:{name:b.name||"",email:st.email||"",phone:st.phone||"",address:st.address||"",city:b.city||"",state:b.state||""},
     client:inv.client,issueDate:inv.issueDate,dueDate:inv.dueDate,terms:(INV_TERMS.find(x=>x[0]===inv.terms)||INV_TERMS[0])[1],
     lines:(inv.lines||[]).map(l=>({desc:l.desc||"",qty:Number(l.qty)||0,unitPrice:Number(l.unitPrice)||0,amount:invLineAmt(l)})),
-    subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,total:t.total,credit:t.credit,
+    subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,taxBase:t.subtotal?Math.round(t.taxable*(1-t.discount/t.subtotal)*100)/100:0,total:t.total,credit:t.credit,
     retainagePct:inv.kind==="deposit"?0:Number(inv.retainagePct)||0,held:t.held,dueNow:t.dueNow,paid:t.paid,balance:t.balance,dueNowBal:t.dueNowBal,
     status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
     viewedAt:(pubFor(inv)||{}).viewedAt||null,updatedAt:Date.now()};
@@ -2513,7 +2515,7 @@ function invoiceEditor(d){
     const L=(a,b,c)=>el("div",{class:c||""},el("span",{},a),el("b",{},b));
     tot.append(L("Subtotal",money(t.subtotal)));
     if (t.discount) tot.append(L("Discount","−"+money(t.discount)));
-    if (t.tax) tot.append(L("Sales tax ("+(Number(d.taxRate)||0)+"%)",money(t.tax)));
+    if (t.tax) tot.append(L(taxLabel(Number(d.taxRate)||0,t.subtotal?t.taxable*(1-t.discount/t.subtotal):0,t.subtotal-t.discount),money(t.tax)));
     tot.append(L("Total",money(t.total),"t"));
     if (t.credit) tot.append(L("Less deposit received","−"+money(t.credit)));
     if (t.held) tot.append(L("Retainage held ("+(Number(d.retainagePct)||0)+"%)","−"+money(t.held)));
@@ -2651,7 +2653,7 @@ function invoiceDocEl(inv){
   const tb=el("tbody"); p.lines.forEach(l=>tb.append(el("tr",{},el("td",{},l.desc),el("td",{class:"num"},String(l.qty)),el("td",{class:"num"},money(l.unitPrice)),el("td",{class:"num"},money(l.amount)))));
   doc.append(el("table",{class:"ilines"},el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{class:"num"},"Qty"),el("th",{class:"num"},"Price"),el("th",{class:"num"},"Amount"))),tb));
   const T=el("div",{class:"itot"}); const L=(a,b,c)=>T.append(el("div",{class:c||""},el("span",{},a),el("b",{},b)));
-  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L("Sales tax ("+p.taxRate+"%)",money(p.tax));
+  L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount)); if (p.tax) L(taxLabel(p.taxRate,p.taxBase,p.subtotal-(p.discount||0)),money(p.tax));
   L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
   if (p.paid) L("Paid","−"+money(p.paid)); L(p.status==="paid"?"Balance":"Amount due",money(p.status==="paid"?0:p.dueNowBal),"due");
   doc.append(T);
