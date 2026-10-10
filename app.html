@@ -128,6 +128,13 @@ textarea{resize:vertical;min-height:70px}
 .card .price{font-weight:800}
 .card .notes{font-size:13px;color:var(--muted);background:var(--bg);border-radius:var(--radius-sm);padding:6px 8px;margin:6px 0;white-space:pre-wrap}
 .card select{width:100%;padding:6px 8px;font-size:14px}
+.crewbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.crewbox .who{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;padding:3px 4px 3px 3px;font-size:13px;font-weight:700}
+.crewbox .av{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font:750 10px var(--display)}
+.crewbox small{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.crewbox .x{border:0;background:transparent;color:var(--muted);font-size:16px;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0}
+.crewbox .x:hover{background:var(--danger-soft);color:var(--danger)}
+.card .crewbox select.add{width:auto;flex:1 1 130px;min-width:0;padding:5px 8px;font-size:13px;border-radius:999px}
 .card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .paid{font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px}
 .paid.yes{background:var(--primary-soft);color:var(--primary)}
@@ -362,7 +369,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="requests" aria-selected="false" data-owner>Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
     <button role="tab" data-tab="projects" aria-selected="false" data-feature="projects" hidden>Projects</button>
-    <button role="tab" data-tab="rewards" aria-selected="false" data-owner>Rewards</button>
+    <button role="tab" data-tab="rewards" aria-selected="false" data-owner data-feature="rewards">Rewards</button>
     <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
     <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
@@ -412,6 +419,9 @@ let SERVICES = SERVICE_DEFAULTS.Cleaning.slice();
 const EXP_CATS = ["Supplies","Fuel & mileage","Payroll","Equipment","Insurance","Marketing","Vehicle upkeep","Other"];
 const TRADE_EXP_CATS = ["Materials","Subcontractors","Permits & fees","Tool rental"];
 function hasProjects(){ const b=S.business||{}; if (b.features && typeof b.features.projects==="boolean") return b.features.projects; return TRADE_CATS.includes(b.category); }
+// Customer rewards suit repeat-visit businesses (cleaning, lawn, pet care), not one-off trade jobs.
+// Off by default for the trades; any business can switch it in Settings. A business that already has members keeps it on.
+function hasRewards(){ const b=S.business||{}; if (b.features && typeof b.features.rewards==="boolean") return b.features.rewards; return !TRADE_CATS.includes(b.category) || S.customers.some(c=>c.rewardsMember); }
 const PROJECT_STATUSES = [{id:"planning",label:"Planning"},{id:"active",label:"Active"},{id:"hold",label:"On hold"},{id:"done",label:"Finished"}];
 // Everyone working a job: the lead (assigneeId) plus any extra crew.
 function jobCrew(j){ return [...new Set([j.assigneeId,...(Array.isArray(j.crewIds)?j.crewIds:[])].filter(Boolean))]; }
@@ -545,8 +555,10 @@ function draw(){
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
   document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
+  document.querySelectorAll(".tabs button[data-feature=rewards]").forEach(b=>{ b.hidden = !S.isOwner || !hasRewards(); });
   if (!S.isOwner && ["requests","rewards","insights","books","payroll"].includes(S.tab)) S.tab="board";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
+  if (S.tab==="rewards" && !hasRewards()) S.tab="board";
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
@@ -574,6 +586,7 @@ function drawWho(){
   }
   w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
+  if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
 function drawBanners(){
@@ -619,7 +632,9 @@ function drawBanners(){
 
 /* ---- Rewards: members, balances and the points log ---- */
 function rewardsName(){ const b=S.business||{}; return b.rewardsName || ((b.category||"Cleaning")==="Cleaning" ? "Clean Rewards" : "Rewards"); }
-const REWARD_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const CLEAN_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const GENERAL_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"$30 off next booking"},{p:500,t:"20% off a visit"},{p:1000,t:"Free standard visit"}];
+let REWARD_TIERS=CLEAN_TIERS;
 const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
 function addLedger(c, delta, type, reason){
   if (S.demo) return write(()=>Store.set("pointsLedger",newId(),{uid:c.id,businessId:S.businessId,customerName:c.name||"",delta,type,reason,by:S.myEmail,createdAt:Date.now()}),"Points updated");
@@ -750,17 +765,17 @@ function settingsBusiness(){
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,maxlength:"120",value:b.name||""})),
       el("label",{class:"f"},"Type of business",el("select",{name:"category",value:CATEGORIES.includes(b.category)?b.category:"Other"},CATEGORIES.map(c=>el("option",{},c)))),
-      el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
-        el("input",{type:"checkbox",name:"projects",checked:hasProjects(),style:"width:auto;margin:0;"}),
-        "Projects & subcontractors"),
+      el("div",{class:"checks",style:"align-self:end;padding-bottom:9px"},
+        el("label",{},el("input",{type:"checkbox",name:"projects",checked:hasProjects()}),"Projects & subcontractors"),
+        el("label",{},el("input",{type:"checkbox",name:"rewards",checked:hasRewards()}),"Customer rewards")),
       el("label",{class:"f full"},"Services you offer (one per line)",el("textarea",{name:"services",rows:"6"},SERVICES.join("\n"))),
-      el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})),
+      hasRewards() ? el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})) : el("input",{type:"hidden",name:"rewardsName",value:S.business.rewardsName||""}),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Save"))));
   f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
     const services=[...new Set(d.services.split("\n").map(x=>x.trim()).filter(Boolean))].slice(0,30);
     const name=d.name.trim(), rn=d.rewardsName.trim();
     const category=CATEGORIES.includes(d.category)?d.category:"Other";
-    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked};
+    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked,rewards:!!f.querySelector("[name=rewards]").checked};
     if(!name) return toast("Enter your business name.");
     if(!services.length) return toast("List at least one service.");
     write(async()=>{
@@ -775,7 +790,7 @@ function settingsBusiness(){
 function viewSettings(){
   const frag=document.createDocumentFragment();
   const secs=S.isOwner&&S.business
-    ?[["business","Business"],["notify","Notifications"],["access","Owners & invites"],["rewards","Rewards"],["account","Account"]]
+    ?[["business","Business"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
@@ -823,7 +838,7 @@ function viewRequests(){
       el("span",{class:"paid "+(status==="pending"?"no":"yes")}, status)));
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
     if (b.details) card.append(el("div",{class:"notes"},b.details));
-    if (b.wantsRewards) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
+    if (b.wantsRewards && hasRewards()) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
     const trail=[];
     if (b.ownerNotifiedAt) trail.push("Owners alerted");
     if (b.reminderCount) trail.push(b.reminderCount+" reminder"+(b.reminderCount>1?"s":"")+" sent");
@@ -1086,12 +1101,20 @@ function jobCard(j){
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
 
   if (st!=="done"){
-    const sel=el("select",{"aria-label":"Assign to", value:j.assigneeId||"", onchange:e=>assign(j,e.target.value)},
-      el("option",{value:""},"Unassigned"),
-      S.employees.filter(e=>e.active!==false || e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)));
-    card.append(sel);
-    const extra=jobCrew(j).filter(id=>id!==j.assigneeId).map(empById).filter(Boolean);
-    if (extra.length) card.append(el("div",{class:"kv",style:"margin-top:6px"},"With ",el("b",{},extra.map(e=>e.name.split(" ")[0]).join(", "))));
+    // Everyone on the job, lead first. Tap × to take someone off; pick from the list to add more.
+    const crew=jobCrew(j).map(empById).filter(Boolean);
+    const box=el("div",{class:"crewbox"});
+    crew.forEach((e,i)=>box.append(el("span",{class:"who"},
+      el("span",{class:"av",style:"background:"+colorFor(e),"aria-hidden":"true"},initials(e.name)),
+      e.name.split(" ")[0], i===0&&crew.length>1?el("small",{},"lead"):null,
+      el("button",{type:"button",class:"x","aria-label":"Take "+e.name+" off this job",onclick:()=>removeFromJob(j,e.id)},"×"))));
+    const others=S.employees.filter(e=>e.active!==false && !jobCrew(j).includes(e.id));
+    if (others.length) box.append(el("select",{class:"add","aria-label":crew.length?"Add another person to this job":"Assign this job",
+        onchange:ev=>{ if(ev.target.value) addToJob(j,ev.target.value); }},
+      el("option",{value:""},crew.length?"+ Add person":"Assign someone"),
+      others.map(e=>el("option",{value:e.id},e.name))));
+    if (!crew.length && !others.length) box.append(el("span",{class:"kv"},"Add your crew on the Team tab"));
+    card.append(box);
   } else {
     const names=jobCrew(j).map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
     card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},names.length?names.join(", "):"—")),
@@ -1114,6 +1137,21 @@ function assign(j, empId){
   const who = empById(empId);
   write(()=>Store.update("jobs",j.id,{assigneeId:empId||null,status}), who?("Assigned to "+who.name):"Unassigned");
 }
+// The first person on a job is its lead; everyone after is extra crew.
+function addToJob(j, empId){
+  const who=empById(empId); if(!who) return;
+  if (!j.assigneeId) return assign(j, empId);
+  const crewIds=[...new Set([...(j.crewIds||[]),empId])].filter(id=>id!==j.assigneeId);
+  write(()=>Store.update("jobs",j.id,{crewIds}), who.name+" added to this job");
+}
+function removeFromJob(j, empId){
+  const who=empById(empId);
+  const rest=jobCrew(j).filter(id=>id!==empId);
+  const st=j.status||"new";
+  const patch={assigneeId:rest[0]||null, crewIds:rest.slice(1)};
+  if (!rest.length && st==="assigned") patch.status="new";
+  write(()=>Store.update("jobs",j.id,patch), (who?who.name:"They")+" taken off this job");
+}
 function setStatus(j,status){
   const patch={status};
   if (status==="in_progress") patch.startedAt=Date.now();
@@ -1134,10 +1172,10 @@ function openJob(j, preset){
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
     el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
     el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
-    el("label",{class:"f"},hasProjects()?"Lead":"Assign to",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
+    el("label",{class:"f"},"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
     hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||""},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
     activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
-      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Extra crew on this job"),
+      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Also on this job"),
       el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null,
     el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:hasProjects()?"Materials on site, lockbox code, inspection time…":"Gate code, pets, rooms to skip…"},j.notes||"")),
     el("div",{class:"acts"},
@@ -2017,9 +2055,10 @@ function viewInsights(){
   // crew performance (last 30 days)
   const since30=daysAgo(30), since90=daysAgo(90);
   const d30=dj.filter(j=>j.date>=since30), d90=dj.filter(j=>j.date>=since90);
-  const crew=S.employees.map(e=>{ const js=d30.filter(j=>j.assigneeId===e.id);
+  // Everyone on a job gets credit for it; revenue is split evenly between them so the total still adds up.
+  const crew=S.employees.map(e=>{ const js=d30.filter(j=>jobCrew(j).includes(e.id));
     const timed=js.filter(j=>j.startedAt&&j.completedAt&&j.completedAt>j.startedAt&&j.completedAt-j.startedAt<12*3600e3);
-    return {e, n:js.length, rev:sum(js,j=>j.price), hrs: timed.length? sum(timed,j=>j.completedAt-j.startedAt)/timed.length/3600e3 : null}; })
+    return {e, n:js.length, rev:sum(js,j=>(Number(j.price)||0)/Math.max(1,jobCrew(j).length)), hrs: timed.length? sum(timed,j=>j.completedAt-j.startedAt)/timed.length/3600e3 : null}; })
     .filter(c=>c.n||c.e.active!==false).sort((a,b)=>b.rev-a.rev);
   const crewMax=Math.max(1,...crew.map(c=>c.rev));
   const crewP=el("section",{class:"panel"},el("h2",{},"Crew performance"),el("p",{class:"sub"},"Last 30 days, by money brought in"));
@@ -2177,6 +2216,7 @@ function syncCrewAccess(){
   if (!S.isOwner || S.adminView || !S.business || !S.businessId) return;
   clearTimeout(crewSyncT);
   crewSyncT=setTimeout(async()=>{
+    if (!S.business || !S.isOwner || S.adminView || S.demo) return;   // signed out or switched business meanwhile
     const want=[...new Set(S.employees.filter(e=>e.userId && e.active!==false).map(e=>e.userId))].sort();
     const have=[...new Set(S.business.crewUids||[])].sort();
     if (want.join(",")===have.join(",")) return;
@@ -2258,14 +2298,43 @@ async function enablePush(){
     await PN.register();
   } catch(e){ console.warn("Push setup failed", e); }
 }
+// Any step that needs the network or the phone gets a few seconds at most,
+// so a bad signal or a stuck plugin can never trap someone in their account.
+function withinMs(promise, ms){ return Promise.race([Promise.resolve(promise).catch(e=>console.warn(e)), new Promise(r=>setTimeout(r,ms))]); }
+let signingOut=false;
 async function signOutApp(){
   if (S.demo) return exitDemo();
+  if (signingOut) return;
+  signingOut=true;
+  toast("Signing out…");
+  // End a running shift so location sharing stops with the session.
   try {
-    if (pushToken){ await firebase.firestore().doc("devices/"+pushToken).delete(); }
-    if (isNative() && window.Capacitor.Plugins.PushNotifications) await window.Capacitor.Plugins.PushNotifications.unregister();
+    const m=me(); const loc=m&&locFor(m.id);
+    if (bgWatcherId){ const BG=window.Capacitor&&Capacitor.Plugins.BackgroundGeolocation; if (BG) await withinMs(BG.removeWatcher({id:bgWatcherId}),1500); bgWatcherId=null; }
+    if (watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+    S.watching=false;
+    if (m && loc && loc.onDuty) await withinMs(Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}),2500);
+    syncRunnerContext(false);
   } catch(e){ console.warn(e); }
+  // This phone stops getting the business's alerts.
+  if (pushToken) await withinMs(firebase.firestore().doc("devices/"+pushToken).delete(),2500);
+  if (isNative() && window.Capacitor.Plugins.PushNotifications) await withinMs(window.Capacitor.Plugins.PushNotifications.unregister(),2000);
   pushToken=null;
-  auth.signOut();
+  resetToSignedOut();
+  try { $("#gateLoginPassword").value=""; } catch(e){}
+  try { await withinMs(auth.signOut(),4000); } catch(e){ console.warn(e); }
+  // On a bad connection, keep trying quietly; the sign-in page is already showing.
+  if (auth.currentUser) setTimeout(()=>{ auth.signOut().catch(e=>console.warn(e)); },3000);
+  signingOut=false;
+}
+function resetToSignedOut(){
+  unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
+  COLLS.forEach(c=>{ S[c]=[]; });
+  Object.assign(S,{myUserId:null,myEmail:null,isOwner:false,isPlatformAdmin:false,business:null,businessId:null,homeBusiness:null,
+    adminView:false,viewOnly:false,tab:"board",who:"all",projFilter:null,pr:null,dutyErr:null});
+  pendingPopupShown=false; booted=false; clearTimeout(crewSyncT);
+  document.title="Dazift";
+  showGate(); window.scrollTo(0,0);
 }
 window.signOutApp = signOutApp;
 let booted=false;
@@ -2473,6 +2542,7 @@ function applyBusinessLists(biz){
   const cat = SERVICE_DEFAULTS[biz.category] ? biz.category : "Cleaning";
   SERVICES = Array.isArray(biz.services) && biz.services.length ? biz.services.slice() : SERVICE_DEFAULTS[cat].slice();
   EXP_CATS[0] = cat==="Cleaning" ? "Cleaning supplies" : "Supplies";
+  REWARD_TIERS = cat==="Cleaning" ? CLEAN_TIERS : GENERAL_TIERS;
   // Trade businesses also log materials, subcontractor payments, permits and rentals.
   const trade = (biz.features && typeof biz.features.projects==="boolean") ? biz.features.projects : TRADE_CATS.includes(biz.category);
   TRADE_EXP_CATS.forEach(c=>{ const i=EXP_CATS.indexOf(c); if (trade && i<0) EXP_CATS.splice(EXP_CATS.length-1,0,c); if (!trade && i>=0) EXP_CATS.splice(i,1); });
@@ -2565,7 +2635,7 @@ function demoSeed(kind){
 
   if (kind==="cleaning"){
     business={id:BID,name:"Sparkle & Shine Cleaning",category:"Cleaning",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
-      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false}};
+      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false,rewards:true}};
     people([["eMaria","Maria Lopez","731-555-0142","Team lead"],["eTasha","Tasha Greene","731-555-0178","Cleaner"],["eJordan","Jordan Pike","731-555-0119","Cleaner"],["eAmber","Amber Cole","731-555-0133","Trainee"]]);
     put("payRates",{cls:"w2",payType:"hourly",rate:17,w9:false},"eMaria");
     put("payRates",{cls:"1099",payType:"percent",rate:40,w9:true},"eTasha");
@@ -2600,7 +2670,7 @@ function demoSeed(kind){
   } else {
     business={id:BID,name:"Ridgeline Builders",category:"Construction",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
       services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
-      rewardsName:"Ridgeline Rewards",features:{projects:true},sutaRate:2.7};
+      features:{projects:true,rewards:false},sutaRate:2.7};
     put("companies",{name:"Ray’s Drywall LLC",trade:"Drywall",contact:"Ray Duncan",phone:"731-555-0187",w9:true,insuranceExp:D(18),licenseExp:D(210),createdAt:at(-300,9)},"coRay");
     put("companies",{name:"Volt Electric Co.",trade:"Electrical",contact:"Eli Watts",phone:"731-555-0150",w9:true,insuranceExp:D(140),licenseExp:D(320),createdAt:at(-300,9)},"coVolt");
     put("companies",{name:"Precision Tile & Stone",trade:"Tile",contact:"Sam Ruiz",phone:"731-555-0126",w9:false,insuranceExp:D(-12),licenseExp:D(95),createdAt:at(-200,9)},"coTile");
@@ -2709,10 +2779,11 @@ function demoSeed(kind){
     ? [["Gail Owens","731-555-0164","Deep cleaning","3 bed, 2 bath. Moving my mother in next weekend.",2],["Reed home","731-555-0123","Regular cleaning","Every other Friday if you have the opening.",5],["Sunrise Realty","731-555-0145","Move-in / move-out","Rental turnover, keys in the lockbox.",8]]
     : [["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Estimate visit","Want a quote to turn the hall bath into a walk-in shower.",4],["Hall family","731-555-0168","Decks & porches","Back deck has two soft boards and a wobbly rail.",7]];
   bk.forEach(([name,phone,service,details,off],i)=>put("bookings",{name,phone,service,details,requestedDate:D(off),status:"pending",uid:"demo-c"+i,createdAt:at(-1,8+i),ownerNotifiedAt:at(-1,8+i),reminderCount:i===0?2:0}));
-  [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
+  // Rewards members only for the cleaning demo; the contractor demo has rewards turned off.
+  (kind==="cleaning" ? [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
    ["Dr. Patel","731-555-0147",[[155,"Paid job"],[160,"Paid job"],[150,"Paid job"]]],
-   ["Carter home","731-555-0172",[[1400,"Paid job"],[50,"Bonus points: referral"]]],
-   ["Owens home","731-555-0164",[[85,"Paid job"]]]].forEach(([name,phone,log],i)=>{
+   ["Carter home","731-555-0172",[[640,"Paid job"],[300,"Paid job"],[50,"Bonus points: referral"]]],
+   ["Owens home","731-555-0164",[[85,"Paid job"]]]] : []).forEach(([name,phone,log],i)=>{
     const cid="demo-c"+(10+i); put("customers",{name,phone,email:"",rewardsMember:true},cid);
     log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
   });
@@ -2823,12 +2894,7 @@ async function routeUser(user){
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
-  if (user){ await routeUser(user); } else {
-    S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
-    pendingPopupShown=false;
-    booted=false;
-    showGate();
-  }
+  if (user){ await routeUser(user); } else resetToSignedOut();
 });
 })();
 </script>
