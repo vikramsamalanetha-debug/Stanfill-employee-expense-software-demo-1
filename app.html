@@ -2352,7 +2352,7 @@ function invoiceFromJobs(jobs){
   if (dep>0) inv.depositApplied=Math.min(dep,invTotals(inv).total);
   return inv;
 }
-const invUrl = inv => ((location.protocol.startsWith("http") && !isNative()) ? location.origin : "https://dazift.com")+"/invoice.html?k="+inv.publicKey;
+const invUrl = inv => ((location.protocol.startsWith("http") && !isNative()) ? location.origin : "https://dayzift.com")+"/invoice.html?k="+inv.publicKey;
 function randomKey(){ const b=new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
 // What the client sees, kept in a separate record that anyone with the link can open.
 // "Sales tax (9.75%)", or "Sales tax (9.75% on $312.50)" when only some lines are taxed.

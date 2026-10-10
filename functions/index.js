@@ -20,7 +20,7 @@ const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.com" });
 const SMTP_PORT = defineString("SMTP_PORT", { default: "465" });
 const SMTP_USER = defineString("SMTP_USER", { default: "support@dazift.com" });
 const ADMIN_EMAIL = defineString("ADMIN_EMAIL", { default: "samala_netha@yahoo.com" });
-const APP_URL = "https://dazift.com/app";
+const APP_URL = "https://dayzift.com/app";
 
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const when = (ms) => new Date(ms || Date.now()).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) + " CT";
@@ -92,7 +92,7 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
 // to the client from "<Business> via Dayzift", with replies going to the business.
 // Dayzift never takes payments: "Pay online" is the business's own payment link.
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const INVOICE_BASE = "https://dazift.com/invoice.html?k=";
+const INVOICE_BASE = "https://dayzift.com/invoice.html?k=";
 const money = (n) => "$" + (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const niceDate = (s) => { if (!s) return ""; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }); };
 const todayCT = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
