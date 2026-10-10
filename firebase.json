@@ -3,7 +3,7 @@
     {
       "source": "functions",
       "codebase": "alerts",
-      "runtime": "nodejs20"
+      "runtime": "nodejs22"
     }
   ]
 }
