@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
 <!-- A client's view of one invoice, opened from the link the business sent.
-     Dazift never takes payments: "Pay online" goes to the business's own payment page.
+     Dayzift never takes payments: "Pay online" goes to the business's own payment page.
      A product of LIT America (www.litamerica.net). -->
 <style>
 :root{--bg:#F7F6F3;--ink:#1D1B18;--muted:#6A655D;--line:#E3E0D9;--primary:#D9480F;--ok:#2F8A4E;--danger:#B42318;--sun:#F2C230;
@@ -109,7 +109,7 @@ function render(p){
   if (p.footer) doc.append(el("p",{class:"foot"},p.footer));
   root.replaceChildren(bar,doc,
     el("p",{class:"foot noprint"},"Questions about this invoice? Contact "+(b.name||"the business")+(b.phone?" at "+b.phone:"")+(b.email?" or "+b.email:"")+"."),
-    el("p",{class:"foot"},"Sent with Dazift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
+    el("p",{class:"foot"},"Sent with Dayzift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
 }
 })();
 </script>
