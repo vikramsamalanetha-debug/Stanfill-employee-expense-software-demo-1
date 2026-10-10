@@ -259,6 +259,10 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
 .gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
 .gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
+.checkline{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;font-weight:400;color:var(--ink)}
+.checkline input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:var(--primary)}
+.checkline b{display:block;font-size:14px}
+.checkline small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
 .gate-brand{display:flex;align-items:center;gap:10px;letter-spacing:-.03em}
 .gate-mark{width:34px;height:34px;flex:none}
 .gate-panel p{color:var(--muted);margin:0 0 18px}
@@ -305,6 +309,23 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
       <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
       <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
+      <label class="checkline"><input type="checkbox" id="gateRegCrew"><span><b>I'm joining a crew</b><small>Your employer added you to their team. You don't need to set up a business.</small></span></label>
+      <label class="f" id="gateRegTypeWrap">Type of business
+        <select id="gateRegType">
+          <option value="" selected disabled>Choose your type of business</option>
+          <option>Cleaning</option>
+          <option>Lawn Care</option>
+          <option>Handyman</option>
+          <option>Pet Care</option>
+          <option>Construction</option>
+          <option>Plumbing</option>
+          <option>Electrical</option>
+          <option>HVAC</option>
+          <option>Roofing</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <p class="kv hidden" id="gateRegCrewNote" style="margin:0;font-size:13px">Sign up with the same email your employer added. Once you confirm it, you'll land on their board.</p>
       <button class="btn primary" id="gateRegBtn">Create account</button>
     </div>
     <div class="gate-msg" id="gateMsg"></div>
@@ -364,7 +385,11 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <div class="gate-panel">
     <h1>Almost there</h1>
     <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
-    <button class="btn ghost" onclick="signOutApp()">Sign out</button>
+    <div class="gate-form">
+      <button class="btn primary hidden" id="pendingAgainBtn" type="button">Check again</button>
+      <button class="btn hidden" id="pendingOwnerBtn" type="button">I'm an owner. Set up my business</button>
+      <button class="btn ghost" onclick="signOutApp()">Sign out</button>
+    </div>
   </div>
   <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
@@ -2589,12 +2614,22 @@ function wireGate(){
   $("#gateRegBtn").addEventListener("click", async ()=>{
     const name=$("#gateRegName").value.trim(), email=$("#gateRegEmail").value.trim(),
       phone=$("#gateRegPhone").value.trim(), password=$("#gateRegPassword").value;
+    const isCrew=$("#gateRegCrew").checked, category=$("#gateRegType").value;
     if (!name||!email||!password) return gateMsg("Fill in your name, email, and a password.");
+    if (!isCrew && !CATEGORIES.includes(category)) return gateMsg("Choose your type of business, or tick \u201cI'm joining a crew\u201d.");
     try {
       const cred = await auth.createUserWithEmailAndPassword(email,password);
-      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set({name,email,phone,createdAt:Date.now()});
+      const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew) acct.plannedCategory=category;
+      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set(acct);
       try { await cred.user.sendEmailVerification(); } catch(e){ console.warn(e); }
     } catch(e){ gateMsg(friendlyAuthError(e)); }
+  });
+  // Crew members join an existing business, so they don't pick a business type.
+  $("#gateRegCrew").addEventListener("change", ()=>{
+    const crew=$("#gateRegCrew").checked;
+    $("#gateRegTypeWrap").classList.toggle("hidden",crew);
+    $("#gateRegCrewNote").classList.toggle("hidden",!crew);
+    gateMsg("");
   });
   $("#gateForgotBtn").addEventListener("click", async ()=>{
     const email=$("#gateLoginEmail").value.trim();
@@ -2632,14 +2667,26 @@ function showVerify(user){
 }
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(){ hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
+function showBizOnboard(category){
+  if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
+  hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showPendingApproval(biz){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
   $("#pendingApprovalMsg").textContent = biz.status==="suspended"
     ? "\""+(biz.name||"Your business")+"\" has been suspended. Contact support if you believe this is a mistake."
     : "\""+(biz.name||"Your business")+"\" is waiting for approval. You'll get full access as soon as it's reviewed.";
+  $("#pendingAgainBtn").classList.add("hidden"); $("#pendingOwnerBtn").classList.add("hidden");
   $("#pendingApproval").classList.remove("hidden");
 }
+// A crew member whose employer hasn't added their email yet.
+function showCrewWaiting(email){
+  hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
+  $("#pendingApprovalMsg").textContent="We couldn't find a team that added "+(email||"your email")+" yet. Ask your employer to add you on their Team tab with this exact email, then tap Check again.";
+  $("#pendingAgainBtn").classList.remove("hidden"); $("#pendingOwnerBtn").classList.remove("hidden");
+  $("#pendingApproval").classList.remove("hidden");
+}
+$("#pendingAgainBtn").addEventListener("click",()=>{ if (auth.currentUser) routeUser(auth.currentUser); });
+$("#pendingOwnerBtn").addEventListener("click",()=>showBizOnboard());
 function showApp(){ hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=false; }
 
 async function addOwnerByEmail(){
@@ -3249,8 +3296,8 @@ async function routeUser(user){
         render();
       });
     }
-    let myPhone = "";
-    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists) myPhone = acctDoc.data().phone||""; } catch(e){}
+    let myPhone = "", acct = {};
+    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists){ acct = acctDoc.data()||{}; myPhone = acct.phone||""; } } catch(e){}
     let biz;
     try { biz = await resolveBusiness(user.uid, user.email, myPhone, user.emailVerified); }
     catch(e){ console.warn(e); showGate(); gateMsg("Couldn’t load your business. Check your connection and sign in again."); return; }
@@ -3259,7 +3306,8 @@ async function routeUser(user){
       else enterBusiness(biz);
     }
     else if (!user.emailVerified) showVerify(user);
-    else showBizOnboard();
+    else if (acct.role==="crew") showCrewWaiting(user.email);
+    else showBizOnboard(acct.plannedCategory);
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
