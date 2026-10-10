@@ -62,6 +62,43 @@ textarea{resize:vertical;min-height:70px}
 .banner.info{background:var(--sky-soft)}
 .banner.duty{background:var(--primary-soft)}
 .banner.warn{background:var(--lemon-soft)}
+.banner.demo{background:var(--ink);color:var(--bg)}
+.banner.demo .seg{background:color-mix(in srgb,var(--bg) 18%,transparent)}
+.banner.demo .seg button{color:var(--bg)}
+.banner.demo .seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink)}
+/* projects */
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
+@media (max-width:400px){.projects{grid-template-columns:1fr}}
+.proj{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.proj h3{margin:0;font:600 19px/1.2 var(--display)}
+.pill{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:var(--surface-2);color:var(--muted)}
+.pill.active{background:var(--sky-soft);color:var(--sky)}
+.pill.planning{background:var(--lemon-soft);color:#7A5A00}
+.pill.done{background:var(--primary-soft);color:var(--primary)}
+.pill.warn{background:var(--lemon-soft);color:#7A5A00}
+.pill.bad{background:var(--danger-soft);color:var(--danger)}
+.pill.ok{background:#E3F2E8;color:var(--ok)}
+.progress{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--sky);border-radius:999px}
+.mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mini div{background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-weight:700;color:var(--muted)}
+.mini b{display:block;color:var(--ink);font:750 16px var(--display);font-variant-numeric:tabular-nums}
+.phase{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:14px}
+.crewdots{display:inline-flex}
+.crewdots span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:750 10px var(--display);color:#fff;border:2px solid var(--surface);margin-left:-6px}
+.crewdots span:first-child{margin-left:0}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:6px;align-items:center;font-weight:400;color:var(--ink);font-size:14px}
+.checks input{width:auto;margin:0}
+/* payroll */
+.pr td input{width:84px;padding:5px 6px;font-size:14px}
+.pr td.who{min-width:150px}
+.pr .sub2{font-size:12px;color:var(--muted)}
+.stub{background:var(--bg);border-radius:var(--radius);padding:10px 12px;font-size:13px;display:grid;gap:2px;max-width:420px}
+.stub div{display:flex;justify-content:space-between;gap:10px}
+.stub .t{border-top:1px solid var(--line);margin-top:4px;padding-top:4px;font-weight:800}
+.demo-cta{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;display:grid;gap:8px}
+.demo-cta .row .btn{flex:1;justify-content:center}
 .pulse{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
@@ -120,7 +157,10 @@ textarea{resize:vertical;min-height:70px}
 .stat .v{font:750 26px/1.15 var(--display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .stat.net .v{color:var(--primary)} .stat.net.neg .v{color:var(--danger)}
 .books{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;align-items:start}
-@media (max-width:860px){.books{grid-template-columns:1fr}}
+@media (max-width:860px){.books{grid-template-columns:minmax(0,1fr)}}
+.books>*,.duo>*,.expform>*,.hbar>*{min-width:0}
+.expform input,.expform select,.expform textarea{width:100%}
+.banner.demo>.grow{flex:1 1 260px}
 .bar{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:center;font-size:14px;margin-bottom:8px}
 .bar .track{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden}
 .bar .fill{height:100%;background:var(--lemon);border-radius:999px}
@@ -176,7 +216,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .rangefoot div{font-size:13px;color:var(--muted);font-weight:700}
 .rangefoot b{display:block;color:var(--ink);font:750 18px var(--display);font-variant-numeric:tabular-nums}
 .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
-@media (max-width:860px){.duo{grid-template-columns:1fr}}
+@media (max-width:860px){.duo{grid-template-columns:minmax(0,1fr)}}
 .panel .sub{font-size:13px;color:var(--muted);margin:-8px 0 12px}
 .hbar{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:10px;align-items:center;font-size:14px;margin-bottom:10px}
 .hbar .track{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden}
@@ -244,6 +284,13 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <button class="btn primary" id="gateRegBtn">Create account</button>
     </div>
     <div class="gate-msg" id="gateMsg"></div>
+    <div class="demo-cta">
+      <span class="kv">Just looking? Explore a demo business with made-up data. No account needed.</span>
+      <div class="row">
+        <button class="btn" type="button" id="demoContractorBtn">Contractor demo</button>
+        <button class="btn" type="button" id="demoCleaningBtn">Cleaning demo</button>
+      </div>
+    </div>
   </div>
   <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
@@ -260,6 +307,11 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
           <option>Lawn Care</option>
           <option>Handyman</option>
           <option>Pet Care</option>
+          <option>Construction</option>
+          <option>Plumbing</option>
+          <option>Electrical</option>
+          <option>HVAC</option>
+          <option>Roofing</option>
           <option>Other</option>
         </select>
       </label>
@@ -312,9 +364,11 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
     <button role="tab" data-tab="requests" aria-selected="false" data-owner>Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
+    <button role="tab" data-tab="projects" aria-selected="false" data-feature="projects" hidden>Projects</button>
     <button role="tab" data-tab="rewards" aria-selected="false" data-owner>Rewards</button>
     <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
+    <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
     <button role="tab" data-tab="books" aria-selected="false" data-owner>Books</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
@@ -347,10 +401,23 @@ const SERVICE_DEFAULTS = {
   "Lawn Care":["Mowing & edging","Yard cleanup","Hedge & shrub trimming","Leaf removal","Mulch & beds"],
   "Handyman":["Small repairs","Installations","Painting","Drywall patching","Carpentry"],
   "Pet Care":["Dog walking","Pet sitting","Drop-in visit","Overnight stay","Grooming"],
+  "Construction":["Remodel phase","Framing","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
+  "Plumbing":["Service call","Leak repair","Water heater install","Drain cleaning","Repipe","Fixture install","Estimate visit"],
+  "Electrical":["Service call","Panel upgrade","Outlet & switch work","Lighting install","Rough-in","Estimate visit"],
+  "HVAC":["Service call","System install","Maintenance visit","Duct work","Estimate visit"],
+  "Roofing":["Roof inspection","Repair","Full replacement","Gutters","Estimate visit"],
   "Other":["Standard service","Large job","Consultation"]
 };
+const CATEGORIES = ["Cleaning","Lawn Care","Handyman","Pet Care","Construction","Plumbing","Electrical","HVAC","Roofing","Other"];
+// Trades that run multi-day projects and hire subcontractors get those tools turned on by default.
+const TRADE_CATS = ["Construction","Plumbing","Electrical","HVAC","Roofing","Handyman"];
 let SERVICES = SERVICE_DEFAULTS.Cleaning.slice();
 const EXP_CATS = ["Supplies","Fuel & mileage","Payroll","Equipment","Insurance","Marketing","Vehicle upkeep","Other"];
+const TRADE_EXP_CATS = ["Materials","Subcontractors","Permits & fees","Tool rental"];
+function hasProjects(){ const b=S.business||{}; if (b.features && typeof b.features.projects==="boolean") return b.features.projects; return TRADE_CATS.includes(b.category); }
+const PROJECT_STATUSES = [{id:"planning",label:"Planning"},{id:"active",label:"Active"},{id:"hold",label:"On hold"},{id:"done",label:"Finished"}];
+// Everyone working a job: the lead (assigneeId) plus any extra crew.
+function jobCrew(j){ return [...new Set([j.assigneeId,...(Array.isArray(j.crewIds)?j.crewIds:[])].filter(Boolean))]; }
 const STATUSES = [
   {id:"new", label:"New jobs"},
   {id:"assigned", label:"Assigned"},
@@ -393,16 +460,34 @@ function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-
 let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates"];
+// Firestore sentinels (server time, delete field) have no meaning in the on-device store.
+function localClean(data){
+  const out={}; const FV=firebase.firestore.FieldValue;
+  for (const [k,v] of Object.entries(data||{})){
+    if (v && typeof v==="object" && FV && v instanceof FV){
+      if (v.isEqual(FV.serverTimestamp())) out[k]=Date.now();
+      else if (v.isEqual(FV.delete())) out[k]=undefined;
+      continue;
+    }
+    out[k]=v;
+  }
+  return JSON.parse(JSON.stringify(out));
+}
 const Store = {
-  mode:"loading", db:null, local:null, listeners:{},
+  mode:"loading", db:null, local:null, listeners:{}, demo:false,
   useLocal(){
     this.mode="local";
     try { this.local = JSON.parse(localStorage.getItem("secp-board")||"null"); } catch(e){ this.local=null; }
-    if (!this.local) this.local = {employees:{},jobs:{},locations:{},expenses:{}};
-    ["customers","pointsLedger"].forEach(c=>{ if(!this.local[c]) this.local[c]={}; });
+    if (!this.local) this.local = {};
+    COLLS.forEach(c=>{ if(!this.local[c]) this.local[c]={}; });
   },
-  saveLocal(){ try{ localStorage.setItem("secp-board", JSON.stringify(this.local)); }catch(e){} },
+  // Demo: an empty in-memory store that is never saved and never reaches the database.
+  useDemo(){
+    this.mode="local"; this.demo=true; this.db=null; this.listeners={};
+    this.local={}; COLLS.forEach(c=>{ this.local[c]={}; });
+  },
+  saveLocal(){ if (this.demo) return; try{ localStorage.setItem("secp-board", JSON.stringify(this.local)); }catch(e){} },
   emit(coll){ const arr=Object.entries(this.local[coll]||{}).map(([id,d])=>({id,...d})); (this.listeners[coll]||[]).forEach(f=>f(arr)); },
   subscribe(coll, cb, businessId){
     if (this.mode==="db"){
@@ -415,17 +500,17 @@ const Store = {
   async set(coll,id,data){
     if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).set(data);
-    this.local[coll][id] = JSON.parse(JSON.stringify(data)); this.saveLocal(); this.emit(coll);
+    (this.local[coll] ||= {})[id] = localClean(data); this.saveLocal(); this.emit(coll);
   },
   async update(coll,id,data){
     if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).update(data);
-    this.local[coll][id] = {...(this.local[coll][id]||{}), ...JSON.parse(JSON.stringify(data))}; this.saveLocal(); this.emit(coll);
+    (this.local[coll] ||= {})[id] = {...(this.local[coll][id]||{}), ...localClean(data)}; this.saveLocal(); this.emit(coll);
   },
   async del(coll,id){
     if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).delete();
-    delete this.local[coll][id]; this.saveLocal(); this.emit(coll);
+    if (this.local[coll]) delete this.local[coll][id]; this.saveLocal(); this.emit(coll);
   }
 };
 function viewOnlyBlocked(){
@@ -446,7 +531,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], tab:"board", who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -462,10 +547,14 @@ function draw(){
   if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
-  if (!S.isOwner && ["requests","rewards","insights","books"].includes(S.tab)) S.tab="board";
+  document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
+  if (!S.isOwner && ["requests","rewards","insights","books","payroll"].includes(S.tab)) S.tab="board";
+  if (S.tab==="projects" && !hasProjects()) S.tab="board";
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
+  else if (S.tab==="projects") v.append(viewProjects());
+  else if (S.tab==="payroll") v.append(viewPayroll());
   else if (S.tab==="requests") v.append(viewRequests());
   else if (S.tab==="rewards") v.append(viewRewards());
   else if (S.tab==="board") v.append(viewBoard());
@@ -500,7 +589,16 @@ function drawBanners(){
       el("button",{class:"btn small "+(S.viewOnly?"":"lemon"),onclick:adminToggleEditing},S.viewOnly?"Turn on editing":"Back to view only"),
       el("button",{class:"btn small",onclick:adminBackHome},"Back to my business")));
   }
-  if (Store.mode==="local") b.append(el("div",{class:"banner info"},
+  if (S.demo){
+    const asCrew = !S.isOwner;
+    b.append(el("div",{class:"banner demo"},
+      el("span",{class:"grow"},el("b",{},"Demo account."),
+        " Every name and number here is made up. Try anything: nothing is saved, and it resets when you leave."),
+      el("div",{class:"seg","aria-label":"View the demo as"},
+        el("button",{type:"button","aria-pressed":String(!asCrew),onclick:()=>demoViewAs("owner")},"Owner view"),
+        el("button",{type:"button","aria-pressed":String(asCrew),onclick:()=>demoViewAs("crew")},"Crew view")),
+      el("button",{class:"btn small",onclick:exitDemo},"Exit demo")));
+  } else if (Store.mode==="local") b.append(el("div",{class:"banner info"},
     "Preview mode: changes are saved on this device only. Open the published link to share the board with your crew."));
   const m=me();
   if (m){
@@ -527,6 +625,7 @@ function rewardsName(){ const b=S.business||{}; return b.rewardsName || ((b.cate
 const REWARD_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
 const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
 function addLedger(c, delta, type, reason){
+  if (S.demo) return write(()=>Store.set("pointsLedger",newId(),{uid:c.id,businessId:S.businessId,customerName:c.name||"",delta,type,reason,by:S.myEmail,createdAt:Date.now()}),"Points updated");
   if (Store.mode!=="db") return toast("Open the published board to change points.");
   return write(()=>firebase.firestore().collection("pointsLedger").add({
     uid:c.id, businessId:S.businessId, customerName:c.name||c.email||"", delta, type, reason,
@@ -653,17 +752,23 @@ function settingsBusiness(){
     el("div",{class:"sub"},"These show up on job cards, the booking form and your insights."),
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,maxlength:"120",value:b.name||""})),
+      el("label",{class:"f"},"Type of business",el("select",{name:"category",value:CATEGORIES.includes(b.category)?b.category:"Other"},CATEGORIES.map(c=>el("option",{},c)))),
+      el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
+        el("input",{type:"checkbox",name:"projects",checked:hasProjects(),style:"width:auto;margin:0;"}),
+        "Projects & subcontractors"),
       el("label",{class:"f full"},"Services you offer (one per line)",el("textarea",{name:"services",rows:"6"},SERVICES.join("\n"))),
       el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Save"))));
   f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
     const services=[...new Set(d.services.split("\n").map(x=>x.trim()).filter(Boolean))].slice(0,30);
     const name=d.name.trim(), rn=d.rewardsName.trim();
+    const category=CATEGORIES.includes(d.category)?d.category:"Other";
+    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked};
     if(!name) return toast("Enter your business name.");
     if(!services.length) return toast("List at least one service.");
     write(async()=>{
-      await firebase.firestore().doc("businesses/"+S.businessId).update({name,services,rewardsName:rn||firebase.firestore.FieldValue.delete()});
-      Object.assign(S.business,{name,services}); if(rn) S.business.rewardsName=rn; else delete S.business.rewardsName;
+      await firebase.firestore().doc("businesses/"+S.businessId).update({name,services,category,features,rewardsName:rn||firebase.firestore.FieldValue.delete()});
+      Object.assign(S.business,{name,services,category,features}); if(rn) S.business.rewardsName=rn; else delete S.business.rewardsName;
       applyBusinessLists(S.business);
       const h=$("#bizNameHeader"); if(h) h.firstChild.textContent=name; document.title=name;
       render();
@@ -851,7 +956,7 @@ function viewPlatformAdmin(){
     el("p",{class:"kv",style:"margin:-6px 0 12px;"},"Creates the business right away with the correct name. The owner gets full access automatically the moment they register or sign in using the email or phone you enter below."),
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,autocomplete:"off"})),
-      el("label",{class:"f"},"Category",el("select",{name:"category"},["Cleaning","Lawn Care","Handyman","Pet Care","Other"].map(c=>el("option",{},c)))),
+      el("label",{class:"f"},"Category",el("select",{name:"category"},CATEGORIES.map(c=>el("option",{},c)))),
       el("label",{class:"f"},"City",el("input",{name:"city",autocomplete:"off"})),
       el("label",{class:"f"},"Owner email",el("input",{name:"email",type:"email",autocomplete:"off"})),
       el("label",{class:"f"},"Owner phone",el("input",{name:"phone",type:"tel",autocomplete:"off"})),
@@ -925,8 +1030,9 @@ function viewPlatformAdmin(){
 
 /* ---- board ---- */
 function jobVisible(j){
-  if (S.who==="mine"){ const m=me(); if(!m || j.assigneeId!==m.id) return false; }
-  else if (S.who!=="all" && j.assigneeId!==S.who) return false;
+  if (S.who==="mine"){ const m=me(); if(!m || !jobCrew(j).includes(m.id)) return false; }
+  else if (S.who!=="all" && !jobCrew(j).includes(S.who)) return false;
+  if (S.projFilter && j.projectId!==S.projFilter) return false;
   if (S.range==="all") return true;
   const t=today();
   if (S.range==="today") return j.date===t || (j.status!=="done" && j.date && j.date<t);
@@ -946,6 +1052,11 @@ function viewBoard(){
   [["today","Today"],["week","This week"],["all","All dates"]].forEach(([id,l])=>rangeChips.append(el("button",{class:"chip","aria-pressed":String(S.range===id),onclick:()=>{S.range=id;render();}},l)));
   tb.append(whoChips, el("span",{class:"grow"}), rangeChips);
   frag.append(tb);
+  if (S.projFilter){
+    const p=S.projects.find(x=>x.id===S.projFilter);
+    frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},"Showing jobs for ",el("b",{},p?p.name:"one project")),
+      el("button",{class:"btn small",onclick:()=>{S.projFilter=null;render();}},"Show all jobs")));
+  }
 
   const board=el("div",{class:"board"});
   const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
@@ -965,7 +1076,8 @@ function jobCard(j){
   const st=j.status||"new"; const t=today();
   const overdue = st!=="done" && j.date && j.date<t;
   const card=el("article",{class:"card"});
-  card.append(el("div",{class:"svc"},j.service||SERVICES[0]));
+  const proj = j.projectId ? S.projects.find(p=>p.id===j.projectId) : null;
+  card.append(el("div",{class:"svc"},(j.service||SERVICES[0])+(proj?" · "+proj.name:"")));
   card.append(el("h3",{},j.client||"Untitled job"));
   if (j.address){
     card.append(el("div",{class:"addr"}, el("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},j.address)));
@@ -981,9 +1093,11 @@ function jobCard(j){
       el("option",{value:""},"Unassigned"),
       S.employees.filter(e=>e.active!==false || e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)));
     card.append(sel);
+    const extra=jobCrew(j).filter(id=>id!==j.assigneeId).map(empById).filter(Boolean);
+    if (extra.length) card.append(el("div",{class:"kv",style:"margin-top:6px"},"With ",el("b",{},extra.map(e=>e.name.split(" ")[0]).join(", "))));
   } else {
-    const a=empById(j.assigneeId);
-    card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},a?a.name:"—")),
+    const names=jobCrew(j).map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
+    card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},names.length?names.join(", "):"—")),
       el("span",{class:"grow"}), el("span",{class:"paid "+(j.paid?"yes":"no")}, j.paid?"Paid":"Unpaid")));
   }
   const acts=el("div",{class:"acts"});
@@ -1010,9 +1124,11 @@ function setStatus(j,status){
   write(()=>Store.update("jobs",j.id,patch), status==="done"?"Nice work. Job marked done.":null);
 }
 
-function openJob(j){
+function openJob(j, preset){
   const f=$("#jobForm"); f.replaceChildren();
-  const isNew=!j; j=j||{date:today(),service:SERVICES[0],status:"new"};
+  const isNew=!j; j=j||{date:today(),service:SERVICES[0],status:"new",...(preset||{})};
+  const activeCrew=S.employees.filter(e=>e.active!==false||jobCrew(j).includes(e.id));
+  const projOpts=S.projects.filter(p=>p.status!=="done"||p.id===j.projectId);
   f.append(el("h2",{},isNew?"New job":"Edit job"),
     el("label",{class:"f full"},"Client name",el("input",{name:"client",required:true,value:j.client||"",autocomplete:"off"})),
     el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"})),
@@ -1021,8 +1137,12 @@ function openJob(j){
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
     el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
     el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
-    el("label",{class:"f"},"Assign to",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),S.employees.filter(e=>e.active!==false||e.id===j.assigneeId).map(e=>el("option",{value:e.id},e.name)))),
-    el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:"Gate code, pets, rooms to skip…"},j.notes||"")),
+    el("label",{class:"f"},hasProjects()?"Lead":"Assign to",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
+    hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||""},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
+    activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
+      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Extra crew on this job"),
+      el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null,
+    el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:hasProjects()?"Materials on site, lockbox code, inspection time…":"Gate code, pets, rooms to skip…"},j.notes||"")),
     el("div",{class:"acts"},
       !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),"Job deleted"); } }},"Delete") : null,
       el("span",{class:"grow"}),
@@ -1032,6 +1152,8 @@ function openJob(j){
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
     const data={client:d.client.trim(),address:d.address.trim(),service:d.service,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
+    data.crewIds=[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value).filter(id=>id!==data.assigneeId);
+    if (hasProjects()) data.projectId=d.projectId||null;
     let status=j.status||"new";
     if (!data.assigneeId && status!=="done") status="new";
     else if (data.assigneeId && status==="new") status="assigned";
@@ -1060,8 +1182,8 @@ function viewTeam(){
   S.employees.slice().sort((a,b)=>(a.active===false)-(b.active===false)||a.name.localeCompare(b.name)).forEach(e=>{
     const loc=locFor(e.id);
     const on=loc&&loc.onDuty; const fresh=loc&&loc.at&&Date.now()-loc.at<STALE_MS;
-    const cur=S.jobs.find(j=>j.assigneeId===e.id&&j.status==="in_progress");
-    const next=S.jobs.filter(j=>j.assigneeId===e.id&&j.status==="assigned").sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""))[0];
+    const cur=S.jobs.find(j=>jobCrew(j).includes(e.id)&&j.status==="in_progress");
+    const next=S.jobs.filter(j=>jobCrew(j).includes(e.id)&&j.status==="assigned").sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""))[0];
     let statusText="Off shift", dotCls="";
     if (on && loc.lat!=null && fresh){ statusText="On shift, location live"; dotCls="on"; }
     else if (on && loc.lat!=null){ statusText="On shift, signal lost"; dotCls="stale"; }
@@ -1070,6 +1192,8 @@ function viewTeam(){
       el("div",{class:"head"}, el("div",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
         el("div",{class:"grow"}, el("h3",{},e.name + (e.active===false?" (inactive)":"")),
           el("span",{class:"status"},el("span",{class:"dot "+dotCls,"aria-hidden":"true"}),statusText))));
+    const co = e.companyId ? S.companies.find(c=>c.id===e.companyId) : null;
+    if (e.role || co) card.append(el("div",{class:"row",style:"gap:6px"}, e.role?el("span",{class:"pill"},e.role):null, co?el("span",{class:"pill warn"},"Sub · "+co.name):null));
     if (e.phone) card.append(el("div",{class:"kv"},"Phone: ",el("a",{href:"tel:"+e.phone.replace(/[^\d+]/g,"")},e.phone)));
     if (on && loc.since) card.append(el("div",{class:"kv"},"Shift started ",el("b",{},new Date(loc.since).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}))));
     if (loc && loc.lat!=null){
@@ -1090,7 +1214,160 @@ function viewTeam(){
   frag.append(grid);
   frag.append(el("p",{class:"kv",style:"margin-top:18px;max-width:70ch"},
     "Locations are only shared while a team member is on shift and has this page open on their phone. Ending a shift stops sharing right away."));
+  if (S.isOwner && hasProjects()) frag.append(subsPanel());
   return frag;
+}
+
+/* ---- subcontractors (companies) ---- */
+function daysUntil(s){ if(!s) return null; return Math.round((parseYmd(s)-parseYmd(today()))/864e5); }
+function expiryPill(label, s){
+  const d=daysUntil(s);
+  if (d==null) return el("span",{class:"pill warn"},label+": not on file");
+  if (d<0) return el("span",{class:"pill bad"},label+" expired "+niceDate(s));
+  if (d<=30) return el("span",{class:"pill warn"},label+" expires in "+d+" day"+(d===1?"":"s"));
+  return el("span",{class:"pill ok"},label+" good to "+niceDate(s));
+}
+function subsPanel(){
+  const p=el("div",{class:"panel",style:"margin-top:20px"});
+  p.append(el("div",{class:"row",style:"margin-bottom:6px"},el("h2",{class:"grow",style:"margin:0"},"Subcontractors"),
+    el("button",{class:"btn",onclick:()=>openCompany()},"Add subcontractor")));
+  p.append(el("div",{class:"sub",style:"margin:4px 0 12px"},"Keep each sub's W-9, insurance and license dates in one place. Dazift flags anything expired or expiring within 30 days."));
+  if (!S.companies.length){ p.append(el("div",{class:"empty"},"No subcontractors yet.")); return p; }
+  const grid=el("div",{class:"team"});
+  S.companies.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c=>{
+    const crew=S.employees.filter(e=>e.companyId===c.id);
+    const paid=S.expenses.filter(x=>x.companyId===c.id).reduce((n,x)=>n+(Number(x.amount)||0),0);
+    const card=el("article",{class:"person"},
+      el("div",{class:"head"},el("div",{class:"avatar",style:"background:var(--muted)"},initials(c.name)),
+        el("div",{class:"grow"},el("h3",{},c.name),el("span",{class:"kv"},(c.trade||"Subcontractor")+(c.contact?" · "+c.contact:"")))),
+      el("div",{class:"row",style:"gap:6px"},
+        el("span",{class:"pill "+(c.w9?"ok":"bad")},c.w9?"W-9 on file":"Collect W-9"),
+        expiryPill("Insurance",c.insuranceExp), expiryPill("License",c.licenseExp)),
+      c.phone?el("div",{class:"kv"},"Phone: ",el("a",{href:"tel:"+c.phone.replace(/[^\d+]/g,"")},c.phone)):null,
+      el("div",{class:"kv"},"Paid this year ",el("b",{},money(paid)),crew.length?[" · ",el("b",{},String(crew.length))," on your board"]:null),
+      el("div",{class:"row"},el("span",{class:"grow"}),el("button",{class:"btn small ghost",onclick:()=>openCompany(c)},"Edit")));
+    grid.append(card);
+  });
+  p.append(grid);
+  return p;
+}
+function openCompany(c){
+  const f=$("#empForm"); f.replaceChildren(); const isNew=!c; c=c||{};
+  f.append(el("h2",{},isNew?"Add subcontractor":"Edit subcontractor"),
+    el("label",{class:"f full"},"Company name",el("input",{name:"name",required:true,value:c.name||"",autocomplete:"off"})),
+    el("label",{class:"f"},"Trade",el("input",{name:"trade",value:c.trade||"",placeholder:"Drywall, electrical…"})),
+    el("label",{class:"f"},"Contact person",el("input",{name:"contact",value:c.contact||""})),
+    el("label",{class:"f"},"Phone",el("input",{name:"phone",type:"tel",value:c.phone||""})),
+    el("label",{class:"f"},"Email",el("input",{name:"email",type:"email",value:c.email||""})),
+    el("label",{class:"f"},"Insurance expires",el("input",{name:"insuranceExp",type:"date",value:c.insuranceExp||""})),
+    el("label",{class:"f"},"License expires",el("input",{name:"licenseExp",type:"date",value:c.licenseExp||""})),
+    el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink)"},
+      el("input",{type:"checkbox",name:"w9",checked:!!c.w9,style:"width:auto;margin:0"}),"W-9 on file"),
+    el("p",{class:"kv full",style:"margin:-4px 0 0"},"Keep the W-9 itself in your own files. Dazift only records that you have it, not the tax ID on it."),
+    el("div",{class:"acts"},
+      !isNew?el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Remove "+c.name+"? Payments already logged stay in the books.")){ $("#empDlg").close(); write(()=>Store.del("companies",c.id),"Removed"); } }},"Remove"):null,
+      el("span",{class:"grow"}),
+      el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
+      el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save changes")));
+  f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
+    const data={name:d.name.trim(),trade:d.trade.trim(),contact:d.contact.trim(),phone:d.phone.trim(),email:(d.email||"").trim().toLowerCase(),
+      insuranceExp:d.insuranceExp||null,licenseExp:d.licenseExp||null,w9:!!f.querySelector("[name=w9]").checked};
+    if (isNew){ data.createdAt=Date.now(); data.businessId=S.businessId; write(()=>Store.set("companies",newId(),data),"Subcontractor added"); }
+    else write(()=>Store.update("companies",c.id,data),"Saved"); };
+  $("#empDlg").showModal();
+}
+
+/* ---- projects ---- */
+function projectNumbers(p){
+  const jobs=S.jobs.filter(j=>j.projectId===p.id);
+  const done=jobs.filter(j=>j.status==="done");
+  const billed=done.reduce((n,j)=>n+(Number(j.price)||0),0);
+  const collected=done.filter(j=>j.paid).reduce((n,j)=>n+(Number(j.price)||0),0);
+  const costs=S.expenses.filter(x=>x.projectId===p.id).reduce((n,x)=>n+(Number(x.amount)||0),0);
+  const contract=Number(p.contract)||0;
+  return {jobs,done,billed,collected,costs,contract,margin:contract-costs,pct:jobs.length?done.length/jobs.length:0};
+}
+function viewProjects(){
+  const frag=document.createDocumentFragment();
+  if (!S.projFilterStatus) S.projFilterStatus="open";
+  const list=S.projects.filter(p=>S.projFilterStatus==="all" || (S.projFilterStatus==="open" ? p.status!=="done" : p.status==="done"))
+    .sort((a,b)=>(a.status==="done")-(b.status==="done")||(a.start||"").localeCompare(b.start||""));
+  const open=S.projects.filter(p=>p.status!=="done");
+  const backlog=open.reduce((n,p)=>{ const k=projectNumbers(p); return n+Math.max(0,k.contract-k.billed); },0);
+  frag.append(el("div",{class:"toolbar"},
+    el("span",{class:"kv grow"},el("b",{},String(open.length))," open project(s)",
+      S.isOwner?[" · ",el("b",{},money(backlog))," left to bill"]:null),
+    el("div",{class:"chips"},[["open","Open"],["done","Finished"],["all","All"]].map(([id,l])=>
+      el("button",{class:"chip","aria-pressed":String(S.projFilterStatus===id),onclick:()=>{S.projFilterStatus=id;render();}},l))),
+    S.isOwner?el("button",{class:"btn primary",onclick:()=>openProject()},"New project"):null));
+  if (!list.length){
+    frag.append(el("div",{class:"panel"},el("h2",{},"No projects here yet"),
+      el("p",{class:"kv"},"A project holds a multi-day job like a remodel or new build. Add its phases as jobs, put a crew on each one, and track costs against the contract.")));
+    return frag;
+  }
+  const grid=el("div",{class:"projects"});
+  list.forEach(p=>{
+    const k=projectNumbers(p);
+    const st=PROJECT_STATUSES.find(s=>s.id===p.status)||PROJECT_STATUSES[0];
+    const crewIds=[...new Set(k.jobs.flatMap(jobCrew))];
+    const lead=empById(p.leadId);
+    const card=el("article",{class:"proj"});
+    card.append(el("div",{class:"row"},el("span",{class:"pill "+st.id},st.label),el("span",{class:"grow"}),
+      el("span",{class:"kv"},(p.start?niceDate(p.start):"No start date")+(p.end?" → "+niceDate(p.end):""))));
+    card.append(el("div",{},el("h3",{},p.name),el("div",{class:"kv"},p.client||"",p.address?[" · ",el("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(p.address),target:"_blank",rel:"noopener"},p.address)]:null)));
+    card.append(el("div",{},el("div",{class:"row kv",style:"justify-content:space-between;margin-bottom:4px"},
+      el("span",{},el("b",{},k.done.length+" of "+k.jobs.length)," phases done"),el("span",{},Math.round(k.pct*100)+"%")),
+      el("div",{class:"progress",role:"progressbar","aria-valuenow":String(Math.round(k.pct*100)),"aria-valuemin":"0","aria-valuemax":"100"},el("i",{style:"width:"+(k.pct*100).toFixed(1)+"%"}))));
+    if (S.isOwner) card.append(el("div",{class:"mini"},
+      el("div",{},"Contract",el("b",{},money(k.contract))),
+      el("div",{},"Billed",el("b",{},money(k.billed))),
+      el("div",{},"Costs so far",el("b",{},money(k.costs)))));
+    if (S.isOwner && k.contract) card.append(el("div",{class:"kv"},"Margin if costs stop here: ",el("b",{style:"color:"+(k.margin>=0?"var(--ok)":"var(--danger)")},money(k.margin)),
+      k.contract?" ("+Math.round(k.margin/k.contract*100)+"%)":""));
+    card.append(el("div",{class:"row"},el("span",{class:"kv"},"Lead ",el("b",{},lead?lead.name:"not set")),el("span",{class:"grow"}),
+      el("span",{class:"crewdots","aria-label":crewIds.length+" people on this project"},crewIds.slice(0,6).map(empById).filter(Boolean).map(e=>el("span",{style:"background:"+colorFor(e),title:e.name},initials(e.name))))));
+    const phases=el("details",{},el("summary",{class:"kv",style:"cursor:pointer;font-weight:700"},"Phases"));
+    k.jobs.slice().sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")).forEach(j=>{
+      const s=STATUSES.find(x=>x.id===(j.status||"new"));
+      phases.append(el("div",{class:"phase"},el("span",{class:"pill "+(j.status==="done"?"done":j.status==="in_progress"?"active":"")},s?s.label.replace(" jobs",""):""),
+        el("span",{class:"grow"},j.service||""),el("span",{class:"kv"},niceDate(j.date)),
+        el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Open")));
+    });
+    if (!k.jobs.length) phases.append(el("div",{class:"empty"},"No phases yet."));
+    card.append(phases);
+    card.append(el("div",{class:"acts",style:"display:flex;gap:6px;flex-wrap:wrap"},
+      el("button",{class:"btn small primary",onclick:()=>openJob(null,{projectId:p.id,client:p.client||p.name,address:p.address||"",assigneeId:p.leadId||null})},"Add phase"),
+      el("button",{class:"btn small",onclick:()=>{S.projFilter=p.id;S.who="all";S.range="all";S.tab="board";render();}},"See on board"),
+      S.isOwner?el("button",{class:"btn small ghost",onclick:()=>openProject(p)},"Edit"):null));
+    grid.append(card);
+  });
+  frag.append(grid);
+  return frag;
+}
+function openProject(p){
+  const f=$("#jobForm"); f.replaceChildren(); const isNew=!p; p=p||{status:"planning",start:today()};
+  f.append(el("h2",{},isNew?"New project":"Edit project"),
+    el("label",{class:"f full"},"Project name",el("input",{name:"name",required:true,value:p.name||"",placeholder:"Henderson kitchen remodel",autocomplete:"off"})),
+    el("label",{class:"f"},"Client",el("input",{name:"client",value:p.client||"",autocomplete:"off"})),
+    el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:p.phone||""})),
+    el("label",{class:"f full"},"Job site address",el("input",{name:"address",value:p.address||"",autocomplete:"off"})),
+    el("label",{class:"f"},"Start",el("input",{name:"start",type:"date",value:p.start||""})),
+    el("label",{class:"f"},"Target finish",el("input",{name:"end",type:"date",value:p.end||""})),
+    el("label",{class:"f"},"Contract amount",el("input",{name:"contract",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:p.contract??""})),
+    el("label",{class:"f"},"Status",el("select",{name:"status",value:p.status||"planning"},PROJECT_STATUSES.map(s=>el("option",{value:s.id},s.label)))),
+    el("label",{class:"f full"},"Lead on site",el("select",{name:"leadId",value:p.leadId||""},el("option",{value:""},"Not set"),S.employees.filter(e=>e.active!==false||e.id===p.leadId).map(e=>el("option",{value:e.id},e.name)))),
+    el("label",{class:"f full"},"Scope and notes",el("textarea",{name:"notes"},p.notes||"")),
+    el("div",{class:"acts"},
+      !isNew?el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Delete this project? Its phases stay on the job board.")){ $("#jobDlg").close(); write(()=>Store.del("projects",p.id),"Project deleted"); } }},"Delete"):null,
+      el("span",{class:"grow"}),
+      el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
+      el("button",{type:"submit",class:"btn primary"},isNew?"Create project":"Save changes")));
+  f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#jobDlg").close();
+    const data={name:d.name.trim(),client:d.client.trim(),phone:d.phone.trim(),address:d.address.trim(),start:d.start||null,end:d.end||null,
+      contract:Number(d.contract)||0,status:d.status,leadId:d.leadId||null,notes:d.notes.trim()};
+    if (isNew){ data.createdAt=Date.now(); data.businessId=S.businessId; write(()=>Store.set("projects",newId(),data),"Project created"); }
+    else write(()=>Store.update("projects",p.id,data),"Project saved"); };
+  $("#jobDlg").showModal();
 }
 function openEmp(e){
   const f=$("#empForm"); f.replaceChildren(); const isNew=!e; e=e||{};
@@ -1099,6 +1376,8 @@ function openEmp(e){
     el("label",{class:"f full"},"Email (they'll sign in with this)",el("input",{name:"email",type:"email",value:e.email||"",autocomplete:"off"})),
     el("label",{class:"f"},"Phone",el("input",{name:"phone",type:"tel",value:e.phone||""})),
     el("label",{class:"f"},"Status",el("select",{name:"active",value:e.active===false?"no":"yes"},el("option",{value:"yes"},"Active"),el("option",{value:"no"},"Inactive"))),
+    el("label",{class:"f"},"Role",el("input",{name:"role",value:e.role||"",placeholder:hasProjects()?"Lead carpenter, apprentice…":"Lead, trainee…"})),
+    hasProjects() ? el("label",{class:"f"},"Works for",el("select",{name:"companyId",value:e.companyId||""},el("option",{value:""},"Your own crew"),S.companies.map(c=>el("option",{value:c.id},c.name)))) : null,
     e.email && !e.userId ? el("p",{class:"kv full",style:"margin:-6px 0 0;"},"Waiting for them to register with this email — they'll be added to the team automatically.") : null,
     el("div",{class:"acts"},
       !isNew && e.userId ? el("button",{type:"button",class:"btn ghost",onclick:()=>{ $("#empDlg").close(); write(()=>Store.update("employees",e.id,{userId:null}),"Account unlinked"); }},"Unlink account") : null,
@@ -1107,7 +1386,8 @@ function openEmp(e){
       el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save changes")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
-    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),active:d.active==="yes"};
+    const data={name:d.name.trim(),email:(d.email||"").trim().toLowerCase(),phone:d.phone.trim(),phoneNorm:normPhone(d.phone),active:d.active==="yes",role:(d.role||"").trim()};
+    if (hasProjects()) data.companyId=d.companyId||null;
     if (isNew){ data.createdAt=Date.now(); data.userId=null; data.businessId=S.businessId; write(()=>Store.set("employees",newId(),data),"Team member added"); }
     else write(()=>Store.update("employees",e.id,data),"Saved"); };
   $("#empDlg").showModal();
@@ -1134,6 +1414,12 @@ async function syncRunnerContext(onDuty){
 async function startDuty(){
   const m=me(); if(!m) return;
   S.dutyErr=null;
+  if (S.demo){   // the demo pretends the phone is at a job site in Lexington, TN
+    const now=Date.now();
+    await Store.set("locations",m.id,{onDuty:true,since:now,at:now,lat:35.6509+(Math.random()-.5)*.01,lng:-88.3934+(Math.random()-.5)*.01,acc:12,businessId:S.businessId});
+    S.watching=true; render(); toast("Shift started. In the demo your location is made up.");
+    return;
+  }
   const existing=locFor(m.id);
   const since = existing&&existing.onDuty&&existing.since ? existing.since : Date.now();
   queue(()=>Store.set("locations",m.id,{onDuty:true,since,at:existing&&existing.at||null,lat:existing&&existing.lat!=null?existing.lat:null,lng:existing&&existing.lng!=null?existing.lng:null,acc:existing&&existing.acc||null,businessId:S.businessId}));
@@ -1266,8 +1552,9 @@ function monthRows(){
   const mo=S.month;
   const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>({
     kind:"income", id:j.id, date:j.date, cat:j.service||SERVICES[0], desc:j.client+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid}));
+  const pName=id=>{ const p=id&&S.projects.find(x=>x.id===id); return p?" · "+p.name:""; };
   const exp=S.expenses.filter(x=>(x.date||"").startsWith(mo)).map(x=>({
-    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:x.vendor||x.note||"", amount:Number(x.amount)||0,
+    kind:"expense", id:x.id, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
     receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
 }
@@ -1295,7 +1582,9 @@ function viewBooks(){
       el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
       el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
       el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
-      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:"Walmart, mop heads and bleach",autocomplete:"off"})),
+      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:hasProjects()?"Lowe's, 2x4s and screws":"Walmart, mop heads and bleach",autocomplete:"off"})),
+      hasProjects() ? el("label",{class:"f"},"Project",el("select",{name:"projectId"},el("option",{value:""},"None"),S.projects.filter(p=>p.status!=="done").map(p=>el("option",{value:p.id},p.name)))) : null,
+      hasProjects() ? el("label",{class:"f"},"Subcontractor",el("select",{name:"companyId"},el("option",{value:""},"None"),S.companies.map(c=>el("option",{value:c.id},c.name)))) : null,
       el("label",{class:"f full"},"Receipt photo or PDF (optional)",
         el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
       isNative() ? el("div",{class:"full",style:"margin-top:-6px;"},el("button",{type:"button",class:"btn small",onclick:captureReceiptPhoto},"📷 Take Photo")) : null,
@@ -1315,7 +1604,8 @@ function viewBooks(){
     submitBtn.disabled=true;
     let receiptData={};
     try {
-      if (file){
+      if (file && S.demo){ receiptData={receiptUrl:URL.createObjectURL(file), receiptName:file.name||"receipt"}; }
+      else if (file){
         let uploadFile=file;
         if (wantsPdf && file.type.startsWith("image/")){
           toast("Converting to PDF…");
@@ -1330,7 +1620,8 @@ function viewBooks(){
       console.warn(err);
       toast("Couldn't upload the receipt, but saving the expense anyway.");
     }
-    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...receiptData}),"Expense added");
+    const links={}; if (d.projectId) links.projectId=d.projectId; if (d.companyId) links.companyId=d.companyId;
+    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...links,...receiptData}),"Expense added");
     f.reset(); f.querySelector("[name=date]").value=today();
     $("#receiptPreview").classList.add("hidden");
     capturedReceiptFile = null;
@@ -1377,6 +1668,230 @@ async function exportCsv(){
     document.body.append(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   } catch(e){ toast("The download didn’t start."); }
+}
+
+/* ---- payroll ----
+   Works out each person's pay for a period from the jobs they finished and the pay rule the owner set.
+   Dazift never moves money or files taxes; it gives the owner the breakdown to pay from. */
+const PAY_TYPES=[
+  {id:"hourly",label:"Hourly",unit:"Hours",rateLabel:"$ per hour"},
+  {id:"perjob",label:"Per job",unit:"Jobs",rateLabel:"$ per job"},
+  {id:"percent",label:"% of job price",unit:"Job revenue $",rateLabel:"Crew share %"},
+  {id:"day",label:"Day rate",unit:"Days",rateLabel:"$ per day"},
+  {id:"piece",label:"Piece rate",unit:"Units",rateLabel:"$ per unit"},
+  {id:"salary",label:"Salary / flat per period",unit:null,rateLabel:"$ per pay period"}
+];
+const TAX={ssRate:6.2,ssBase:184500,medRate:1.45,addlMedOver:200000,addlMedRate:0.9,futaRate:0.6,futaBase:7000,necThreshold:2000};
+const r2=n=>Math.round((Number(n)||0)*100)/100;
+function sutaRate(){ return Number(S.business&&S.business.sutaRate)>=0 && S.business.sutaRate!=null ? Number(S.business.sutaRate) : 2.7; }
+function sutaBase(){ return Number(S.business&&S.business.sutaBase)||7000; }
+function mileageRate(){ return Number(S.business&&S.business.mileageRate)||0.70; }
+function payRateFor(empId){ return S.payRates.find(r=>r.id===empId)||null; }
+function payRuleText(r){
+  if (!r) return "No pay rule yet";
+  const t=PAY_TYPES.find(x=>x.id===r.payType)||PAY_TYPES[0];
+  const amt = t.id==="percent" ? (Number(r.rate)||0)+"% of job price" : money(r.rate)+(t.id==="salary"?" per period":" "+t.rateLabel.replace("$ ",""));
+  return (r.cls==="1099"?"1099 contractor":"W-2 employee")+" · "+amt;
+}
+// What the board says each person did in the period.
+function workIn(empId,start,end){
+  const jobs=S.jobs.filter(j=>j.status==="done" && j.date && j.date>=start && j.date<=end && jobCrew(j).includes(empId));
+  const weeks={}; let hours=0, revenue=0;
+  jobs.forEach(j=>{
+    const h=(j.startedAt&&j.completedAt&&j.completedAt>j.startedAt)?(j.completedAt-j.startedAt)/36e5:0;
+    hours+=h; const wk=ymd(weekStart(parseYmd(j.date))); weeks[wk]=(weeks[wk]||0)+h;
+    revenue+=(Number(j.price)||0)/Math.max(1,jobCrew(j).length);
+  });
+  const ot=Object.values(weeks).reduce((n,h)=>n+Math.max(0,h-40),0);
+  return {jobs:jobs.length, hours:Math.round(hours*4)/4, ot:Math.round(ot*4)/4, revenue:r2(revenue), days:new Set(jobs.map(j=>j.date)).size};
+}
+// Gross already paid this calendar year, from payroll runs recorded before this period.
+function ytdBefore(empId,start){
+  const yr=start.slice(0,4);
+  return r2(S.expenses.filter(x=>x.payrollRun && (x.payrollRun.end||"").startsWith(yr) && x.payrollRun.end<start)
+    .reduce((n,x)=>n+(Number(((x.payrollRun.people||[]).find(p=>p.empId===empId)||{}).paid)||0),0));
+}
+function calcPay(e,start,end){
+  const r=payRateFor(e.id); const w=workIn(e.id,start,end); const ed=(S.pr.edits[e.id] ||= {});
+  const t=PAY_TYPES.find(x=>x.id===(r&&r.payType))||PAY_TYPES[0];
+  const rate=Number(r&&r.rate)||0; const cls=(r&&r.cls)||"w2";
+  const auto={hourly:w.hours,perjob:w.jobs,percent:w.revenue,day:w.days,piece:0,salary:1}[t.id];
+  const qty = ed.qty!=null&&ed.qty!=="" ? Number(ed.qty)||0 : auto;
+  // W-2 hourly crew get time and a half past 40 hours in a week.
+  const otHours = (cls==="w2" && t.id==="hourly") ? Math.min(qty, ed.qty!=null&&ed.qty!=="" ? Math.max(0,qty-40*Math.max(1,Math.round((parseYmd(end)-parseYmd(start))/6048e5))) : w.ot) : 0;
+  let base = t.id==="percent" ? qty*rate/100 : t.id==="salary" ? rate : qty*rate;
+  const otPremium = otHours*rate*0.5;
+  const tips=Number(ed.tips)||0, bonus=Number(ed.bonus)||0, miles=Number(ed.miles)||0;
+  const wages=r2(base+otPremium+tips+bonus), reimb=r2(miles*mileageRate());
+  const ytd=ytdBefore(e.id,start), other=r2(ed.deduct);
+  const out={e,r,t,w,cls,qty,auto,otHours,wages,reimb,ytd,other,tips,bonus,miles};
+  if (cls==="1099"){
+    const paid=r2(wages+reimb);
+    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:ytd+paid>=TAX.necThreshold};
+  }
+  const ssBase=Math.max(0,Math.min(wages,TAX.ssBase-ytd));
+  const ssEe=r2(ssBase*TAX.ssRate/100), ssEr=ssEe;
+  const addl=Math.max(0,(ytd+wages)-Math.max(TAX.addlMedOver,ytd));
+  const medEe=r2(wages*TAX.medRate/100+addl*TAX.addlMedRate/100), medEr=r2(wages*TAX.medRate/100);
+  const fit=r2(ed.fit);
+  const futa=r2(Math.max(0,Math.min(wages,TAX.futaBase-ytd))*TAX.futaRate/100);
+  const suta=r2(Math.max(0,Math.min(wages,sutaBase()-ytd))*sutaRate()/100);
+  const erTax=r2(ssEr+medEr+futa+suta);
+  return {...out,paid:wages,net:r2(wages-ssEe-medEe-fit-other+reimb),ssEe,medEe,fit,ssEr,medEr,futa,suta,erTax,cost:r2(wages+reimb+erTax)};
+}
+function prPreset(id){
+  const t=new Date(), ws=weekStart(t);
+  if (id==="this"){ S.pr.start=ymd(ws); S.pr.end=ymd(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()+6)); }
+  if (id==="last"){ const s=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-7); S.pr.start=ymd(s); S.pr.end=ymd(new Date(s.getFullYear(),s.getMonth(),s.getDate()+6)); }
+  if (id==="two"){ const s=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-14); S.pr.start=ymd(s); S.pr.end=ymd(new Date(s.getFullYear(),s.getMonth(),s.getDate()+13)); }
+  if (id==="month"){ S.pr.start=ymd(new Date(t.getFullYear(),t.getMonth(),1)); S.pr.end=ymd(new Date(t.getFullYear(),t.getMonth()+1,0)); }
+  S.pr.edits={}; render();
+}
+function prNum(label,val,onset,attrs){
+  return el("label",{class:"f"},label,el("input",{type:"number",min:"0",step:"any",inputmode:"decimal",value:val==null?"":String(val),...(attrs||{}),
+    onchange:ev=>{ onset(ev.target.value); render(); }}));
+}
+function viewPayroll(){
+  if (!S.pr){ S.pr={edits:{}}; prPreset("last"); }
+  const frag=document.createDocumentFragment();
+  const {start,end}=S.pr;
+  const people=S.employees.filter(e=>e.active!==false && !e.companyId);
+  const rows=people.map(e=>calcPay(e,start,end));
+  const sum=k=>r2(rows.reduce((n,x)=>n+(x[k]||0),0));
+  const recorded=S.expenses.find(x=>x.payrollRun && x.payrollRun.start===start && x.payrollRun.end===end);
+
+  frag.append(el("div",{class:"toolbar"},
+    el("label",{class:"f"},"From",el("input",{type:"date",value:start,onchange:e=>{ if(e.target.value){S.pr.start=e.target.value;S.pr.edits={};render();} }})),
+    el("label",{class:"f"},"To",el("input",{type:"date",value:end,onchange:e=>{ if(e.target.value){S.pr.end=e.target.value;S.pr.edits={};render();} }})),
+    el("div",{class:"chips",style:"align-self:end"},[["this","This week"],["last","Last week"],["two","Last 2 weeks"],["month","This month"]].map(([id,l])=>
+      el("button",{class:"chip",onclick:()=>prPreset(id)},l))),
+    el("span",{class:"grow"}),
+    el("button",{class:"btn",style:"align-self:end",onclick:()=>exportPayrollCsv(rows)},"Export CSV")));
+
+  frag.append(el("div",{class:"sum"},
+    el("div",{class:"stat"},el("div",{class:"l"},"Gross pay"),el("div",{class:"v"},money(sum("paid")))),
+    el("div",{class:"stat"},el("div",{class:"l"},"Take-home pay"),el("div",{class:"v"},money(sum("net")))),
+    el("div",{class:"stat"},el("div",{class:"l"},"Employer taxes (est.)"),el("div",{class:"v"},money(sum("erTax")))),
+    el("div",{class:"stat net"},el("div",{class:"l"},"Total labor cost"),el("div",{class:"v"},money(sum("cost"))))));
+
+  frag.append(el("div",{class:"banner "+(recorded?"info":"warn")},
+    el("span",{class:"grow"}, recorded
+      ? ["This period is in the books as ",el("b",{},money(recorded.amount)),". Pay totals count toward each person's year."]
+      : "Hours, jobs and revenue below come from finished jobs on the board. Change any number, then record the payroll so it lands in the books."),
+    recorded
+      ? el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Remove this payroll from the books?")) write(()=>Store.del("expenses",recorded.id),"Payroll removed from the books"); }},"Undo")
+      : el("button",{class:"btn small primary",disabled:!rows.some(x=>x.cost>0),onclick:()=>recordPayroll(rows)},"Record payroll in the books")));
+
+  if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew on the Team tab, then set how each person is paid."))); return frag; }
+
+  const grid=el("div",{class:"team"});
+  rows.forEach(x=>{
+    const {e,r,t,w,cls}=x; const ed=S.pr.edits[e.id];
+    const card=el("article",{class:"person"});
+    card.append(el("div",{class:"head"},el("div",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
+      el("div",{class:"grow"},el("h3",{},e.name),el("span",{class:"kv"},payRuleText(r))),
+      el("button",{class:"btn small ghost",onclick:()=>openPayRate(e)},r?"Edit pay":"Set pay")));
+    card.append(el("div",{class:"row",style:"gap:6px"},
+      el("span",{class:"pill "+(cls==="1099"?"warn":"active")},cls==="1099"?"1099":"W-2"),
+      cls==="1099"?el("span",{class:"pill "+(r&&r.w9?"ok":"bad")},r&&r.w9?"W-9 on file":"Collect W-9"):null,
+      cls==="1099"&&x.needs1099?el("span",{class:"pill warn"},"1099-NEC needed"):null,
+      el("span",{class:"kv"},"Board: "+w.jobs+" job"+(w.jobs===1?"":"s")+" · "+w.hours+" h")));
+    if (r){
+      const inputs=el("div",{class:"expform"});
+      if (t.unit) inputs.append(prNum(t.unit,ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>{ed.qty=v;}));
+      inputs.append(prNum("Tips $",ed.tips,v=>{ed.tips=v;}), prNum("Bonus $",ed.bonus,v=>{ed.bonus=v;}), prNum("Miles driven",ed.miles,v=>{ed.miles=v;}));
+      if (cls==="w2") inputs.append(prNum("Federal income tax $",ed.fit,v=>{ed.fit=v;},{title:"From the employee's W-4 and IRS Publication 15-T, or your accountant"}));
+      inputs.append(prNum("Advances / deductions $",ed.deduct,v=>{ed.deduct=v;}));
+      card.append(inputs);
+      const L=(a,b,cls2)=>el("div",{class:cls2||""},el("span",{},a),el("b",{},b));
+      const stub=el("div",{class:"stub"});
+      stub.append(L("Earnings",money(x.wages-x.tips-x.bonus)));
+      if (x.otHours) stub.append(L("Includes overtime ("+x.otHours+" h at 1.5×)","+"+money(x.otHours*(Number(r.rate)||0)*0.5)));
+      if (x.tips) stub.append(L("Tips",money(x.tips)));
+      if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
+      if (cls==="w2"){
+        stub.append(L("Social Security","−"+money(x.ssEe)),L("Medicare","−"+money(x.medEe)),L("Federal income tax","−"+money(x.fit)));
+      }
+      if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
+      if (x.reimb) stub.append(L("Mileage ("+x.miles+" mi, not taxed)","+"+money(x.reimb)));
+      stub.append(L(cls==="w2"?"Take-home pay":"Pay this period",money(x.net),"t"));
+      if (cls==="w2") stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"You also owe about ",el("b",{},money(x.erTax))," in employer taxes."));
+      else stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"No taxes withheld. Paid this year: ",el("b",{},money(x.ytd+x.paid))));
+      card.append(stub);
+    } else {
+      card.append(el("div",{class:"empty"},"Set how "+e.name.split(" ")[0]+" is paid to see their pay."));
+    }
+    grid.append(card);
+  });
+  frag.append(grid);
+
+  const subs=S.employees.filter(e=>e.active!==false && e.companyId);
+  if (subs.length) frag.append(el("p",{class:"kv",style:"margin-top:14px"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
+
+  // Year-end 1099s for this calendar year
+  const yr=start.slice(0,4);
+  const cons=S.employees.filter(e=>(payRateFor(e.id)||{}).cls==="1099");
+  const yearEnd=yr+"-12-32";   // sorts after every date in the year, so all recorded runs count
+  const p=el("div",{class:"panel",style:"margin-top:20px"},el("h2",{},"1099s for "+yr));
+  p.append(el("div",{class:"sub"},"Contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" need a 1099-NEC by January 31. Totals come from recorded payroll."));
+  const co=S.companies.map(c=>({name:c.name,w9:c.w9,paid:S.expenses.filter(x=>x.companyId===c.id&&(x.date||"").startsWith(yr)).reduce((n,x)=>n+(Number(x.amount)||0),0)}));
+  const list=[...cons.map(e=>({name:e.name,w9:(payRateFor(e.id)||{}).w9,paid:ytdBefore(e.id,yearEnd)})),...co];
+  if (!list.length) p.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
+  list.sort((a,b)=>b.paid-a.paid).forEach(c=>p.append(el("div",{class:"srow"},
+    el("div",{class:"sinfo"},el("b",{},c.name),el("span",{class:"kv"},"Paid "+money(c.paid)+" so far")),
+    el("div",{class:"row",style:"gap:6px"},
+      el("span",{class:"pill "+(c.w9?"ok":"bad")},c.w9?"W-9 on file":"Collect W-9"),
+      el("span",{class:"pill "+(c.paid>=TAX.necThreshold?"warn":"")},c.paid>=TAX.necThreshold?"1099-NEC needed":"Under $"+TAX.necThreshold.toLocaleString())))));
+  frag.append(p);
+
+  const rates=el("details",{class:"panel"},el("summary",{style:"cursor:pointer;font-weight:800"},"Tax rates used"));
+  rates.append(el("div",{class:"expform",style:"margin-top:12px"},
+    prNum("State unemployment (SUTA) %",sutaRate(),v=>saveBizNum("sutaRate",v)),
+    prNum("SUTA wage base $",sutaBase(),v=>saveBizNum("sutaBase",v)),
+    prNum("Mileage rate $ per mile",mileageRate(),v=>saveBizNum("mileageRate",v))));
+  rates.append(el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages. These are estimates to pay from, not tax advice."));
+  frag.append(rates);
+  return frag;
+}
+function saveBizNum(field,v){
+  const n=Number(v); if(!(n>=0)) return toast("Enter a number.");
+  write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({[field]:n}); S.business[field]=n; render(); },"Saved");
+}
+function recordPayroll(rows){
+  const {start,end}=S.pr; const total=r2(rows.reduce((n,x)=>n+x.cost,0));
+  if (!confirm("Record "+money(total)+" of payroll for "+niceDate(start)+" to "+niceDate(end)+" in the books?\n\nDazift doesn't send any money. Pay your crew the way you normally do.")) return;
+  const people=rows.filter(x=>x.cost>0).map(x=>({empId:x.e.id,name:x.e.name,cls:x.cls,paid:x.paid,net:x.net,erTax:x.erTax}));
+  write(()=>Store.set("expenses",newId(),{date:end,amount:total,category:"Payroll",vendor:"Crew payroll "+niceDate(start)+" – "+niceDate(end),
+    payrollRun:{start,end,people},createdAt:Date.now(),businessId:S.businessId}),"Payroll recorded in the books");
+}
+function exportPayrollCsv(rows){
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const head=["Name","Type","W-9 on file","Period start","Period end","Gross pay","Mileage","Employee SS","Employee Medicare","Federal income tax","Deductions","Take-home","Employer SS","Employer Medicare","FUTA","SUTA","Total cost"];
+  const lines=[head.join(",")].concat(rows.map(x=>[x.e.name,x.cls==="1099"?"1099":"W-2",x.cls==="1099"?((x.r&&x.r.w9)?"Yes":"No"):"",S.pr.start,S.pr.end,
+    x.paid,x.reimb,x.ssEe,x.medEe,x.fit,x.other,x.net,x.ssEr,x.medEr,x.futa,x.suta,x.cost].map((v,i)=>i>=5?Number(v).toFixed(2):q(v)).join(",")));
+  try {
+    const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"}));
+    const a=document.createElement("a"); a.href=url; a.download="dazift-payroll-"+S.pr.start+"-to-"+S.pr.end+".csv";
+    document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  } catch(e){ toast("The download didn’t start."); }
+}
+function openPayRate(e){
+  const r=payRateFor(e.id)||{cls:"1099",payType:"hourly",rate:""};
+  const f=$("#empForm"); f.replaceChildren();
+  f.append(el("h2",{},"How "+e.name.split(" ")[0]+" is paid"),
+    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls},el("option",{value:"1099"},"1099 contractor"),el("option",{value:"w2"},"W-2 employee"))),
+    el("label",{class:"f"},"Pay type",el("select",{name:"payType",value:r.payType},PAY_TYPES.map(t=>el("option",{value:t.id},t.label)))),
+    el("label",{class:"f"},"Rate",el("input",{name:"rate",type:"number",min:"0",step:"0.01",inputmode:"decimal",required:true,value:r.rate??""})),
+    el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
+      el("input",{type:"checkbox",name:"w9",checked:!!r.w9,style:"width:auto;margin:0"}),"W-9 on file"),
+    el("p",{class:"kv full",style:"margin:0"},"Only owners can see pay. For % of job price, enter the percent (35 means 35%). Whether someone is a contractor or an employee depends on how you run the work, so check with your accountant if you're unsure."),
+    el("div",{class:"acts"},el("span",{class:"grow"}),
+      el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
+      el("button",{type:"submit",class:"btn primary"},"Save")));
+  f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
+    const data={cls:d.cls==="w2"?"w2":"1099",payType:d.payType,rate:Number(d.rate)||0,w9:!!f.querySelector("[name=w9]").checked,businessId:S.businessId,updatedAt:Date.now()};
+    write(()=>Store.set("payRates",e.id,data),"Pay saved"); };
+  $("#empDlg").showModal();
 }
 
 /* ---- insights ---- */
@@ -1657,7 +2172,7 @@ function maybeShowPendingPopup(){
 $("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
 $("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
 
-const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger"];
+const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates"];
 let crewSyncT=null;
 function syncCrewAccess(){
   // Owners keep the business's crew list (crewUids) matching the linked, active team members.
@@ -1747,6 +2262,7 @@ async function enablePush(){
   } catch(e){ console.warn("Push setup failed", e); }
 }
 async function signOutApp(){
+  if (S.demo) return exitDemo();
   try {
     if (pushToken){ await firebase.firestore().doc("devices/"+pushToken).delete(); }
     if (isNative() && window.Capacitor.Plugins.PushNotifications) await window.Capacitor.Plugins.PushNotifications.unregister();
@@ -1831,6 +2347,7 @@ function showPendingApproval(biz){
 function showApp(){ hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=false; }
 
 async function addOwnerByEmail(){
+  if (S.demo) return toast("Inviting owners is turned off in the demo.");
   const input = (prompt("Email address of the person to add as a co-owner (full access, same as you):")||"").trim();
   if (!input) return;
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input)) return toast("Enter an email address. Co-owners are invited by email so we can confirm it’s them.");
@@ -1952,6 +2469,9 @@ function applyBusinessLists(biz){
   const cat = SERVICE_DEFAULTS[biz.category] ? biz.category : "Cleaning";
   SERVICES = Array.isArray(biz.services) && biz.services.length ? biz.services.slice() : SERVICE_DEFAULTS[cat].slice();
   EXP_CATS[0] = cat==="Cleaning" ? "Cleaning supplies" : "Supplies";
+  // Trade businesses also log materials, subcontractor payments, permits and rentals.
+  const trade = (biz.features && typeof biz.features.projects==="boolean") ? biz.features.projects : TRADE_CATS.includes(biz.category);
+  TRADE_EXP_CATS.forEach(c=>{ const i=EXP_CATS.indexOf(c); if (trade && i<0) EXP_CATS.splice(EXP_CATS.length-1,0,c); if (!trade && i>=0) EXP_CATS.splice(i,1); });
 }
 function enterBusiness(biz, opts){
   opts=opts||{};
@@ -1993,9 +2513,251 @@ function adminToggleEditing(){
   render();
 }
 
+/* ---------- demo account ----------
+   A made-up business that shows every feature. It lives in memory on this device only:
+   the database connection is switched off and every database call is answered locally,
+   so nothing a demo visitor does can reach a real business. Leaving the demo reloads the page. */
+let realFirestoreFn=null;
+function installDemoShim(){
+  if (realFirestoreFn) return;
+  realFirestoreFn=firebase.firestore;
+  try { realFirestoreFn().disableNetwork(); } catch(e){}
+  const snap={docs:[],empty:true,size:0,forEach(){}};
+  const ref=path=>{ const [c,id]=String(path).split("/"); const mine=COLLS.includes(c)&&id;
+    return { id, get:async()=>({exists:false,id,data:()=>({})}),
+      set:async d=>{ if(mine) await Store.set(c,id,d); },
+      update:async d=>{ if(mine) await Store.update(c,id,d); },
+      delete:async()=>{ if(mine) await Store.del(c,id); },
+      onSnapshot:()=>()=>{} }; };
+  const coll=c=>{ const q={ where:()=>q, limit:()=>q, orderBy:()=>q, get:async()=>snap,
+      onSnapshot:cb=>{ try{ cb(snap); }catch(e){} return ()=>{}; },
+      add:async d=>{ const id=newId(); if(COLLS.includes(c)) await Store.set(c,id,d); return {id}; },
+      doc:id=>ref(c+"/"+(id||newId())) }; return q; };
+  const fake={ doc:ref, collection:coll, batch:()=>({set(){},update(){},delete(){},commit:async()=>{}}), disableNetwork:async()=>{}, enableNetwork:async()=>{} };
+  const fn=function(){ return fake; };
+  Object.getOwnPropertyNames(realFirestoreFn).forEach(k=>{ if(["length","name","prototype","arguments","caller"].includes(k)) return; try{ fn[k]=realFirestoreFn[k]; }catch(e){} });
+  firebase.firestore=fn;
+}
+function seededRandom(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function demoSeed(kind){
+  const rnd=seededRandom(kind==="cleaning"?7:42);
+  const R=(a,b)=>a+rnd()*(b-a), pick=a=>a[Math.floor(rnd()*a.length)], cents=n=>Math.round(n*100)/100;
+  const now=new Date(), D=off=>ymd(new Date(now.getFullYear(),now.getMonth(),now.getDate()+off));
+  const at=(off,h,m)=>new Date(now.getFullYear(),now.getMonth(),now.getDate()+off,h,m||0).getTime();
+  const BID="demo";
+  const C={}; COLLS.forEach(c=>C[c]={});
+  let n=0; const id=p=>p+(++n).toString(36);
+  const put=(c,data,key)=>{ const k=key||id(c[0]); C[c][k]={...data,businessId:BID}; return k; };
+  const job=(o)=>{
+    const j={service:o.service,client:o.client,address:o.address||"",price:o.price||0,date:D(o.off),time:o.time||"08:00",phone:o.phone||"",notes:o.notes||"",
+      assigneeId:o.crew&&o.crew[0]||null,crewIds:(o.crew||[]).slice(1),projectId:o.projectId||null,status:o.status,paid:!!o.paid,createdAt:at(o.off-3,9)};
+    if (o.status==="done"||o.status==="in_progress"){ const [h,m]=(o.time||"08:00").split(":").map(Number); j.startedAt=at(o.off,h,m)+Math.round(R(-8,12))*6e4;
+      if (o.status==="done") j.completedAt=j.startedAt+Math.round((o.hours||R(2,4))*36e5); }
+    return put("jobs",j);
+  };
+  const exp=(off,category,amount,vendor,extra)=>put("expenses",{date:D(off),category,amount:cents(amount),vendor,createdAt:at(off,18),...(extra||{})});
+  const people=list=>list.map(([key,name,phone,role,companyId],i)=>{ put("employees",{name,phone,phoneNorm:normPhone(phone),email:"",role:role||"",companyId:companyId||null,active:true,userId:"demo-u"+(i+1),createdAt:at(-200,9)},key); return key; });
+  let business;
+
+  if (kind==="cleaning"){
+    business={id:BID,name:"Sparkle & Shine Cleaning",category:"Cleaning",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
+      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false}};
+    people([["eMaria","Maria Lopez","731-555-0142","Team lead"],["eTasha","Tasha Greene","731-555-0178","Cleaner"],["eJordan","Jordan Pike","731-555-0119","Cleaner"],["eAmber","Amber Cole","731-555-0133","Trainee"]]);
+    put("payRates",{cls:"w2",payType:"hourly",rate:17,w9:false},"eMaria");
+    put("payRates",{cls:"1099",payType:"percent",rate:40,w9:true},"eTasha");
+    put("payRates",{cls:"1099",payType:"perjob",rate:55,w9:false},"eJordan");
+    put("payRates",{cls:"w2",payType:"hourly",rate:14,w9:false},"eAmber");
+    const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
+      ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
+      ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"]];
+    const price={"Regular cleaning":[115,165],"Deep cleaning":[225,320],"Move-in / move-out":[275,395],"Commercial cleaning":[190,340]};
+    const hours={"Regular cleaning":[2,3.2],"Deep cleaning":[3.5,5.5],"Move-in / move-out":[4,6],"Commercial cleaning":[2.5,4.5]};
+    const crewKeys=["eMaria","eTasha","eJordan","eAmber"];
+    for (let off=-92; off<=12; off++){
+      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(); if(dow===0) continue;
+      const count = dow===6 ? (rnd()<.5?1:0) : 2+(rnd()<.5?1:0);
+      for (let k=0;k<count;k++){
+        const ci=Math.floor(rnd()*clients.length);
+        const service= ci===3||ci===7 ? "Commercial cleaning" : ci===4 ? "Move-in / move-out" : rnd()<.75 ? "Regular cleaning" : "Deep cleaning";
+        const lead=pick(crewKeys.slice(0,3)); const crew=[lead]; if (service!=="Regular cleaning" && rnd()<.6) crew.push(pick(crewKeys.filter(c=>c!==lead)));
+        const status = off<0 ? "done" : off===0 ? (k===0?"in_progress":"assigned") : (rnd()<.25?"new":"assigned");
+        job({service,client:clients[ci][0],address:clients[ci][1],price:Math.round(R(...price[service])/5)*5,off,time:pick(["08:00","09:00","10:00","13:00"]),
+          crew:status==="new"?[]:crew,status,hours:R(...hours[service]),paid:off<-10?rnd()<.97:off<0?rnd()<.5:false});
+      }
+    }
+    for (let off=-92; off<=0; off++){
+      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(), dd=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDate();
+      if (dow===1) exp(off,"Cleaning supplies",R(45,110),pick(["Walmart","Sam’s Club","Dollar General"])+" supplies");
+      if (dow===2||dow===5) exp(off,"Fuel & mileage",R(32,62),pick(["Murphy USA","Shell","Marathon"])+" fuel");
+      if (dd===1) exp(off,"Insurance",148,"Liability insurance");
+      if (dd===15) exp(off,"Marketing",R(40,90),"Facebook ads");
+    }
+    exp(-47,"Equipment",239.99,"Replacement vacuum");
+  } else {
+    business={id:BID,name:"Ridgeline Builders",category:"Construction",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
+      services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
+      rewardsName:"Ridgeline Rewards",features:{projects:true},sutaRate:2.7};
+    put("companies",{name:"Ray’s Drywall LLC",trade:"Drywall",contact:"Ray Duncan",phone:"731-555-0187",w9:true,insuranceExp:D(18),licenseExp:D(210),createdAt:at(-300,9)},"coRay");
+    put("companies",{name:"Volt Electric Co.",trade:"Electrical",contact:"Eli Watts",phone:"731-555-0150",w9:true,insuranceExp:D(140),licenseExp:D(320),createdAt:at(-300,9)},"coVolt");
+    put("companies",{name:"Precision Tile & Stone",trade:"Tile",contact:"Sam Ruiz",phone:"731-555-0126",w9:false,insuranceExp:D(-12),licenseExp:D(95),createdAt:at(-200,9)},"coTile");
+    people([["eMarcus","Marcus Bell","731-555-0101","Lead carpenter"],["eTasha","Tasha Greene","731-555-0178","Carpenter"],["eLuis","Luis Ortega","731-555-0164","Plumber"],
+      ["eKendra","Kendra Shaw","731-555-0139","Apprentice"],["eJordan","Jordan Pike","731-555-0119","Painter"],
+      ["eRay","Ray Duncan","731-555-0187","Drywall foreman","coRay"],["eEli","Eli Watts","731-555-0150","Electrician","coVolt"]]);
+    put("payRates",{cls:"w2",payType:"hourly",rate:28,w9:false},"eMarcus");
+    put("payRates",{cls:"w2",payType:"hourly",rate:21,w9:false},"eTasha");
+    put("payRates",{cls:"1099",payType:"hourly",rate:34,w9:true},"eLuis");
+    put("payRates",{cls:"w2",payType:"day",rate:160,w9:false},"eKendra");
+    put("payRates",{cls:"1099",payType:"percent",rate:30,w9:false},"eJordan");
+
+    const proj=(key,o,phases)=>{ put("projects",{...o,createdAt:at(-120,9)},key);
+      phases.forEach(([service,off,status,crew,price,hours,paid])=>job({service,client:o.client,address:o.address,phone:o.phone,price,off,status,crew,hours,paid,projectId:key,time:"07:30"})); };
+    proj("pHend",{name:"Henderson kitchen remodel",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:D(-24),end:D(18),contract:38500,status:"active",leadId:"eMarcus",
+      notes:"Gut and rebuild. Shaker cabinets, quartz counters, tile backsplash. Family is living in the house; keep the dining room clear."},[
+      ["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],
+      ["Rough plumbing",-19,"done",["eLuis"],4200,7,true],
+      ["Electrical rough-in",-16,"done",["eEli"],3600,8,true],
+      ["Drywall hang & finish",0,"in_progress",["eRay","eKendra"],4400],
+      ["Cabinet install",3,"assigned",["eMarcus","eTasha"],7800],
+      ["Countertops & backsplash",9,"assigned",["eTasha"],8650],
+      ["Final punch list",16,"new",[],6000]]);
+    proj("pCarter",{name:"Carter bathroom remodel",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:D(-6),end:D(12),contract:14200,status:"active",leadId:"eTasha",
+      notes:"Tub to walk-in shower conversion. Client picked the tile already; it's in the garage."},[
+      ["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],
+      ["Plumbing reroute",0,"in_progress",["eLuis"],3200],
+      ["Shower tile",4,"assigned",["eTasha"],4800],
+      ["Vanity & fixtures",10,"new",[],4800]]);
+    proj("pBrooks",{name:"Brooks rental deck",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:D(12),end:D(22),contract:9800,status:"planning",leadId:"eMarcus",
+      notes:"12x16 pressure-treated deck with stairs. Permit submitted."},[
+      ["Permit & layout",12,"new",[],900],["Framing",14,"new",[],4200],["Decking & rails",18,"new",[],4700]]);
+    proj("pDental",{name:"Lexington Family Dental buildout",client:"Lexington Family Dental",phone:"731-555-0155",address:"220 E Main St, Lexington, TN",start:D(-88),end:D(-34),contract:62000,status:"done",leadId:"eMarcus",
+      notes:"Two new operatories and a break room."},[
+      ["Framing",-88,"done",["eMarcus","eTasha","eKendra"],15500,9,true],["Electrical",-78,"done",["eEli"],12400,9,true],
+      ["Drywall",-66,"done",["eRay","eKendra"],9300,8,true],["Flooring",-52,"done",["eTasha","eJordan"],11800,9,true],
+      ["Paint & trim",-40,"done",["eJordan"],8000,8,true],["Punch list",-34,"done",["eMarcus"],5000,6,false]]);
+
+    // Day-to-day service calls between projects
+    const svc=[["Plumbing repair",[165,420],"eLuis",[1.5,3.5]],["Water heater install",[1450,2200],"eLuis",[3.5,5]],["Drywall & paint",[350,950],"eJordan",[3,6]],
+      ["Estimate visit",[0,0],"eMarcus",[0.75,1.25]],["Punch list",[220,520],"eTasha",[2,4]]];
+    const clients=[["Owens home","6 Beech Lake Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],
+      ["Hall family","225 Southern Ave, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Davis duplex","402 Poplar St, Lexington, TN"],["Gail Owens","9 Lakeview Dr, Lexington, TN"]];
+    for (let off=-90; off<=7; off++){
+      const dow=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off).getDay(); if(dow===0||dow===6) continue;
+      const count=rnd()<.7?1:2;
+      for (let k=0;k<count;k++){
+        const [service,pr,who,hr]=pick(svc); const c=pick(clients);
+        const status = off<0 ? "done" : off===0 ? "assigned" : (rnd()<.3?"new":"assigned");
+        const crew = status==="new" ? [] : (service==="Water heater install" ? [who,"eKendra"] : [who]);
+        job({service,client:c[0],address:c[1],price:Math.round(R(...pr)/5)*5,off,time:pick(["08:00","10:30","13:00","15:00"]),crew,status,hours:R(...hr),paid:off<-10?rnd()<.95:off<0?rnd()<.5:false});
+      }
+    }
+    // Project costs
+    exp(-26,"Permits & fees",285,"Henderson County building permit",{projectId:"pHend"});
+    exp(-19,"Materials",1180.42,"Ferguson, PEX and fittings",{projectId:"pHend"});
+    exp(-15,"Subcontractors",2400,"Volt Electric Co., rough-in",{projectId:"pHend",companyId:"coVolt"});
+    exp(-10,"Materials",986.17,"Lowe’s, drywall and mud",{projectId:"pHend"});
+    exp(-5,"Materials",6214.88,"Lowe’s, shaker cabinets",{projectId:"pHend"});
+    exp(-2,"Subcontractors",2100,"Ray’s Drywall LLC, first draw",{projectId:"pHend",companyId:"coRay"});
+    exp(-7,"Permits & fees",95,"Plumbing permit",{projectId:"pCarter"});
+    exp(-6,"Materials",642.3,"Ferguson, shower valve and drain",{projectId:"pCarter"});
+    exp(-3,"Materials",1148.6,"Floor & Decor, thinset and trim",{projectId:"pCarter"});
+    exp(-1,"Tool rental",165,"Sunbelt, tile saw (3 days)",{projectId:"pCarter"});
+    [[-90,"Materials",9840,"84 Lumber, framing package"],[-80,"Subcontractors",8200,"Volt Electric Co.",{companyId:"coVolt"}],[-68,"Subcontractors",6100,"Ray’s Drywall LLC",{companyId:"coRay"}],
+     [-55,"Materials",5230.5,"Floor & Decor, LVP flooring"],[-50,"Subcontractors",1850,"Precision Tile & Stone, break room",{companyId:"coTile"}],[-42,"Materials",912.4,"Sherwin-Williams paint"],[-36,"Tool rental",650,"Dumpster rental"]]
+      .forEach(([off,cat,amt,v,x])=>exp(off,cat,amt,v,{projectId:"pDental",...(x||{})}));
+    for (let off=-92; off<=0; off++){
+      const dd=new Date(now.getFullYear(),now.getMonth(),now.getDate()+off), dow=dd.getDay();
+      if (dow===1) exp(off,"Fuel & mileage",R(90,160),pick(["Murphy USA","Shell","Marathon"])+" fuel, two trucks");
+      if (dow===3 && rnd()<.6) exp(off,"Supplies",R(40,180),pick(["Home Depot","Lowe’s"])+" fasteners and blades");
+      if (dd.getDate()===1) exp(off,"Insurance",640,"General liability insurance");
+      if (dd.getDate()===15) exp(off,"Marketing",R(120,220),"Google ads");
+    }
+    exp(-33,"Equipment",489,"Milwaukee impact driver kit");
+    exp(-12,"Vehicle upkeep",342.18,"Truck tires rotated, brakes");
+  }
+
+  // Payroll already recorded: a summary for earlier in the year, then each week up to two weeks ago.
+  const rates=C.payRates;
+  const firstWeekly=weekStart(new Date(now.getFullYear(),now.getMonth(),now.getDate()-63));
+  const lumpEnd=ymd(new Date(firstWeekly.getFullYear(),firstWeekly.getMonth(),firstWeekly.getDate()-1));
+  const lump=kind==="cleaning"?{eMaria:9850,eTasha:7420,eJordan:1480,eAmber:3910}:{eMarcus:31600,eTasha:22150,eLuis:18720,eKendra:14080,eJordan:1250};
+  const lumpPeople=Object.entries(lump).map(([k,paid])=>({empId:k,name:C.employees[k].name,cls:rates[k].cls,paid,net:rates[k].cls==="w2"?cents(paid*.86):paid,erTax:rates[k].cls==="w2"?cents(paid*.1):0}));
+  put("expenses",{date:lumpEnd,category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
+    payrollRun:{start:now.getFullYear()+"-01-01",end:lumpEnd,people:lumpPeople},createdAt:at(-64,18)});
+  const jobsArr=Object.values(C.jobs);
+  const ws=weekStart(now), lastWeekStart=ymd(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-7));
+  for (let w=0; w<12; w++){
+    const s=new Date(firstWeekly.getFullYear(),firstWeekly.getMonth(),firstWeekly.getDate()+w*7), e=new Date(s.getFullYear(),s.getMonth(),s.getDate()+6);
+    const S0=ymd(s), E0=ymd(e);
+    if (E0>=lastWeekStart) break;   // last week stays unrecorded so the demo can show "Record payroll"
+    const ppl=[];
+    Object.entries(rates).forEach(([k,r])=>{
+      const js=jobsArr.filter(j=>j.status==="done"&&j.date>=S0&&j.date<=E0&&jobCrew(j).includes(k));
+      const hrs=js.reduce((n,j)=>n+(j.completedAt-j.startedAt)/36e5,0);
+      const rev=js.reduce((n,j)=>n+(Number(j.price)||0)/Math.max(1,jobCrew(j).length),0);
+      const gross=cents(r.payType==="hourly"?hrs*r.rate+Math.max(0,hrs-40)*r.rate*.5:r.payType==="day"?new Set(js.map(j=>j.date)).size*r.rate:r.payType==="perjob"?js.length*r.rate:r.payType==="percent"?rev*r.rate/100:0);
+      if (gross>0) ppl.push({empId:k,name:C.employees[k].name,cls:r.cls,paid:gross,net:r.cls==="w2"?cents(gross*.86):gross,erTax:r.cls==="w2"?cents(gross*.0765+gross*.033):0});
+    });
+    if (ppl.length) put("expenses",{date:E0,category:"Payroll",amount:cents(ppl.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Crew payroll "+niceDate(S0)+" – "+niceDate(E0),payrollRun:{start:S0,end:E0,people:ppl},createdAt:e.getTime()});
+  }
+
+  // Website booking requests and rewards members
+  const bk=kind==="cleaning"
+    ? [["Gail Owens","731-555-0164","Deep cleaning","3 bed, 2 bath. Moving my mother in next weekend.",2],["Reed home","731-555-0123","Regular cleaning","Every other Friday if you have the opening.",5],["Sunrise Realty","731-555-0145","Move-in / move-out","Rental turnover, keys in the lockbox.",8]]
+    : [["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Estimate visit","Want a quote to turn the hall bath into a walk-in shower.",4],["Hall family","731-555-0168","Decks & porches","Back deck has two soft boards and a wobbly rail.",7]];
+  bk.forEach(([name,phone,service,details,off],i)=>put("bookings",{name,phone,service,details,requestedDate:D(off),status:"pending",uid:"demo-c"+i,createdAt:at(-1,8+i),ownerNotifiedAt:at(-1,8+i),reminderCount:i===0?2:0}));
+  [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
+   ["Dr. Patel","731-555-0147",[[155,"Paid job"],[160,"Paid job"],[150,"Paid job"]]],
+   ["Carter home","731-555-0172",[[1400,"Paid job"],[50,"Bonus points: referral"]]],
+   ["Owens home","731-555-0164",[[85,"Paid job"]]]].forEach(([name,phone,log],i)=>{
+    const cid="demo-c"+(10+i); put("customers",{name,phone,email:"",rewardsMember:true},cid);
+    log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
+  });
+
+  // Crew out on jobs right now
+  const live=kind==="cleaning"
+    ? [["eMaria",35.6612,-88.4021,90,3.5],["eJordan",35.6475,-88.4011,240,2]]
+    : [["eMarcus",35.6612,-88.4021,80,5],["eLuis",35.6475,-88.4011,190,3],["eRay",35.6606,-88.4030,400,4.5]];
+  live.forEach(([k,lat,lng,secAgo,hrs])=>put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since:Date.now()-hrs*36e5},k));
+  return {business,colls:C};
+}
+function startDemo(kind){
+  kind = kind==="cleaning" ? "cleaning" : "contractor";
+  S.demo=true; S.demoKind=kind;
+  installDemoShim();
+  Store.useDemo();
+  const seed=demoSeed(kind);
+  Object.entries(seed.colls).forEach(([c,docs])=>{ Store.local[c]=docs; });
+  const biz=seed.business;
+  S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
+  S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
+  S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false;
+  S.tab="board"; S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; pendingPopupShown=false;
+  const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
+  document.title=biz.name+" · Dazift demo";
+  booted=true;
+  subscribeAll(); showApp(); render();
+}
+function demoViewAs(role){
+  if (!S.demo) return;
+  if (role==="crew"){
+    const crew=S.demoKind==="cleaning"?"eTasha":"eTasha";
+    const e=(Store.local.employees||{})[crew];
+    S.isOwner=false; S.myUserId=e?e.userId:"demo-u2"; S.myEmail=null;
+    toast("Now seeing what "+(e?e.name.split(" ")[0]:"a crew member")+" sees on her phone");
+  } else {
+    S.isOwner=true; S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com";
+    toast("Back to the owner view");
+  }
+  S.who="all"; pendingPopupShown=true;
+  subscribeAll(); render(); window.scrollTo(0,0);
+}
+function exitDemo(){ location.href=location.pathname; }
+
 wireGate();
 switchGateTab(/[?&]register\b/.test(location.search) ? "register" : "login");
-showGate();
+$("#demoContractorBtn").addEventListener("click",()=>startDemo("contractor"));
+$("#demoCleaningBtn").addEventListener("click",()=>startDemo("cleaning"));
+{ const m=location.search.match(/[?&]demo(?:=([a-z]+))?/); if (m) startDemo(m[1]); else showGate(); }
 
 $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
@@ -2048,6 +2810,7 @@ async function routeUser(user){
     else showBizOnboard();
 }
 auth.onAuthStateChanged(async function(user){
+  if (S.demo) return;   // the demo never signs in or loads a real business
   if (user){ await routeUser(user); } else {
     S.myUserId=null; S.myEmail=null; S.isOwner=false; S.business=null; S.businessId=null;
     pendingPopupShown=false;

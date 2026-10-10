@@ -109,6 +109,27 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
 
+    // Projects (remodels, builds): the whole crew sees them, owners delete them.
+    match /projects/{id} {
+      allow read: if isMember(resource.data.get('businessId', null));
+      allow create: if isMember(request.resource.data.get('businessId', null));
+      allow update: if isMember(resource.data.get('businessId', null)) && sameBusiness();
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // ---------- owners only: subcontractors and pay rates ----------
+    match /companies/{id} {
+      allow read, delete: if isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+    }
+    // One pay rule per team member (document id = team member id). Crew can't see anyone's pay.
+    match /payRates/{id} {
+      allow read, delete: if isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+    }
+
     // ---------- the books: owners only ----------
     match /expenses/{id} {
       allow read, delete: if isOwner(resource.data.get('businessId', null));
