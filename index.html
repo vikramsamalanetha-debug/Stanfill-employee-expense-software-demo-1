@@ -116,12 +116,14 @@ section{padding:84px 0}
 
 .feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:40px}
 @media (max-width:760px){.feats{grid-template-columns:1fr}}
-.feat{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
-.feat .shot{display:block;margin:0;padding:18px 18px 0;background:linear-gradient(160deg,var(--teal-soft),#EEF4F1);border-bottom:1px solid var(--line)}
-.feat .shot img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:10px 10px 0 0;
-  box-shadow:0 -1px 0 var(--line),0 8px 24px rgba(20,88,72,.14);background:#F7F6F3;transition:transform .25s}
-.feat .shot:hover img{transform:translateY(-3px)}
-@media (prefers-reduced-motion:reduce){.feat .shot img{transition:none}.feat .shot:hover img{transform:none}}
+.feat{position:relative;background:linear-gradient(to top,#EAF4EF 0,#F6FAF8 120px,var(--surface) 190px);border:1px solid var(--line);border-radius:20px;overflow:hidden;min-width:0;padding-bottom:132px}
+/* A small, tilted peek at the screen in the card's corner. Click it to see the full screenshot. */
+.feat .shot{position:absolute;right:-18px;bottom:-22px;width:min(54%,280px);display:block;transform:rotate(-7deg);transform-origin:bottom right;transition:transform .3s ease}
+.feat .shot img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:10px;border:4px solid #fff;
+  box-shadow:0 1px 0 var(--line),0 14px 30px rgba(20,88,72,.22);background:#F7F6F3}
+.feat .shot:hover,.feat .shot:focus-visible{transform:rotate(-4deg) translateY(-8px)}
+@media (max-width:760px){.feat{padding-bottom:124px}.feat .shot{width:62%;bottom:-30px}}
+@media (prefers-reduced-motion:reduce){.feat .shot{transition:none}.feat .shot:hover,.feat .shot:focus-visible{transform:rotate(-7deg)}}
 .feat .txt{padding:22px 24px 24px}
 .feat .hd{display:flex;align-items:center;gap:12px;margin-bottom:8px}
 .feat .ic{width:40px;height:40px;border-radius:11px;background:var(--teal-soft);display:grid;place-items:center;flex:none}
