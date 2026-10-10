@@ -24,6 +24,8 @@
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 *,*::before,*::after{box-sizing:inherit}
+/* What's inside <details> doesn't inherit through the browser's own wrapper, so set it directly. */
+details *,details *::before,details *::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
@@ -202,13 +204,21 @@ table.lines input{width:100%}
 table.lines td.qty{width:72px} table.lines td.price{width:110px} table.lines td.tx{width:40px;text-align:center}
 table.lines .kv{font-size:12px;margin-top:2px}
 .invtot{margin:12px 0 0 auto;max-width:340px}
+.invnote{margin-top:12px;padding:10px 14px;border-radius:var(--radius);background:var(--sun-soft,#FCF2CF);font-size:14px}
+@media (max-width:620px){ .invtop{grid-template-columns:1fr!important} }
+.invmore{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius);padding:10px 14px}
+.invmore>summary{cursor:pointer;padding:2px 0}
+.invmore[open]>summary{margin-bottom:10px}
+table.lines input[type=number]{-moz-appearance:textfield}
+table.lines input[type=number]::-webkit-inner-spin-button,table.lines input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .jobpick{border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-top:8px;display:grid;gap:6px;max-height:240px;overflow:auto}
 .sendgrid{display:grid;gap:10px;margin-top:12px}
 .sendopt{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
 .sendopt input[type=email]{flex:1;min-width:180px}
 .linkbox input{width:100%;font-size:13px;background:var(--bg)}
-@media (max-width:620px){ table.lines thead{display:none} table.lines tr{display:grid;grid-template-columns:1fr 70px 96px 32px;gap:4px;border-bottom:1px solid var(--line);padding:6px 0}
-  table.lines td{border:0;padding:2px} table.lines td:first-child{grid-column:1/-1} table.lines td.num{align-self:center} table.lines td.tx{display:none} }
+@media (max-width:620px){ table.lines thead{display:none} table.lines tr{display:grid;grid-template-columns:64px 96px 1fr auto 32px;gap:4px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0}
+  table.lines td{border:0;padding:2px} table.lines td:first-child{grid-column:1/-1} table.lines td.num{text-align:right}
+  table.lines td.tx{display:flex;align-items:center;gap:4px;width:auto} table.lines td.tx::after{content:"Tax";font-size:12px;color:var(--muted)} }
 .invdoc{background:#fff;color:#1D1B18;border:1px solid var(--line);border-radius:var(--radius);padding:28px;font-size:14px;max-width:760px;margin:auto}
 .invdoc .ih{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid #1D1B18;padding-bottom:14px}
 .invdoc .ibiz{font:750 22px var(--display)}
@@ -2436,6 +2446,7 @@ function openInvoice(inv){
   invoiceEditor(d);
 }
 function invDlg(){ const dl=$("#invDlg"); if (!dl.open) dl.showModal(); return $("#invBody"); }
+let invMoreOpen=false;   // remembers whether "More options" was open while the editor redraws
 function invoiceEditor(d){
   const body=invDlg(); body.replaceChildren();
   const isNew=!d.id, st=invSettings();
@@ -2453,16 +2464,11 @@ function invoiceEditor(d){
   const nameIn=el("input",{value:d.client.name||"",required:true,autocomplete:"off",list:"invClients",oninput:ev=>{ d.client.name=ev.target.value; }, onchange:ev=>{
     const ci=clientInfo(ev.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]) d.client[k]=ci[k]; }); invoiceEditor(d); }});
   const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).filter(Boolean))].sort();
+  const issueIn=el("input",{type:"date",value:d.issueDate||today(),oninput:ev=>{ d.issueDate=ev.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); if(t&&ev.target.value){ d.dueDate=addDays(ev.target.value,t[2]); dueIn.value=d.dueDate; } upd(); }});
   body.append(hdr,
-    el("div",{class:"expform",style:"margin-top:12px"},
-      el("label",{class:"f"},"Client",nameIn,el("datalist",{id:"invClients"},clients.map(c=>el("option",{value:c})))),
-      inp("Client email","client.email",{type:"email",placeholder:"For emailing the invoice"}),
-      inp("Client phone","client.phone",{type:"tel"}),
-      inp("Billing address","client.address",{autocomplete:"off"}),
-      projSel,
-      el("label",{class:"f"},"Invoice date",el("input",{type:"date",value:d.issueDate||today(),oninput:ev=>{ d.issueDate=ev.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); if(t&&ev.target.value){ d.dueDate=addDays(ev.target.value,t[2]); dueIn.value=d.dueDate; } }})),
-      el("label",{class:"f"},"Payment terms",termSel),
-      el("label",{class:"f"},"Due date",dueIn)));
+    el("div",{class:"expform invtop",style:"margin-top:12px"},
+      el("label",{class:"f"},"Bill to",nameIn,el("datalist",{id:"invClients"},clients.map(c=>el("option",{value:c})))),
+      inp("Their email","client.email",{type:"email",placeholder:"To email the invoice"})));
 
   // Lines
   const tb=el("tbody");
@@ -2475,7 +2481,7 @@ function invoiceEditor(d){
       el("td",{class:"qty"},el("input",{type:"number",step:"any",min:"0",inputmode:"decimal",value:String(l.qty??1),"aria-label":"Quantity",oninput:ev=>{ l.qty=Number(ev.target.value)||0; a.textContent=money(invLineAmt(l)); upd(); }})),
       el("td",{class:"price"},el("input",{type:"number",step:"0.01",inputmode:"decimal",value:String(l.unitPrice??""),"aria-label":"Price",oninput:ev=>{ l.unitPrice=Number(ev.target.value)||0; a.textContent=money(invLineAmt(l)); upd(); }})),
       a,
-      el("td",{class:"tx"},el("input",{type:"checkbox",checked:!!l.taxable,"aria-label":"Taxable",title:"Charge sales tax on this line",style:"width:auto",onchange:ev=>{ l.taxable=ev.target.checked; upd(); }})),
+      el("td",{class:"tx"+(Number(d.taxRate)>0?"":" hidden")},el("input",{type:"checkbox",checked:!!l.taxable,"aria-label":"Taxable",title:"Charge sales tax on this line",style:"width:auto",onchange:ev=>{ l.taxable=ev.target.checked; upd(); }})),
       el("td",{},el("button",{type:"button",class:"btn small ghost danger","aria-label":"Remove line",onclick:()=>{ d.lines.splice(ix,1); invoiceEditor(d); }},"×"))));
   });
   if (!(d.lines||[]).length) tb.append(el("tr",{},el("td",{colspan:"6",class:"empty"},"No lines yet. Add finished jobs or a line below.")));
@@ -2490,7 +2496,7 @@ function invoiceEditor(d){
     js.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); if(!d.projectId&&j.projectId) d.projectId=j.projectId; });
     invoiceEditor(d); }},"Add selected"));
   body.append(el("div",{class:"tablewrap",style:"margin-top:14px"},el("table",{class:"lines"},
-    el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{},"Qty"),el("th",{},"Price"),el("th",{class:"num"},"Amount"),el("th",{title:"Taxable"},"Tax"),el("th",{}))),tb)),
+    el("thead",{},el("tr",{},el("th",{},"Description"),el("th",{},"Qty"),el("th",{},"Price"),el("th",{class:"num"},"Amount"),el("th",{title:"Charge sales tax on this line",class:Number(d.taxRate)>0?"":"hidden"},"Tax"),el("th",{}))),tb)),
     el("div",{class:"row",style:"margin-top:8px"},
       el("button",{type:"button",class:"btn small",onclick:()=>{ d.lines.push({id:newId(),type:"item",desc:"",qty:1,unitPrice:0,taxable:false}); invoiceEditor(d); setTimeout(()=>{ const ins=body.querySelectorAll('table.lines input[aria-label="Description"]'); if(ins.length) ins[ins.length-1].focus(); },0); }},"+ Add a line"),
       d.kind!=="deposit"&&avail.length?el("button",{type:"button",class:"btn small",onclick:()=>pick.classList.toggle("hidden")},"+ Finished jobs ("+avail.length+")"):null,
@@ -2506,11 +2512,30 @@ function invoiceEditor(d){
     d.kind!=="deposit"&&(dep>0||Number(d.depositApplied))?el("div",{},inp("Deposit to take off $","depositApplied",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
       el("div",{class:"kv",style:"margin-top:4px"},money(dep)+" in paid deposits available. ",dep>0?el("a",{href:"#",onclick:ev=>{ev.preventDefault(); d.depositApplied=Math.min(dep,invTotals({...d,depositApplied:0}).total); invoiceEditor(d);}},"Use it"):null)):null);
   const tot=el("div",{class:"stub invtot"});
-  body.append(adj, tot,
+  // Deposits change what's due, so offer them up front rather than hiding them.
+  const depHint=d.kind!=="deposit"&&dep>0&&!Number(d.depositApplied)?el("div",{class:"invnote"},
+    money(dep)+" deposit already paid by this client. ",el("a",{href:"#",onclick:ev=>{ev.preventDefault(); d.depositApplied=Math.min(dep,invTotals({...d,depositApplied:0}).total); invoiceEditor(d);}},"Take it off this invoice")):null;
+  const moreSum=el("span",{class:"kv"});
+  const more=el("details",{class:"invmore",open:invMoreOpen,ontoggle:ev=>{ invMoreOpen=ev.target.open; }},
+    el("summary",{},el("b",{},"More options"),moreSum),
+    el("div",{class:"expform"},
+      el("label",{class:"f"},"Payment terms",termSel),
+      el("label",{class:"f"},"Due date",dueIn),
+      el("label",{class:"f"},"Invoice date",issueIn),
+      projSel,
+      inp("Client phone","client.phone",{type:"tel"}),
+      inp("Billing address","client.address",{autocomplete:"off"})),
+    adj,
     el("label",{class:"f",style:"margin-top:12px"},"Note to the client",el("textarea",{rows:"2",placeholder:"Thanks for choosing us! Warranty: 1 year on labor.",oninput:ev=>{ d.notes=ev.target.value; }},d.notes||"")),
-    el("label",{class:"row",style:"gap:8px;margin-top:10px;font-weight:400"},el("input",{type:"checkbox",checked:d.autoRemind!==false,style:"width:auto",onchange:ev=>{ d.autoRemind=ev.target.checked; }}),
+    el("label",{class:"row",style:"gap:8px;margin-top:10px;font-weight:400"},el("input",{type:"checkbox",checked:d.autoRemind!==false,style:"width:auto",onchange:ev=>{ d.autoRemind=ev.target.checked; upd(); }}),
       "Email a friendly reminder if it's overdue (every 3 days, up to 3 times)"));
+  body.append(...[tot, depHint, more].filter(Boolean));
+  // Typing a tax rate shows or hides the Tax column, so redraw once the field is left.
+  adj.querySelectorAll("input").forEach(x=>x.addEventListener("change",()=>{ if (x.closest("label")&&/Sales tax/.test(x.closest("label").textContent)) invoiceEditor(d); }));
   function upd(){
+    const term=(INV_TERMS.find(x=>x[0]===d.terms)||INV_TERMS[0])[1];
+    moreSum.textContent=" · "+[term, d.dueDate&&d.terms!=="receipt"?"due "+niceDate(d.dueDate):null, Number(d.taxRate)?"tax "+d.taxRate+"%":null,
+      Number(d.discount)?"discount "+money(d.discount):null, Number(d.retainagePct)?"retainage "+d.retainagePct+"%":null, d.autoRemind!==false?"reminders on":null].filter(Boolean).join(" · ");
     const t=invTotals(d); tot.replaceChildren();
     const L=(a,b,c)=>el("div",{class:c||""},el("span",{},a),el("b",{},b));
     tot.append(L("Subtotal",money(t.subtotal)));
@@ -2543,7 +2568,7 @@ function invoiceEditor(d){
     el("button",{type:"button",class:"btn",onclick:()=>$("#invDlg").close()},"Cancel"),
     el("button",{type:"button",class:"btn",onclick:()=>printInvoice({...d,number:num})},"Preview"),
     d.status!=="sent"?el("button",{type:"button",class:"btn",onclick:()=>go(false)},"Save draft"):null,
-    el("button",{type:"button",class:"btn primary",onclick:()=>go(true)},d.status==="sent"?"Save changes":"Save and send")));
+    el("button",{type:"button",class:"btn primary",onclick:()=>go(true)},d.status==="sent"?"Save changes":"Send invoice")));
 }
 
 function invoiceDetail(d){
