@@ -285,11 +285,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
     <div class="gate-msg" id="gateMsg"></div>
     <div class="demo-cta">
-      <span class="kv">Just looking? Explore a demo business with made-up data. No account needed.</span>
-      <div class="row">
-        <button class="btn" type="button" id="demoContractorBtn">Contractor demo</button>
-        <button class="btn" type="button" id="demoCleaningBtn">Cleaning demo</button>
-      </div>
+      <span class="kv">Want to look around first? Sign in with <b>demo</b> and password <b>demo</b> for a contractor business, or <b>cleaning</b> / <b>demo</b> for a cleaning crew.</span>
+      <button class="btn small" type="button" id="demoFillBtn">Fill in the demo login</button>
     </div>
   </div>
   <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
@@ -592,12 +589,12 @@ function drawBanners(){
   if (S.demo){
     const asCrew = !S.isOwner;
     b.append(el("div",{class:"banner demo"},
-      el("span",{class:"grow"},el("b",{},"Demo account."),
-        " Every name and number here is made up. Try anything: nothing is saved, and it resets when you leave."),
+      el("span",{class:"grow"},el("b",{},"You're in the demo account."),
+        " Every name and number is made up. Try anything; it resets when you sign out."),
       el("div",{class:"seg","aria-label":"View the demo as"},
         el("button",{type:"button","aria-pressed":String(!asCrew),onclick:()=>demoViewAs("owner")},"Owner view"),
         el("button",{type:"button","aria-pressed":String(asCrew),onclick:()=>demoViewAs("crew")},"Crew view")),
-      el("button",{class:"btn small",onclick:exitDemo},"Exit demo")));
+      el("button",{class:"btn small",onclick:exitDemo},"Sign out")));
   } else if (Store.mode==="local") b.append(el("div",{class:"banner info"},
     "Preview mode: changes are saved on this device only. Open the published link to share the board with your crew."));
   const m=me();
@@ -2281,12 +2278,19 @@ function switchGateTab(which){
   $("#gateRegisterPanel").classList.toggle("hidden",which!=="register");
   gateMsg("");
 }
+const DEMO_LOGINS={"demo":"contractor","demo@dazift.com":"contractor","cleaning":"cleaning","cleaning@dazift.com":"cleaning","demo-cleaning":"cleaning"};
 function wireGate(){
   $("#gateLoginTab").addEventListener("click",()=>switchGateTab("login"));
   $("#gateRegisterTab").addEventListener("click",()=>switchGateTab("register"));
   $("#gateLoginBtn").addEventListener("click", async ()=>{
     const email=$("#gateLoginEmail").value.trim(), password=$("#gateLoginPassword").value;
     if (!email||!password) return gateMsg("Enter your email and password.");
+    // Demo login: a ready-made business to explore. Each visitor gets a fresh private copy.
+    const demoKind=DEMO_LOGINS[email.toLowerCase()];
+    if (demoKind){
+      if (password.trim().toLowerCase()!=="demo") return gateMsg("The demo password is demo.");
+      gateMsg(""); return startDemo(demoKind);
+    }
     try { await auth.signInWithEmailAndPassword(email,password); }
     catch(e){ gateMsg(friendlyAuthError(e)); }
   });
@@ -2751,13 +2755,21 @@ function demoViewAs(role){
   S.who="all"; pendingPopupShown=true;
   subscribeAll(); render(); window.scrollTo(0,0);
 }
+// Signing out of the demo reloads the sign-in page, which throws the demo copy away.
 function exitDemo(){ location.href=location.pathname; }
 
 wireGate();
 switchGateTab(/[?&]register\b/.test(location.search) ? "register" : "login");
-$("#demoContractorBtn").addEventListener("click",()=>startDemo("contractor"));
-$("#demoCleaningBtn").addEventListener("click",()=>startDemo("cleaning"));
-{ const m=location.search.match(/[?&]demo(?:=([a-z]+))?/); if (m) startDemo(m[1]); else showGate(); }
+function fillDemoLogin(kind){
+  switchGateTab("login");
+  $("#gateLoginEmail").value = kind==="cleaning" ? "cleaning" : "demo";
+  $("#gateLoginPassword").value = "demo";
+  $("#gateLoginBtn").focus();
+}
+$("#demoFillBtn").addEventListener("click",()=>fillDemoLogin("contractor"));
+showGate();
+// A link to /app?demo (or ?demo=cleaning) opens the sign-in page with the demo login filled in.
+{ const m=location.search.match(/[?&]demo(?:=([a-z]+))?/); if (m) fillDemoLogin(m[1]); }
 
 $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
