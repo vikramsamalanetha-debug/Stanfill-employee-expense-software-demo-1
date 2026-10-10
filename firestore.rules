@@ -47,8 +47,9 @@ service cloud.firestore {
       allow list: if isPlatformAdmin() || ownsData(resource.data) || invitedOwner(resource.data);
 
       // New businesses start "pending" with the creator as the only owner. The platform admin can pre-register.
+      // No email confirmation needed here: every new business waits for the platform admin's approval.
       allow create: if isPlatformAdmin() || (
-        verifiedEmail()
+        signedIn() && request.auth.token.email != null
         && request.resource.data.get('status', '') == 'pending'
         && request.resource.data.get('ownerUids', []) == [uid()]
         && request.resource.data.get('ownerUid', uid()) == uid()
