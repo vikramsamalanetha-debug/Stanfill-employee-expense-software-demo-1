@@ -1115,7 +1115,7 @@ function viewPlatformAdmin(){
   const leads=unfinishedSignups();
   const lp=el("div",{class:"panel"},el("h2",{},"Signed up, no business yet"),
     el("p",{class:"kv",style:"margin:-6px 0 12px;"},leads.length
-      ? leads.length+" owner account(s) from the last 45 days that haven't submitted a business. Most often they didn't confirm their email. A quick call usually gets them going."
+      ? leads.length+" owner account(s) from the last 45 days that haven't submitted a business. A quick call usually gets them going."
       : "Everyone who signed up as an owner in the last 45 days has submitted a business."));
   leads.forEach(u=>{
     const card=el("article",{class:"card",style:"max-width:640px;"});
@@ -2676,7 +2676,11 @@ function wireGate(){
       const cred = await auth.createUserWithEmailAndPassword(email,password);
       const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew){ acct.plannedCategory=category; acct.plannedBusinessName=bizName; }
       await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set(acct);
-      try { await cred.user.sendEmailVerification(); } catch(e){ console.warn(e); }
+      // Business owners go straight to setting up their business (the platform admin approves it).
+      // Crew still confirm their email, because joining a team is matched by email address.
+      if (isCrew){ try { await cred.user.sendEmailVerification(); } catch(e){ console.warn(e); } }
+      // The sign-in listener may have run before the account was saved, so route again now that it is.
+      routeUser(cred.user);
     } catch(e){ gateMsg(friendlyAuthError(e)); }
   });
   // Crew members join an existing business, so they don't pick a business type.
@@ -3368,7 +3372,7 @@ async function routeUser(user){
       if ((biz.status==="pending"||biz.status==="suspended") && !S.isPlatformAdmin) showPendingApproval(biz);
       else enterBusiness(biz);
     }
-    else if (!user.emailVerified) showVerify(user);
+    else if (acct.role==="crew" && !user.emailVerified) showVerify(user);
     else if (acct.role==="crew") showCrewWaiting(user.email);
     else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName);
 }
