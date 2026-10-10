@@ -44,7 +44,8 @@ footer b a{font-weight:800}
     <li><b>Account details:</b> name, email address, phone number and password (passwords are handled by Google Firebase Authentication; we never see them).</li>
     <li><b>Business details:</b> business name, trade, city, phone, and settings such as alert contacts.</li>
     <li><b>Work records:</b> jobs, booking requests, client names, addresses and phone numbers, prices, payment status, expenses, receipt photos, and rewards points.</li>
-    <li><b>Location during shifts:</b> when a crew member starts a shift, their device’s location is shared with their business until they end the shift. On Android this can continue while the app is in the background during a shift. Location is not collected when the person is off shift.</li>
+    <li><b>Location during shifts:</b> when a crew member starts a shift, their device’s location is shared with their business until they end the shift. In the phone app this can continue while the app is in the background during a shift. Location is not collected when the person is off shift.</li>
+    <li><b>Shift log:</b> each shift’s start and end time, a location point about every five minutes during the shift, and where the device was when a job was started or finished. The business’s owners and that crew member can see it. Owners use it to check hours against pay, and can correct a shift’s times; a correction is recorded with the original times.</li>
     <li><b>Device information:</b> a notification token so owners can receive booking alerts on their phone, and basic technical logs needed to keep the service running.</li>
   </ul>
 
@@ -58,13 +59,13 @@ footer b a{font-weight:800}
 
   <h2>Who can see it</h2>
   <ul>
-    <li><b>Inside a business:</b> owners can see everything in their business. Crew members can see jobs and team information, and their own location is visible to the business while they’re on shift.</li>
+    <li><b>Inside a business:</b> owners can see everything in their business, including the shift log. Crew members see only their own jobs, their own shift and their own shift log; their location is visible to the business owners while they’re on shift.</li>
     <li><b>Service providers:</b> we store data with Google Firebase (Google Cloud) and use providers that deliver email, text messages and phone notifications. They process data only to provide those services to us.</li>
     <li><b>When required:</b> we may disclose information if the law requires it, or to protect people’s safety or the security of the service.</li>
   </ul>
 
   <h2>Camera and photos</h2>
-  <p>The Android app asks for camera and photo access only so you can attach receipt photos to expenses. Photos are stored with that business’s records.</p>
+  <p>The phone app asks for camera and photo access only so you can attach receipt photos to expenses. Photos are stored with that business’s records.</p>
 
   <h2>Keeping and deleting information</h2>
   <p>We keep information while the business account is active. A business owner can delete jobs, expenses and team members at any time. To delete your account, or a whole business and its records, email <a href="mailto:support@dazift.com">support@dazift.com</a> from the address on the account and we’ll remove it, except anything we must keep by law.</p>
