@@ -102,10 +102,16 @@ service cloud.firestore {
       allow update: if isMember(resource.data.get('businessId', null)) && sameBusiness();
       allow delete: if isMember(resource.data.get('businessId', null));
     }
+    // Live locations: owners see the whole team; a crew member sees and shares only their own.
+    // (The document id is the team member's id, and that record says which account it belongs to.)
     match /locations/{id} {
-      allow read: if isMember(resource.data.get('businessId', null));
-      allow create: if isMember(request.resource.data.get('businessId', null));
-      allow update: if isMember(resource.data.get('businessId', null)) && sameBusiness();
+      function myTeamRecord() {
+        return signedIn() && get(/databases/$(database)/documents/employees/$(id)).data.get('userId', '') == uid();
+      }
+      allow read: if myTeamRecord() || isOwner(resource.data.get('businessId', null));
+      allow create: if (myTeamRecord() && isMember(request.resource.data.get('businessId', null)))
+        || isOwner(request.resource.data.get('businessId', null));
+      allow update: if (myTeamRecord() || isOwner(resource.data.get('businessId', null))) && sameBusiness();
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
 

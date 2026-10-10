@@ -359,7 +359,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <header class="top">
     <div class="brand">
       <h1 id="bizNameHeader">Dazift<span class="sparkle" aria-hidden="true"></span></h1>
-      <p>Crew board, team locations and the books, all in one place.</p>
+      <p id="appTagline">Crew board, team locations and the books, all in one place.</p>
     </div>
     <div class="whoami" id="whoami"></div>
   </header>
@@ -504,6 +504,13 @@ const Store = {
     }
     (this.listeners[coll] ||= []).push(cb); this.emit(coll); return ()=>{};
   },
+  // One document, for crew who may only read their own record.
+  subscribeDoc(coll, id, cb){
+    if (this.mode==="db") return this.db.doc(coll+"/"+id).onSnapshot(d=>cb(d.exists?[{id:d.id,...d.data()}]:[]), e=>console.warn(coll,e));
+    const f=arr=>cb(arr.filter(x=>x.id===id));
+    (this.listeners[coll] ||= []).push(f); this.emit(coll);
+    return ()=>{ this.listeners[coll]=(this.listeners[coll]||[]).filter(x=>x!==f); };
+  },
   async set(coll,id,data){
     if (S.viewOnly) throw Object.assign(new Error("View only"),{code:"view-only"});
     if (this.mode==="db") return this.db.doc(coll+"/"+id).set(data);
@@ -555,6 +562,8 @@ function draw(){
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
   document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
+  const tag=$("#appTagline"); if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
+  const teamTab=document.querySelector('.tabs button[data-tab="team"]'); if (teamTab) teamTab.textContent = S.isOwner ? "Team & locations" : "My shift";
   document.querySelectorAll(".tabs button[data-feature=rewards]").forEach(b=>{ b.hidden = !S.isOwner || !hasRewards(); });
   if (!S.isOwner && ["requests","rewards","insights","books","payroll"].includes(S.tab)) S.tab="board";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
@@ -584,7 +593,7 @@ function drawWho(){
   } else if (S.myEmail){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
-  w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   w.append(el("button",{class:"btn ghost",onclick:()=>{S.tab="settings";render();}},"\u2699 Settings"));
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
@@ -1042,6 +1051,7 @@ function viewPlatformAdmin(){
 
 /* ---- board ---- */
 function jobVisible(j){
+  if (!S.isOwner){ const m=me(); if (!m || !jobCrew(j).includes(m.id)) return false; }   // crew see only jobs they're on
   if (S.who==="mine"){ const m=me(); if(!m || !jobCrew(j).includes(m.id)) return false; }
   else if (S.who!=="all" && !jobCrew(j).includes(S.who)) return false;
   if (S.projFilter && j.projectId!==S.projFilter) return false;
@@ -1057,8 +1067,9 @@ function viewBoard(){
   const frag=document.createDocumentFragment();
   const tb=el("div",{class:"toolbar"});
   const whoChips=el("div",{class:"chips","aria-label":"Show jobs for"});
-  const opts=[["all","Everyone"]]; if(me()) opts.push(["mine","My jobs"]);
-  S.employees.filter(e=>e.active!==false).forEach(e=>{ if(!me()||e.id!==me().id) opts.push([e.id,e.name]); });
+  const opts = S.isOwner ? [["all","Everyone"]] : [];
+  if (S.isOwner){ if(me()) opts.push(["mine","My jobs"]); S.employees.filter(e=>e.active!==false).forEach(e=>{ if(!me()||e.id!==me().id) opts.push([e.id,e.name]); }); }
+  if (!S.isOwner) whoChips.append(el("span",{class:"kv"},me()?"Your jobs":"Link your name on the My shift tab to see your jobs"));
   opts.forEach(([id,l])=>whoChips.append(el("button",{class:"chip","aria-pressed":String(S.who===id),onclick:()=>{S.who=id;render();}},l)));
   const rangeChips=el("div",{class:"chips","aria-label":"Date range"});
   [["today","Today"],["week","This week"],["all","All dates"]].forEach(([id,l])=>rangeChips.append(el("button",{class:"chip","aria-pressed":String(S.range===id),onclick:()=>{S.range=id;render();}},l)));
@@ -1072,7 +1083,10 @@ function viewBoard(){
 
   const board=el("div",{class:"board"});
   const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
-  for (const st of STATUSES){
+  // Unassigned jobs are the owner's to hand out, so crew don't see that column.
+  const cols = S.isOwner ? STATUSES : STATUSES.filter(x=>x.id!=="new");
+  board.style.gridTemplateColumns = S.isOwner ? "" : "repeat(auto-fit,minmax(min(100%,260px),1fr))";
+  for (const st of cols){
     const list=jobs.filter(j=>(j.status||"new")===st.id);
     if (st.id==="done") list.reverse();
     const col=el("section",{class:"col","data-s":st.id,"aria-label":st.label},
@@ -1096,11 +1110,17 @@ function jobCard(j){
   }
   card.append(el("div",{class:"meta"},
     el("span",{class: overdue?"overdue":""}, niceDate(j.date)+(j.time?", "+niceTime(j.time):"")+(overdue?" (overdue)":"")),
-    el("span",{class:"price"},money(j.price))));
+    S.isOwner ? el("span",{class:"price"},money(j.price)) : null));
   if (j.phone) card.append(el("div",{class:"kv"},"Client phone: ", el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)));
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
 
-  if (st!=="done"){
+  if (st!=="done" && !S.isOwner){
+    // Crew see who they're working with, but only the owner changes who's on a job.
+    const crew=jobCrew(j).map(empById).filter(Boolean);
+    card.append(el("div",{class:"crewbox"},crew.map((e,i)=>el("span",{class:"who"},
+      el("span",{class:"av",style:"background:"+colorFor(e),"aria-hidden":"true"},initials(e.name)),
+      e.name.split(" ")[0], i===0&&crew.length>1?el("small",{},"lead"):null))));
+  } else if (st!=="done"){
     // Everyone on the job, lead first. Tap × to take someone off; pick from the list to add more.
     const crew=jobCrew(j).map(empById).filter(Boolean);
     const box=el("div",{class:"crewbox"});
@@ -1118,16 +1138,16 @@ function jobCard(j){
   } else {
     const names=jobCrew(j).map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
     card.append(el("div",{class:"row"}, el("span",{class:"kv"},"Done by ", el("b",{},names.length?names.join(", "):"—")),
-      el("span",{class:"grow"}), el("span",{class:"paid "+(j.paid?"yes":"no")}, j.paid?"Paid":"Unpaid")));
+      el("span",{class:"grow"}), S.isOwner ? el("span",{class:"paid "+(j.paid?"yes":"no")}, j.paid?"Paid":"Unpaid") : null));
   }
   const acts=el("div",{class:"acts"});
   if (st==="assigned") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
   if (st==="in_progress") acts.append(el("button",{class:"btn small primary",onclick:()=>setStatus(j,"done")},"Mark done"));
-  if (st==="done"){
+  if (st==="done" && S.isOwner){
     acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
     acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
   }
-  acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
+  if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
   card.append(acts);
   return card;
 }
@@ -1204,17 +1224,21 @@ function openJob(j, preset){
 function viewTeam(){
   const frag=document.createDocumentFragment();
   const onDuty=S.employees.filter(e=>{const l=locFor(e.id); return l&&l.onDuty;});
-  frag.append(el("div",{class:"toolbar"},
+  const m=me();
+  // Owners see the whole team and where everyone is. Crew see only their own shift.
+  if (S.isOwner) frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"}, el("b",{},String(onDuty.length)), " of ", el("b",{},String(S.employees.filter(e=>e.active!==false).length)), " on shift right now"),
-    S.isOwner ? el("button",{class:"btn",onclick:()=>openEmp()},"Add team member") : null));
+    el("button",{class:"btn",onclick:()=>openEmp()},"Add team member")));
+  else frag.append(el("div",{class:"toolbar"},el("span",{class:"kv grow"},
+    m ? "Your shift and your next job. Only the owner sees the whole team." : "Find your name below and tap \u201cThis is me\u201d to see your jobs.")));
   if (!S.employees.length){
     frag.append(el("div",{class:"panel"},el("h2",{},"Add your crew"),
       el("p",{class:"kv"},"Add each cleaner here with their email. When they register using that exact email, they'll be added to your team automatically.")));
     return frag;
   }
   const grid=el("div",{class:"team"});
-  const m=me();
-  S.employees.slice().sort((a,b)=>(a.active===false)-(b.active===false)||a.name.localeCompare(b.name)).forEach(e=>{
+  const people = S.isOwner ? S.employees : m ? [m] : S.employees.filter(e=>!e.userId && e.active!==false);
+  people.slice().sort((a,b)=>(a.active===false)-(b.active===false)||a.name.localeCompare(b.name)).forEach(e=>{
     const loc=locFor(e.id);
     const on=loc&&loc.onDuty; const fresh=loc&&loc.at&&Date.now()-loc.at<STALE_MS;
     const cur=S.jobs.find(j=>jobCrew(j).includes(e.id)&&j.status==="in_progress");
@@ -1229,7 +1253,7 @@ function viewTeam(){
           el("span",{class:"status"},el("span",{class:"dot "+dotCls,"aria-hidden":"true"}),statusText))));
     const co = e.companyId ? S.companies.find(c=>c.id===e.companyId) : null;
     if (e.role || co) card.append(el("div",{class:"row",style:"gap:6px"}, e.role?el("span",{class:"pill"},e.role):null, co?el("span",{class:"pill warn"},"Sub · "+co.name):null));
-    if (e.phone) card.append(el("div",{class:"kv"},"Phone: ",el("a",{href:"tel:"+e.phone.replace(/[^\d+]/g,"")},e.phone)));
+    if (e.phone && (S.isOwner || (m && e.id===m.id))) card.append(el("div",{class:"kv"},"Phone: ",el("a",{href:"tel:"+e.phone.replace(/[^\d+]/g,"")},e.phone)));
     if (on && loc.since) card.append(el("div",{class:"kv"},"Shift started ",el("b",{},new Date(loc.since).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}))));
     if (loc && loc.lat!=null){
       card.append(el("div",{class:"kv"},"Last location ", el("b",{},ago(loc.at)), loc.acc?(" (within about "+Math.round(loc.acc)+" m)"):"" ));
@@ -1242,13 +1266,15 @@ function viewTeam(){
     if (!e.userId && S.myUserId && !m && (!e.email || e.email===(S.myEmail||"").toLowerCase())) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
     if (e.userId && e.userId===S.myUserId) acts.append(el("span",{class:"kv"},"This is you"));
     else if (e.userId) acts.append(el("span",{class:"kv"},"Account linked"));
-    acts.append(el("span",{class:"grow"}), S.isOwner ? el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit") : null);
+    acts.append(el("span",{class:"grow"}));
+    if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openEmp(e)},"Edit"));
     card.append(acts);
     grid.append(card);
   });
   frag.append(grid);
-  frag.append(el("p",{class:"kv",style:"margin-top:18px;max-width:70ch"},
-    "Locations are only shared while a team member is on shift and has this page open on their phone. Ending a shift stops sharing right away."));
+  frag.append(el("p",{class:"kv",style:"margin-top:18px;max-width:70ch"}, S.isOwner
+    ? "Locations are only shared while a team member is on shift and has this page open on their phone. Ending a shift stops sharing right away."
+    : "Your location is shared with the owner only while you're on shift. Ending your shift stops sharing right away."));
   if (S.isOwner && hasProjects()) frag.append(subsPanel());
   return frag;
 }
@@ -1325,9 +1351,11 @@ function projectNumbers(p){
 function viewProjects(){
   const frag=document.createDocumentFragment();
   if (!S.projFilterStatus) S.projFilterStatus="open";
-  const list=S.projects.filter(p=>S.projFilterStatus==="all" || (S.projFilterStatus==="open" ? p.status!=="done" : p.status==="done"))
+  const mine=me();
+  const onIt=p=>S.isOwner || (mine && S.jobs.some(j=>j.projectId===p.id && jobCrew(j).includes(mine.id)));
+  const list=S.projects.filter(onIt).filter(p=>S.projFilterStatus==="all" || (S.projFilterStatus==="open" ? p.status!=="done" : p.status==="done"))
     .sort((a,b)=>(a.status==="done")-(b.status==="done")||(a.start||"").localeCompare(b.start||""));
-  const open=S.projects.filter(p=>p.status!=="done");
+  const open=S.projects.filter(onIt).filter(p=>p.status!=="done");
   const backlog=open.reduce((n,p)=>{ const k=projectNumbers(p); return n+Math.max(0,k.contract-k.billed); },0);
   frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"},el("b",{},String(open.length))," open project(s)",
@@ -1336,8 +1364,8 @@ function viewProjects(){
       el("button",{class:"chip","aria-pressed":String(S.projFilterStatus===id),onclick:()=>{S.projFilterStatus=id;render();}},l))),
     S.isOwner?el("button",{class:"btn primary",onclick:()=>openProject()},"New project"):null));
   if (!list.length){
-    frag.append(el("div",{class:"panel"},el("h2",{},"No projects here yet"),
-      el("p",{class:"kv"},"A project holds a multi-day job like a remodel or new build. Add its phases as jobs, put a crew on each one, and track costs against the contract.")));
+    frag.append(el("div",{class:"panel"},el("h2",{},S.isOwner?"No projects here yet":"You're not on any projects right now"),
+      el("p",{class:"kv"},S.isOwner?"A project holds a multi-day job like a remodel or new build. Add its phases as jobs, put a crew on each one, and track costs against the contract.":"When the owner puts you on a project phase, it shows up here.")));
     return frag;
   }
   const grid=el("div",{class:"projects"});
@@ -1361,17 +1389,17 @@ function viewProjects(){
       k.contract?" ("+Math.round(k.margin/k.contract*100)+"%)":""));
     card.append(el("div",{class:"row"},el("span",{class:"kv"},"Lead ",el("b",{},lead?lead.name:"not set")),el("span",{class:"grow"}),
       el("span",{class:"crewdots","aria-label":crewIds.length+" people on this project"},crewIds.slice(0,6).map(empById).filter(Boolean).map(e=>el("span",{style:"background:"+colorFor(e),title:e.name},initials(e.name))))));
-    const phases=el("details",{},el("summary",{class:"kv",style:"cursor:pointer;font-weight:700"},"Phases"));
-    k.jobs.slice().sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")).forEach(j=>{
+    const phases=el("details",{},el("summary",{class:"kv",style:"cursor:pointer;font-weight:700"},S.isOwner?"Phases":"Your phases"));
+    k.jobs.filter(j=>S.isOwner || jobCrew(j).includes(mine.id)).slice().sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")).forEach(j=>{
       const s=STATUSES.find(x=>x.id===(j.status||"new"));
       phases.append(el("div",{class:"phase"},el("span",{class:"pill "+(j.status==="done"?"done":j.status==="in_progress"?"active":"")},s?s.label.replace(" jobs",""):""),
         el("span",{class:"grow"},j.service||""),el("span",{class:"kv"},niceDate(j.date)),
-        el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Open")));
+        S.isOwner?el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Open"):null));
     });
     if (!k.jobs.length) phases.append(el("div",{class:"empty"},"No phases yet."));
     card.append(phases);
     card.append(el("div",{class:"acts",style:"display:flex;gap:6px;flex-wrap:wrap"},
-      el("button",{class:"btn small primary",onclick:()=>openJob(null,{projectId:p.id,client:p.client||p.name,address:p.address||"",assigneeId:p.leadId||null})},"Add phase"),
+      S.isOwner?el("button",{class:"btn small primary",onclick:()=>openJob(null,{projectId:p.id,client:p.client||p.name,address:p.address||"",assigneeId:p.leadId||null})},"Add phase"):null,
       el("button",{class:"btn small",onclick:()=>{S.projFilter=p.id;S.who="all";S.range="all";S.tab="board";render();}},"See on board"),
       S.isOwner?el("button",{class:"btn small ghost",onclick:()=>openProject(p)},"Edit"):null));
     grid.append(card);
@@ -2229,9 +2257,19 @@ function subscribeAll(){
   unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
   COLLS.forEach(c=>{ S[c]=[]; });
   const bid=S.businessId;
-  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
+  // Crew never load the team's locations: only their own, once we know which team member they are.
+  let myLocSub=null;
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || c!=="locations").forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
     if (S.businessId!==bid) return;          // a late update from a business we've left
     S[c]=arr; render();
+    if (c==="employees" && !S.isOwner){
+      const m=me();
+      if (m && (!myLocSub || myLocSub.id!==m.id)){
+        if (myLocSub) try{ myLocSub.off(); }catch(e){}
+        myLocSub={id:m.id, off:Store.subscribeDoc("locations", m.id, a=>{ if (S.businessId!==bid) return; S.locations=a; render(); })};
+        unsubs.push(()=>{ if (myLocSub) myLocSub.off(); });
+      }
+    }
     if (c==="employees") syncCrewAccess();
     if (c==="bookings") maybeShowPendingPopup();
   }, bid)));
