@@ -362,7 +362,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <button role="tab" data-tab="requests" aria-selected="false" data-owner>Booking Requests</button>
     <button role="tab" data-tab="board" aria-selected="true">Job board</button>
     <button role="tab" data-tab="projects" aria-selected="false" data-feature="projects" hidden>Projects</button>
-    <button role="tab" data-tab="rewards" aria-selected="false" data-owner>Rewards</button>
+    <button role="tab" data-tab="rewards" aria-selected="false" data-owner data-feature="rewards">Rewards</button>
     <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
     <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
     <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
@@ -412,6 +412,9 @@ let SERVICES = SERVICE_DEFAULTS.Cleaning.slice();
 const EXP_CATS = ["Supplies","Fuel & mileage","Payroll","Equipment","Insurance","Marketing","Vehicle upkeep","Other"];
 const TRADE_EXP_CATS = ["Materials","Subcontractors","Permits & fees","Tool rental"];
 function hasProjects(){ const b=S.business||{}; if (b.features && typeof b.features.projects==="boolean") return b.features.projects; return TRADE_CATS.includes(b.category); }
+// Customer rewards suit repeat-visit businesses (cleaning, lawn, pet care), not one-off trade jobs.
+// Off by default for the trades; any business can switch it in Settings. A business that already has members keeps it on.
+function hasRewards(){ const b=S.business||{}; if (b.features && typeof b.features.rewards==="boolean") return b.features.rewards; return !TRADE_CATS.includes(b.category) || S.customers.some(c=>c.rewardsMember); }
 const PROJECT_STATUSES = [{id:"planning",label:"Planning"},{id:"active",label:"Active"},{id:"hold",label:"On hold"},{id:"done",label:"Finished"}];
 // Everyone working a job: the lead (assigneeId) plus any extra crew.
 function jobCrew(j){ return [...new Set([j.assigneeId,...(Array.isArray(j.crewIds)?j.crewIds:[])].filter(Boolean))]; }
@@ -545,8 +548,10 @@ function draw(){
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
   document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
+  document.querySelectorAll(".tabs button[data-feature=rewards]").forEach(b=>{ b.hidden = !S.isOwner || !hasRewards(); });
   if (!S.isOwner && ["requests","rewards","insights","books","payroll"].includes(S.tab)) S.tab="board";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
+  if (S.tab==="rewards" && !hasRewards()) S.tab="board";
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
   if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
@@ -620,7 +625,9 @@ function drawBanners(){
 
 /* ---- Rewards: members, balances and the points log ---- */
 function rewardsName(){ const b=S.business||{}; return b.rewardsName || ((b.category||"Cleaning")==="Cleaning" ? "Clean Rewards" : "Rewards"); }
-const REWARD_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const CLEAN_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const GENERAL_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"$30 off next booking"},{p:500,t:"20% off a visit"},{p:1000,t:"Free standard visit"}];
+let REWARD_TIERS=CLEAN_TIERS;
 const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
 function addLedger(c, delta, type, reason){
   if (S.demo) return write(()=>Store.set("pointsLedger",newId(),{uid:c.id,businessId:S.businessId,customerName:c.name||"",delta,type,reason,by:S.myEmail,createdAt:Date.now()}),"Points updated");
@@ -751,17 +758,17 @@ function settingsBusiness(){
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,maxlength:"120",value:b.name||""})),
       el("label",{class:"f"},"Type of business",el("select",{name:"category",value:CATEGORIES.includes(b.category)?b.category:"Other"},CATEGORIES.map(c=>el("option",{},c)))),
-      el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
-        el("input",{type:"checkbox",name:"projects",checked:hasProjects(),style:"width:auto;margin:0;"}),
-        "Projects & subcontractors"),
+      el("div",{class:"checks",style:"align-self:end;padding-bottom:9px"},
+        el("label",{},el("input",{type:"checkbox",name:"projects",checked:hasProjects()}),"Projects & subcontractors"),
+        el("label",{},el("input",{type:"checkbox",name:"rewards",checked:hasRewards()}),"Customer rewards")),
       el("label",{class:"f full"},"Services you offer (one per line)",el("textarea",{name:"services",rows:"6"},SERVICES.join("\n"))),
-      el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})),
+      hasRewards() ? el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})) : el("input",{type:"hidden",name:"rewardsName",value:S.business.rewardsName||""}),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Save"))));
   f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
     const services=[...new Set(d.services.split("\n").map(x=>x.trim()).filter(Boolean))].slice(0,30);
     const name=d.name.trim(), rn=d.rewardsName.trim();
     const category=CATEGORIES.includes(d.category)?d.category:"Other";
-    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked};
+    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked,rewards:!!f.querySelector("[name=rewards]").checked};
     if(!name) return toast("Enter your business name.");
     if(!services.length) return toast("List at least one service.");
     write(async()=>{
@@ -776,7 +783,7 @@ function settingsBusiness(){
 function viewSettings(){
   const frag=document.createDocumentFragment();
   const secs=S.isOwner&&S.business
-    ?[["business","Business"],["notify","Notifications"],["access","Owners & invites"],["rewards","Rewards"],["account","Account"]]
+    ?[["business","Business"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
@@ -824,7 +831,7 @@ function viewRequests(){
       el("span",{class:"paid "+(status==="pending"?"no":"yes")}, status)));
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
     if (b.details) card.append(el("div",{class:"notes"},b.details));
-    if (b.wantsRewards) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
+    if (b.wantsRewards && hasRewards()) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
     const trail=[];
     if (b.ownerNotifiedAt) trail.push("Owners alerted");
     if (b.reminderCount) trail.push(b.reminderCount+" reminder"+(b.reminderCount>1?"s":"")+" sent");
@@ -2504,6 +2511,7 @@ function applyBusinessLists(biz){
   const cat = SERVICE_DEFAULTS[biz.category] ? biz.category : "Cleaning";
   SERVICES = Array.isArray(biz.services) && biz.services.length ? biz.services.slice() : SERVICE_DEFAULTS[cat].slice();
   EXP_CATS[0] = cat==="Cleaning" ? "Cleaning supplies" : "Supplies";
+  REWARD_TIERS = cat==="Cleaning" ? CLEAN_TIERS : GENERAL_TIERS;
   // Trade businesses also log materials, subcontractor payments, permits and rentals.
   const trade = (biz.features && typeof biz.features.projects==="boolean") ? biz.features.projects : TRADE_CATS.includes(biz.category);
   TRADE_EXP_CATS.forEach(c=>{ const i=EXP_CATS.indexOf(c); if (trade && i<0) EXP_CATS.splice(EXP_CATS.length-1,0,c); if (!trade && i>=0) EXP_CATS.splice(i,1); });
@@ -2596,7 +2604,7 @@ function demoSeed(kind){
 
   if (kind==="cleaning"){
     business={id:BID,name:"Sparkle & Shine Cleaning",category:"Cleaning",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
-      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false}};
+      services:SERVICE_DEFAULTS.Cleaning.slice(),rewardsName:"Shine Rewards",features:{projects:false,rewards:true}};
     people([["eMaria","Maria Lopez","731-555-0142","Team lead"],["eTasha","Tasha Greene","731-555-0178","Cleaner"],["eJordan","Jordan Pike","731-555-0119","Cleaner"],["eAmber","Amber Cole","731-555-0133","Trainee"]]);
     put("payRates",{cls:"w2",payType:"hourly",rate:17,w9:false},"eMaria");
     put("payRates",{cls:"1099",payType:"percent",rate:40,w9:true},"eTasha");
@@ -2631,7 +2639,7 @@ function demoSeed(kind){
   } else {
     business={id:BID,name:"Ridgeline Builders",category:"Construction",city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
       services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
-      rewardsName:"Ridgeline Rewards",features:{projects:true},sutaRate:2.7};
+      features:{projects:true,rewards:false},sutaRate:2.7};
     put("companies",{name:"Ray’s Drywall LLC",trade:"Drywall",contact:"Ray Duncan",phone:"731-555-0187",w9:true,insuranceExp:D(18),licenseExp:D(210),createdAt:at(-300,9)},"coRay");
     put("companies",{name:"Volt Electric Co.",trade:"Electrical",contact:"Eli Watts",phone:"731-555-0150",w9:true,insuranceExp:D(140),licenseExp:D(320),createdAt:at(-300,9)},"coVolt");
     put("companies",{name:"Precision Tile & Stone",trade:"Tile",contact:"Sam Ruiz",phone:"731-555-0126",w9:false,insuranceExp:D(-12),licenseExp:D(95),createdAt:at(-200,9)},"coTile");
@@ -2740,10 +2748,11 @@ function demoSeed(kind){
     ? [["Gail Owens","731-555-0164","Deep cleaning","3 bed, 2 bath. Moving my mother in next weekend.",2],["Reed home","731-555-0123","Regular cleaning","Every other Friday if you have the opening.",5],["Sunrise Realty","731-555-0145","Move-in / move-out","Rental turnover, keys in the lockbox.",8]]
     : [["Gail Owens","731-555-0164","Water heater install","40-gallon gas heater leaking at the base. Can someone look this week?",1],["Reed home","731-555-0123","Estimate visit","Want a quote to turn the hall bath into a walk-in shower.",4],["Hall family","731-555-0168","Decks & porches","Back deck has two soft boards and a wobbly rail.",7]];
   bk.forEach(([name,phone,service,details,off],i)=>put("bookings",{name,phone,service,details,requestedDate:D(off),status:"pending",uid:"demo-c"+i,createdAt:at(-1,8+i),ownerNotifiedAt:at(-1,8+i),reminderCount:i===0?2:0}));
-  [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
+  // Rewards members only for the cleaning demo; the contractor demo has rewards turned off.
+  (kind==="cleaning" ? [["Henderson family","731-555-0190",[[420,"Paid job"],[310,"Paid job"],[-250,"Redeemed: Free add-on"],[180,"Paid job"]]],
    ["Dr. Patel","731-555-0147",[[155,"Paid job"],[160,"Paid job"],[150,"Paid job"]]],
-   ["Carter home","731-555-0172",[[1400,"Paid job"],[50,"Bonus points: referral"]]],
-   ["Owens home","731-555-0164",[[85,"Paid job"]]]].forEach(([name,phone,log],i)=>{
+   ["Carter home","731-555-0172",[[640,"Paid job"],[300,"Paid job"],[50,"Bonus points: referral"]]],
+   ["Owens home","731-555-0164",[[85,"Paid job"]]]] : []).forEach(([name,phone,log],i)=>{
     const cid="demo-c"+(10+i); put("customers",{name,phone,email:"",rewardsMember:true},cid);
     log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
   });
