@@ -257,6 +257,33 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 /* auth gate */
 .gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
+/* Sign-in page: brand side on wide screens, form on the right */
+#gate.gate-split{max-width:none;margin:0;padding:0;min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr)}
+.gate-main{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:56px 18px 32px;
+  background:radial-gradient(120% 60% at 50% -10%,#FCF2CF 0,rgba(252,242,207,0) 60%),var(--bg)}
+.gate-main>.gate-panel{width:100%;max-width:380px;box-shadow:0 18px 50px rgba(20,88,72,.10)}
+.gate-side{display:none}
+@media (min-width:960px){
+  #gate.gate-split{grid-template-columns:minmax(0,1.15fr) minmax(440px,1fr)}
+  .gate-main{background:var(--bg)}
+  .gate-side{display:flex;flex-direction:column;justify-content:space-between;position:sticky;top:0;height:100vh;height:100dvh;align-self:start;overflow:hidden;color:#fff;
+    padding:64px clamp(40px,5vw,80px) 0;background:linear-gradient(155deg,#1F7A69 0%,#145848 70%,#0F2A25 100%)}
+  .gs-copy{position:relative;z-index:2;max-width:520px}
+  .gs-kicker{font:800 13px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#F2C230;margin:0 0 14px}
+  .gate-side h2{font:800 clamp(34px,3.4vw,50px)/1.04 var(--display);letter-spacing:-.035em;margin:0 0 26px}
+  .gate-side h2 span{color:#F2C230}
+  .gate-side ul{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+  .gate-side li{position:relative;padding-left:34px;font-size:16px;line-height:1.45;color:rgba(255,255,255,.86)}
+  .gate-side li b{display:block;color:#fff;font-size:17px}
+  .gate-side li::before{content:"";position:absolute;left:0;top:3px;width:22px;height:22px;border-radius:50%;
+    background:#F2C230 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%23145848' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat}
+  .gs-shots{position:relative;z-index:2;height:clamp(220px,30vh,320px);margin-top:40px}
+  .gs-shots img{position:absolute;bottom:-40px;width:min(62%,420px);aspect-ratio:16/10;object-fit:cover;object-position:top left;
+    border-radius:12px;border:5px solid #fff;box-shadow:0 24px 50px rgba(0,0,0,.35);background:#F7F6F3}
+  .gs-a{left:0;transform:rotate(-6deg);transform-origin:bottom left}
+  .gs-b{right:-20px;transform:rotate(5deg);transform-origin:bottom right;bottom:-70px!important}
+  .gs-sun{position:absolute;left:50%;bottom:0;width:min(640px,90%);transform:translateX(-50%);z-index:1}
+}
 .gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
 .gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
 .checkline{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;font-weight:400;color:var(--ink)}
@@ -294,51 +321,69 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 
-<div id="gate" class="gate-wrap hidden">
-  <div class="gate-panel">
-    <h1 class="gate-brand"><a href="/" class="gate-home" title="Back to the Dazift homepage"><svg aria-hidden="true" class="gate-mark" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dazift</a></h1>
-    <p>Sign in to manage your business, or create an account.</p>
-    <div class="gate-tabs">
-      <button id="gateLoginTab" aria-selected="true">Sign In</button>
-      <button id="gateRegisterTab" aria-selected="false">Register</button>
+<div id="gate" class="gate-wrap gate-split hidden">
+  <aside class="gate-side web-only">
+    <div class="gs-copy">
+      <p class="gs-kicker">For the trades and service crews</p>
+      <h2>Your whole workday, <span style="white-space:nowrap">on one board.</span></h2>
+      <ul>
+        <li><b>Jobs and crews</b> Book it, assign the crew, watch it move to done.</li>
+        <li><b>Shifts you can check</b> Hours, route and job check-ins for every shift.</li>
+        <li><b>Payroll and books</b> Pay worked out from the board. Profit for the month at a glance.</li>
+      </ul>
     </div>
-    <div id="gateLoginPanel" class="gate-form">
-      <label class="f">Email<input id="gateLoginEmail" type="email" autocomplete="username"></label>
-      <label class="f">Password<input id="gateLoginPassword" type="password" autocomplete="current-password"></label>
-      <button class="btn primary" id="gateLoginBtn">Sign in</button>
-      <button class="btn ghost small" id="gateForgotBtn" type="button">Forgot your password?</button>
+    <div class="gs-shots" aria-hidden="true">
+      <img src="/shots/board.webp" alt="" loading="lazy" decoding="async" class="gs-a">
+      <img src="/shots/payroll.webp" alt="" loading="lazy" decoding="async" class="gs-b">
     </div>
-    <div id="gateRegisterPanel" class="gate-form hidden">
-      <label class="f">Your name<input id="gateRegName" type="text" autocomplete="name"></label>
-      <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
-      <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
-      <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
-      <label class="checkline"><input type="checkbox" id="gateRegCrew"><span><b>I'm joining a crew</b><small>Your employer added you to their team. You don't need to set up a business.</small></span></label>
-      <div class="gate-form" id="gateRegTypeWrap">
-      <label class="f">Business name<input id="gateRegBizName" type="text" autocomplete="organization" maxlength="120" placeholder="e.g. Ridgeline Builders"></label>
-      <label class="f">Type of business
-        <select id="gateRegType">
-          <option value="" selected disabled>Choose your type of business</option>
-          <option>Cleaning</option>
-          <option>Lawn Care</option>
-          <option>Handyman</option>
-          <option>Pet Care</option>
-          <option>Construction</option>
-          <option>Plumbing</option>
-          <option>Electrical</option>
-          <option>HVAC</option>
-          <option>Roofing</option>
-          <option>Other</option>
-        </select>
-      </label>
+    <svg class="gs-sun" viewBox="0 0 400 220" aria-hidden="true"><path d="M70 220a130 130 0 0 1 260 0z" fill="#F2C230" opacity=".14"/><path d="M200 56V14M98 108 68 78M302 108l30-30" stroke="#F2C230" stroke-width="14" stroke-linecap="round" opacity=".14"/></svg>
+  </aside>
+  <div class="gate-main">
+    <div class="gate-panel">
+      <h1 class="gate-brand"><a href="/" class="gate-home" title="Back to the Dazift homepage"><svg aria-hidden="true" class="gate-mark" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dazift</a></h1>
+      <p>Sign in to manage your business, or create an account.</p>
+      <div class="gate-tabs">
+        <button id="gateLoginTab" aria-selected="true">Sign In</button>
+        <button id="gateRegisterTab" aria-selected="false">Register</button>
       </div>
-      <p class="kv hidden" id="gateRegCrewNote" style="margin:0;font-size:13px">Sign up with the same email your employer added. Once you confirm it, you'll land on their board.</p>
-      <button class="btn primary" id="gateRegBtn">Create account</button>
+      <div id="gateLoginPanel" class="gate-form">
+        <label class="f">Email<input id="gateLoginEmail" type="email" autocomplete="username"></label>
+        <label class="f">Password<input id="gateLoginPassword" type="password" autocomplete="current-password"></label>
+        <button class="btn primary" id="gateLoginBtn">Sign in</button>
+        <button class="btn ghost small" id="gateForgotBtn" type="button">Forgot your password?</button>
+      </div>
+      <div id="gateRegisterPanel" class="gate-form hidden">
+        <label class="f">Your name<input id="gateRegName" type="text" autocomplete="name"></label>
+        <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
+        <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
+        <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
+        <label class="checkline"><input type="checkbox" id="gateRegCrew"><span><b>I'm joining a crew</b><small>Your employer added you to their team. You don't need to set up a business.</small></span></label>
+        <div class="gate-form" id="gateRegTypeWrap">
+        <label class="f">Business name<input id="gateRegBizName" type="text" autocomplete="organization" maxlength="120" placeholder="e.g. Ridgeline Builders"></label>
+        <label class="f">Type of business
+          <select id="gateRegType">
+            <option value="" selected disabled>Choose your type of business</option>
+            <option>Cleaning</option>
+            <option>Lawn Care</option>
+            <option>Handyman</option>
+            <option>Pet Care</option>
+            <option>Construction</option>
+            <option>Plumbing</option>
+            <option>Electrical</option>
+            <option>HVAC</option>
+            <option>Roofing</option>
+            <option>Other</option>
+          </select>
+        </label>
+        </div>
+        <p class="kv hidden" id="gateRegCrewNote" style="margin:0;font-size:13px">Sign up with the same email your employer added. Once you confirm it, you'll land on their board.</p>
+        <button class="btn primary" id="gateRegBtn">Create account</button>
+      </div>
+      <div class="gate-msg" id="gateMsg"></div>
+      <a class="btn gate-cancel web-only" href="/">Cancel</a>
     </div>
-    <div class="gate-msg" id="gateMsg"></div>
-    <a class="btn gate-cancel web-only" href="/">Cancel</a>
+    <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
   </div>
-  <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
 
 <div id="bizOnboard" class="gate-wrap hidden">
