@@ -142,6 +142,10 @@ async function mailInvoice(p, key, to, reminder) {
   await transport().sendMail({ from: `"${name} via Dazift" <${SMTP_USER.value()}>`, to, replyTo: okEmail(b.email) ? b.email : undefined, ...msg });
 }
 
+// Same rule as the app: only businesses waiting for approval or suspended are blocked.
+// Businesses created before approvals existed have no status, and they are active.
+const bizOpen = (b) => !!b && b.status !== "pending" && b.status !== "suspended";
+
 exports.sendInvoiceEmail = onDocumentCreated({ document: "mail/{id}", secrets: [SMTP_PASS] }, async (event) => {
   const ref = event.data && event.data.ref, m = event.data && event.data.data();
   if (!m || m.kind !== "invoice") return;
@@ -151,7 +155,7 @@ exports.sendInvoiceEmail = onDocumentCreated({ document: "mail/{id}", secrets: [
     const db = admin.firestore();
     const [bizSnap, invSnap] = await Promise.all([db.doc("businesses/" + m.businessId).get(), db.doc("invoices/" + m.invoiceId).get()]);
     const biz = bizSnap.data(), inv = invSnap.data();
-    if (!biz || biz.status !== "active") return fail("business not active");
+    if (!bizOpen(biz)) return fail("business not active");
     if (!(biz.ownerUids || []).includes(m.createdBy)) return fail("not an owner");
     if (!inv || inv.businessId !== m.businessId || !inv.publicKey || inv.publicKey !== m.key) return fail("invoice not found");
     // Keep a lid on volume so a business can't be used to spam.
@@ -177,7 +181,7 @@ exports.invoiceReminders = onSchedule({ schedule: "every day 09:00", timeZone: "
     if ((inv.reminders || 0) >= 3 || (inv.lastReminderAt && now - inv.lastReminderAt < 3 * 864e5 - 36e5)) continue;
     const to = inv.client && inv.client.email; if (!okEmail(to)) continue;
     try {
-      const biz = (await db.doc("businesses/" + inv.businessId).get()).data(); if (!biz || biz.status !== "active") continue;
+      const biz = (await db.doc("businesses/" + inv.businessId).get()).data(); if (!bizOpen(biz)) continue;
       const pub = (await db.doc("publicInvoices/" + inv.publicKey).get()).data(); if (!pub || pub.status !== "open") continue;
       await mailInvoice(pub, inv.publicKey, to, true);
       await d.ref.update({ reminders: (inv.reminders || 0) + 1, lastReminderAt: now });
