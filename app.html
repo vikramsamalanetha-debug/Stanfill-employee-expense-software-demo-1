@@ -612,7 +612,9 @@ function render(){ if(renderQueued) return; renderQueued=true; requestAnimationF
 function draw(){
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
   const platformBtn = $("#platformTabBtn");
-  if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
+  if (platformBtn){ platformBtn.hidden = !S.isPlatformAdmin;
+    const n=S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length;
+    platformBtn.textContent = "Platform Admin"+(n?" ("+n+")":""); }
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
   document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
@@ -960,6 +962,36 @@ function convertBookingToJob(b){
 }
 
 /* ---- platform admin ---- */
+// Platform admin: alert when a new sign-up or business shows up while the app is open.
+const adminSeen={};
+function adminWatchNew(kind, list, label){
+  const ids=new Set(list.map(x=>x.id));
+  if (!adminSeen[kind]){ adminSeen[kind]=ids; if (kind==="biz") maybeShowAdminPending(); return; }   // first load: remember, don't alert
+  const fresh=list.filter(x=>!adminSeen[kind].has(x.id)); adminSeen[kind]=ids;
+  fresh.forEach(x=>toast(label(x)));
+  if (fresh.length && kind==="biz") maybeShowAdminPending(true);
+}
+let adminPopupShown=false;
+function maybeShowAdminPending(force){
+  if (!S.isPlatformAdmin || S.demo) return;
+  const n=S.allBusinesses.filter(b=>b.status==="pending").length;
+  if (!n || (adminPopupShown && !force)) return;
+  adminPopupShown=true;
+  $("#pendingCount").textContent=n;
+  $("#pendingDlg h2").firstChild.textContent="You have ";
+  $("#pendingDlg h2").lastChild.textContent=" business(es) waiting for approval";
+  $("#pendingDlg .kv").textContent="New businesses can't use Dazift until you approve them in Platform Admin.";
+  $("#pendingViewBtn").dataset.admin="1"; $("#pendingViewBtn").textContent="Review now";
+  if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
+}
+// Sign-ups that never finished: accounts made as an owner with no business yet. Good people to call.
+function unfinishedSignups(){
+  const owners=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerUids||[]),b.ownerUid].filter(Boolean)));
+  const emails=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerEmails||[]),...(b.pendingOwnerEmails||[])]).map(x=>(x||"").toLowerCase()));
+  const since=Date.now()-45*864e5;
+  return S.allUsers.filter(u=>u.role==="owner" && (u.createdAt||0)>since && !owners.has(u.id) && !emails.has((u.email||"").toLowerCase()))
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
 function ensureUsersLoaded(){
   if (S.usersLoaded) return;
   S.usersLoaded = true;
@@ -1079,6 +1111,20 @@ function viewPlatformAdmin(){
     });
     frag.append(p);
   }
+
+  const leads=unfinishedSignups();
+  const lp=el("div",{class:"panel"},el("h2",{},"Signed up, no business yet"),
+    el("p",{class:"kv",style:"margin:-6px 0 12px;"},leads.length
+      ? leads.length+" owner account(s) from the last 45 days that haven't submitted a business. Most often they didn't confirm their email. A quick call usually gets them going."
+      : "Everyone who signed up as an owner in the last 45 days has submitted a business."));
+  leads.forEach(u=>{
+    const card=el("article",{class:"card",style:"max-width:640px;"});
+    card.append(el("div",{class:"row"},el("h3",{style:"margin:0"},u.plannedBusinessName||"(no business name)"),
+      u.plannedCategory?el("span",{class:"pill"},u.plannedCategory):null, el("span",{class:"grow"}), el("span",{class:"kv"},u.createdAt?ago(u.createdAt):"")));
+    card.append(el("div",{class:"kv"},(u.name||"")+" \u00b7 ",u.email?el("a",{href:"mailto:"+u.email},u.email):"",u.phone?[" \u00b7 ",el("a",{href:"tel:"+String(u.phone).replace(/[^\d+]/g,"")},u.phone)]:null));
+    lp.append(card);
+  });
+  frag.append(lp);
 
   const clients=el("div",{class:"panel"},el("h2",{},"All businesses (client list)"));
   const sorted = S.allBusinesses.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
@@ -2432,10 +2478,15 @@ function maybeShowPendingPopup(){
   if (!pending.length) return;
   pendingPopupShown=true;
   $("#pendingCount").textContent = pending.length;
-  $("#pendingDlg").showModal();
+  $("#pendingDlg h2").firstChild.textContent="You have "; $("#pendingDlg h2").lastChild.textContent=" pending booking request(s)";
+  $("#pendingDlg .kv").textContent="New customers are waiting on you to confirm availability.";
+  delete $("#pendingViewBtn").dataset.admin; $("#pendingViewBtn").textContent="View requests";
+  if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
 }
 $("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
-$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
+$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close();
+  if ($("#pendingViewBtn").dataset.admin){ if (S.adminView) return adminBackHome(); S.tab="platform"; } else S.tab="requests";
+  render(); });
 
 const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates"];
 let crewSyncT=null;
@@ -3298,8 +3349,15 @@ async function routeUser(user){
       platformAdminSubscribed = true;
       firebase.firestore().collection("businesses").onSnapshot(snap=>{
         S.allBusinesses = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        adminWatchNew("biz", S.allBusinesses.filter(b=>b.status==="pending"), b=>"New business waiting for approval: "+(b.name||"unnamed")+(b.category?" ("+b.category+")":""));
         render();
       });
+      S.usersLoaded = true;
+      firebase.firestore().collection("crewAccounts").limit(1000).onSnapshot(snap=>{
+        S.allUsers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        adminWatchNew("acct", S.allUsers.filter(u=>u.role==="owner"), u=>"New sign-up: "+(u.name||u.email||"someone")+(u.plannedBusinessName?" \u00b7 "+u.plannedBusinessName:""));
+        render();
+      }, e=>console.warn("crewAccounts",e));
     }
     let myPhone = "", acct = {};
     try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists){ acct = acctDoc.data()||{}; myPhone = acct.phone||""; } } catch(e){}

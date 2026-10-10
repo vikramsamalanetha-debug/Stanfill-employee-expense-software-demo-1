@@ -1,0 +1,12 @@
+{
+  "name": "dazift-alerts",
+  "private": true,
+  "description": "Dazift: email and phone alerts to the platform admin when someone signs up or registers a business. A product of LIT America (www.litamerica.net).",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0",
+    "nodemailer": "^6.9.16"
+  }
+}
