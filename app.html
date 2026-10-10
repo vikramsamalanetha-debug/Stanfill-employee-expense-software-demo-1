@@ -449,7 +449,7 @@ function el(tag, props, ...kids){
   if (val!==undefined) n.value = val;
   return n;
 }
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const money = n => { const v=Number(n)||0; return (v<0?"\u2212$":"$") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today = () => ymd(new Date());
@@ -2701,11 +2701,11 @@ const DEMO_PROFILES={
     projects:[
       {key:"pHend",name:"Henderson kitchen remodel",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-24,end:18,contract:38500,status:"active",leadId:"eMarcus",
         notes:"Gut and rebuild. Shaker cabinets, quartz counters, tile backsplash. Family is living in the house; keep the dining room clear.",
-        phases:[["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],["Rough plumbing",-19,"done",["eLuis"],4200,7,true],["Electrical rough-in",-16,"done",["eEli"],3600,8,true],["Drywall hang & finish",0,"in_progress",["eRay","eKendra"],4400],["Cabinet install",3,"assigned",["eMarcus","eTasha"],7800],["Countertops & backsplash",9,"assigned",["eTasha"],8650],["Final punch list",16,"new",[],6000]],
+        phases:[["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],["Rough plumbing",-19,"done",["eLuis"],4200,7,true],["Electrical rough-in",-16,"done",["eEli"],3600,8,true],["Drywall hang & finish",-3,"done",["eRay","eKendra"],4400,8,true],["Cabinet install",0,"in_progress",["eMarcus","eTasha"],7800],["Countertops & backsplash",6,"assigned",["eTasha"],8650],["Final punch list",16,"new",[],6000]],
         costs:[[-26,"Permits & fees",285,"Henderson County building permit"],[-19,"Materials",1180.42,"Ferguson, PEX and fittings"],[-15,"Subcontractors",2400,"Volt Electric Co., rough-in","coVolt"],[-10,"Materials",986.17,"Lowe’s, drywall and mud"],[-5,"Materials",6214.88,"Lowe’s, shaker cabinets"],[-2,"Subcontractors",2100,"Ray’s Drywall LLC, first draw","coRay"]]},
       {key:"pCarter",name:"Carter bathroom remodel",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:-6,end:12,contract:14200,status:"active",leadId:"eTasha",
         notes:"Tub to walk-in shower conversion. Client picked the tile already; it's in the garage.",
-        phases:[["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],["Plumbing reroute",0,"in_progress",["eLuis"],3200],["Shower tile",4,"assigned",["eTasha"],4800],["Vanity & fixtures",10,"new",[],4800]],
+        phases:[["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],["Plumbing reroute",-1,"done",["eLuis"],3200,6,false],["Shower tile",0,"in_progress",["eTasha"],4800],["Vanity & fixtures",10,"new",[],4800]],
         costs:[[-7,"Permits & fees",95,"Plumbing permit"],[-6,"Materials",642.3,"Ferguson, shower valve and drain"],[-3,"Materials",1148.6,"Floor & Decor, thinset and trim"],[-1,"Tool rental",165,"Sunbelt, tile saw (3 days)"]]},
       {key:"pBrooks",name:"Brooks rental deck",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:12,end:22,contract:9800,status:"planning",leadId:"eMarcus",
         notes:"12x16 pressure-treated deck with stairs. Permit submitted.",
@@ -2927,7 +2927,8 @@ function demoSeed(type){
   const firstWeekly=weekStart(dayOf(-63));
   const lumpEnd=ymd(new Date(firstWeekly.getFullYear(),firstWeekly.getMonth(),firstWeekly.getDate()-1));
   const lumpPeople=Object.entries(P.lump).map(([k,paid])=>({empId:k,name:C.employees[k].name,cls:rates[k].cls,paid,net:rates[k].cls==="w2"?cents(paid*.86):paid,erTax:rates[k].cls==="w2"?cents(paid*.1):0}));
-  put("expenses",{date:lumpEnd,category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
+  // Booked before the 3-month window the demo charts cover, so it doesn't show as one giant spike.
+  put("expenses",{date:D(-100),category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
     payrollRun:{start:now.getFullYear()+"-01-01",end:lumpEnd,people:lumpPeople},createdAt:at(-64,18)});
   const jobsArr=Object.values(C.jobs);
   const ws=weekStart(now), lastWeekStart=ymd(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-7));
