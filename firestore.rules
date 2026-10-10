@@ -115,6 +115,32 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
 
+    // Shift log: start, end, location trail and job check-ins for each shift.
+    // A crew member creates and adds to their own shifts and can read only their own.
+    // Owners read everything in their business and can fix times. Nobody else sees it.
+    match /shifts/{id} {
+      function myTeamRecordFor(empId) {
+        return signedIn() && get(/databases/$(database)/documents/employees/$(empId)).data.get('userId', '') == uid();
+      }
+      allow read: if (signedIn() && resource.data.get('userId', '') == uid())
+        || isOwner(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null))
+        || (isMember(request.resource.data.get('businessId', null))
+            && request.resource.data.get('userId', '') == uid()
+            && myTeamRecordFor(request.resource.data.get('empId', '')));
+      // crew can only add points and job check-ins, and close the shift; they can't rewrite its start
+      allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
+        || (signedIn() && resource.data.get('userId', '') == uid() && sameBusiness()
+            && changedOnly(['end', 'points', 'events'])
+            && request.resource.data.get('points', []).size() <= 500
+            // the end time is set once, and never in the future
+            && (request.resource.data.get('end', null) == resource.data.get('end', null)
+                || (resource.data.get('end', null) == null
+                    && request.resource.data.end is int
+                    && request.resource.data.end <= request.time.toMillis() + 120000)));
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
     // Projects (remodels, builds): the whole crew sees them, owners delete them.
     match /projects/{id} {
       allow read: if isMember(resource.data.get('businessId', null));

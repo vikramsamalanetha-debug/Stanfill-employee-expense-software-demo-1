@@ -181,6 +181,21 @@ tr.inc td.num{color:var(--ok)}
 .expform .full{grid-column:1/-1}
 
 dialog{border:0;border-radius:var(--radius-lg);padding:0;background:var(--surface);color:var(--ink);width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
+dialog.wide{width:min(720px,calc(100vw - 24px))}
+.shiftrow{border-top:1px solid var(--line);padding:10px 0}
+.shiftrow summary{cursor:pointer;display:grid;grid-template-columns:110px 150px 70px 1fr;gap:6px 12px;align-items:center;list-style:none}
+.shiftrow summary::-webkit-details-marker{display:none}
+.shiftrow .sh{font-variant-numeric:tabular-nums}
+.shiftrow .sf{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+@media (max-width:620px){.shiftrow summary{grid-template-columns:1fr auto}.shiftrow .st{grid-column:1}.shiftrow .sf{grid-column:1/-1}}
+.shiftbody{padding:10px 0 4px}
+.timeline{list-style:none;margin:10px 0 0;padding:0 0 0 14px;border-left:2px solid var(--line);display:grid;gap:6px;font-size:14px}
+.timeline li{display:flex;gap:10px;position:relative}
+.timeline li::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+.timeline li.ev::before{background:var(--primary)}
+.timeline .tt{min-width:68px;color:var(--muted);font-variant-numeric:tabular-nums}
+.timeline li.pt{color:var(--muted)}
+.fixform{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:12px}
 dialog::backdrop{background:rgba(10,25,22,.45)}
 dialog form{padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 dialog h2{grid-column:1/-1;margin:0;font:600 22px var(--display)}
@@ -244,6 +259,10 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .gate-wrap{max-width:380px;margin:80px auto;padding:0 18px}
 .gate-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:24px}
 .gate-panel h1{font:750 24px var(--display);margin:0 0 4px}
+.checkline{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;font-weight:400;color:var(--ink)}
+.checkline input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:var(--primary)}
+.checkline b{display:block;font-size:14px}
+.checkline small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
 .gate-brand{display:flex;align-items:center;gap:10px;letter-spacing:-.03em}
 .gate-mark{width:34px;height:34px;flex:none}
 .gate-panel p{color:var(--muted);margin:0 0 18px}
@@ -290,6 +309,26 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <label class="f">Email<input id="gateRegEmail" type="email" autocomplete="username"></label>
       <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
       <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
+      <label class="checkline"><input type="checkbox" id="gateRegCrew"><span><b>I'm joining a crew</b><small>Your employer added you to their team. You don't need to set up a business.</small></span></label>
+      <div class="gate-form" id="gateRegTypeWrap">
+      <label class="f">Business name<input id="gateRegBizName" type="text" autocomplete="organization" maxlength="120" placeholder="e.g. Ridgeline Builders"></label>
+      <label class="f">Type of business
+        <select id="gateRegType">
+          <option value="" selected disabled>Choose your type of business</option>
+          <option>Cleaning</option>
+          <option>Lawn Care</option>
+          <option>Handyman</option>
+          <option>Pet Care</option>
+          <option>Construction</option>
+          <option>Plumbing</option>
+          <option>Electrical</option>
+          <option>HVAC</option>
+          <option>Roofing</option>
+          <option>Other</option>
+        </select>
+      </label>
+      </div>
+      <p class="kv hidden" id="gateRegCrewNote" style="margin:0;font-size:13px">Sign up with the same email your employer added. Once you confirm it, you'll land on their board.</p>
       <button class="btn primary" id="gateRegBtn">Create account</button>
     </div>
     <div class="gate-msg" id="gateMsg"></div>
@@ -349,7 +388,11 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <div class="gate-panel">
     <h1>Almost there</h1>
     <p id="pendingApprovalMsg">Your business registration is waiting for approval. You'll get access as soon as it's reviewed.</p>
-    <button class="btn ghost" onclick="signOutApp()">Sign out</button>
+    <div class="gate-form">
+      <button class="btn primary hidden" id="pendingAgainBtn" type="button">Check again</button>
+      <button class="btn hidden" id="pendingOwnerBtn" type="button">I'm an owner. Set up my business</button>
+      <button class="btn ghost" onclick="signOutApp()">Sign out</button>
+    </div>
   </div>
   <p class="lit-credit">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></p>
 </div>
@@ -381,6 +424,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
 <dialog id="empDlg"><form method="dialog" id="empForm"></form></dialog>
+<dialog id="shiftDlg" class="wide"><div id="shiftDlgBody" style="padding:20px"></div></dialog>
 <dialog id="assignDlg"><div id="assignDlgBody" style="padding:20px;"></div></dialog>
 <dialog id="pendingDlg">
   <form method="dialog" style="padding:24px;display:block;">
@@ -449,7 +493,7 @@ function el(tag, props, ...kids){
   if (val!==undefined) n.value = val;
   return n;
 }
-const money = n => "$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const money = n => { const v=Number(n)||0; return (v<0?"\u2212$":"$") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today = () => ymd(new Date());
@@ -466,7 +510,7 @@ function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-
 let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts"];
 // Firestore sentinels (server time, delete field) have no meaning in the on-device store.
 function localClean(data){
   const out={}; const FV=firebase.firestore.FieldValue;
@@ -502,6 +546,17 @@ const Store = {
       return ref.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))), e=>{ console.warn(coll,e); if(e && e.code==="revoked") toast("Access to this board changed. Reload to continue."); });
     }
     (this.listeners[coll] ||= []).push(cb); this.emit(coll); return ()=>{};
+  },
+  // Only the records where field == value, for crew who may read only their own.
+  subscribeWhere(coll, field, value, cb, businessId){
+    if (this.mode==="db"){
+      let ref=this.db.collection(coll).where(field,"==",value);
+      if (businessId) ref=ref.where("businessId","==",businessId);
+      return ref.onSnapshot(s=>cb(s.docs.map(d=>({id:d.id,...d.data()}))), e=>console.warn(coll,e));
+    }
+    const f=arr=>cb(arr.filter(x=>x[field]===value));
+    (this.listeners[coll] ||= []).push(f); this.emit(coll);
+    return ()=>{ this.listeners[coll]=(this.listeners[coll]||[]).filter(x=>x!==f); };
   },
   // One document, for crew who may only read their own record.
   subscribeDoc(coll, id, cb){
@@ -544,7 +599,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -557,7 +612,9 @@ function render(){ if(renderQueued) return; renderQueued=true; requestAnimationF
 function draw(){
   document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
   const platformBtn = $("#platformTabBtn");
-  if (platformBtn) platformBtn.hidden = !S.isPlatformAdmin;
+  if (platformBtn){ platformBtn.hidden = !S.isPlatformAdmin;
+    const n=S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length;
+    platformBtn.textContent = "Platform Admin"+(n?" ("+n+")":""); }
   // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
   document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
   document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
@@ -905,6 +962,36 @@ function convertBookingToJob(b){
 }
 
 /* ---- platform admin ---- */
+// Platform admin: alert when a new sign-up or business shows up while the app is open.
+const adminSeen={};
+function adminWatchNew(kind, list, label){
+  const ids=new Set(list.map(x=>x.id));
+  if (!adminSeen[kind]){ adminSeen[kind]=ids; if (kind==="biz") maybeShowAdminPending(); return; }   // first load: remember, don't alert
+  const fresh=list.filter(x=>!adminSeen[kind].has(x.id)); adminSeen[kind]=ids;
+  fresh.forEach(x=>toast(label(x)));
+  if (fresh.length && kind==="biz") maybeShowAdminPending(true);
+}
+let adminPopupShown=false;
+function maybeShowAdminPending(force){
+  if (!S.isPlatformAdmin || S.demo) return;
+  const n=S.allBusinesses.filter(b=>b.status==="pending").length;
+  if (!n || (adminPopupShown && !force)) return;
+  adminPopupShown=true;
+  $("#pendingCount").textContent=n;
+  $("#pendingDlg h2").firstChild.textContent="You have ";
+  $("#pendingDlg h2").lastChild.textContent=" business(es) waiting for approval";
+  $("#pendingDlg .kv").textContent="New businesses can't use Dazift until you approve them in Platform Admin.";
+  $("#pendingViewBtn").dataset.admin="1"; $("#pendingViewBtn").textContent="Review now";
+  if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
+}
+// Sign-ups that never finished: accounts made as an owner with no business yet. Good people to call.
+function unfinishedSignups(){
+  const owners=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerUids||[]),b.ownerUid].filter(Boolean)));
+  const emails=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerEmails||[]),...(b.pendingOwnerEmails||[])]).map(x=>(x||"").toLowerCase()));
+  const since=Date.now()-45*864e5;
+  return S.allUsers.filter(u=>u.role==="owner" && (u.createdAt||0)>since && !owners.has(u.id) && !emails.has((u.email||"").toLowerCase()))
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
 function ensureUsersLoaded(){
   if (S.usersLoaded) return;
   S.usersLoaded = true;
@@ -1024,6 +1111,20 @@ function viewPlatformAdmin(){
     });
     frag.append(p);
   }
+
+  const leads=unfinishedSignups();
+  const lp=el("div",{class:"panel"},el("h2",{},"Signed up, no business yet"),
+    el("p",{class:"kv",style:"margin:-6px 0 12px;"},leads.length
+      ? leads.length+" owner account(s) from the last 45 days that haven't submitted a business. Most often they didn't confirm their email. A quick call usually gets them going."
+      : "Everyone who signed up as an owner in the last 45 days has submitted a business."));
+  leads.forEach(u=>{
+    const card=el("article",{class:"card",style:"max-width:640px;"});
+    card.append(el("div",{class:"row"},el("h3",{style:"margin:0"},u.plannedBusinessName||"(no business name)"),
+      u.plannedCategory?el("span",{class:"pill"},u.plannedCategory):null, el("span",{class:"grow"}), el("span",{class:"kv"},u.createdAt?ago(u.createdAt):"")));
+    card.append(el("div",{class:"kv"},(u.name||"")+" \u00b7 ",u.email?el("a",{href:"mailto:"+u.email},u.email):"",u.phone?[" \u00b7 ",el("a",{href:"tel:"+String(u.phone).replace(/[^\d+]/g,"")},u.phone)]:null));
+    lp.append(card);
+  });
+  frag.append(lp);
 
   const clients=el("div",{class:"panel"},el("h2",{},"All businesses (client list)"));
   const sorted = S.allBusinesses.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
@@ -1178,6 +1279,8 @@ function setStatus(j,status){
   const patch={status};
   if (status==="in_progress") patch.startedAt=Date.now();
   if (status==="done") patch.completedAt=Date.now();
+  if (status==="in_progress") logShiftJob(j,"job_start");
+  if (status==="done") logShiftJob(j,"job_done");
   write(()=>Store.update("jobs",j.id,patch), status==="done"?"Nice work. Job marked done.":null);
 }
 
@@ -1264,6 +1367,14 @@ function viewTeam(){
         cur&&cur.address ? el("a",{class:"btn small",href:"https://www.google.com/maps/dir/?api=1&origin="+loc.lat.toFixed(6)+","+loc.lng.toFixed(6)+"&destination="+encodeURIComponent(cur.address),target:"_blank",rel:"noopener"},"Route to job") : null));
     }
     card.append(el("div",{class:"kv"}, cur ? ["Working on ", el("b",{},cur.client)] : next ? ["Next up ", el("b",{},next.client), " · "+niceDate(next.date)] : "No open jobs"));
+    if (S.isOwner || (m && e.id===m.id)){
+      const wk=shiftsFor(e.id,ymd(weekStart(new Date())),today()), wkH=wk.reduce((n,x)=>n+shiftHours(x),0);
+      const flagged=S.shifts.filter(x=>x.empId===e.id && shiftFlags(x).some(f=>f[0]==="bad")).length;
+      card.append(el("div",{class:"row",style:"gap:8px"},
+        el("span",{class:"kv grow"},"This week ",el("b",{},hrs(wkH))," over "+wk.length+" shift"+(wk.length===1?"":"s")),
+        flagged?el("span",{class:"pill bad"},flagged+" to fix"):null,
+        el("button",{class:"btn small",onclick:()=>openShiftLog(e)},S.isOwner?"Shift log":"My shift log")));
+    }
     const acts=el("div",{class:"row"});
     if (!e.userId && S.myUserId && !m && (!e.email || e.email===(S.myEmail||"").toLowerCase())) acts.append(el("button",{class:"btn small lemon",onclick:()=>write(()=>Store.update("employees",e.id,{userId:S.myUserId}),"Linked. Welcome, "+e.name+"!")},"This is me"));
     if (e.userId && e.userId===S.myUserId) acts.append(el("span",{class:"kv"},"This is you"));
@@ -1458,6 +1569,116 @@ function openEmp(e){
   $("#empDlg").showModal();
 }
 
+/* ---- shift log ----
+   Every shift is saved with its start and end, a trail of location points (at most one every 5 minutes,
+   sooner after a 250 m move), and where the phone was when each job was started and finished.
+   Owners use it to check hours against pay; each crew member can see their own. */
+const SHIFT_POINT_MS=5*60e3, SHIFT_POINT_M=250, SHIFT_MAX_POINTS=400, SHIFT_FORGOT_H=14;
+let shiftPointAt=0, shiftPointPos=null;
+function myOpenShiftId(){ const m=me(); const loc=m&&locFor(m.id); return loc&&loc.onDuty&&loc.shiftId||null; }
+function shiftHours(sh){ const e=sh.end||(Date.now()-sh.start>SHIFT_FORGOT_H*36e5?sh.start:Date.now()); return Math.max(0,(e-sh.start)/36e5); }
+function shiftFlags(sh){
+  const f=[];
+  if (!sh.end && Date.now()-sh.start>SHIFT_FORGOT_H*36e5) f.push(["bad","No clock-out"]);
+  if (!(sh.points||[]).length) f.push(["warn","No location points"]);
+  if (sh.edited) f.push(["","Times fixed by owner"]);
+  return f;
+}
+function shiftsFor(empId,startYmd,endYmd){
+  return S.shifts.filter(x=>x.empId===empId && x.start && ymd(new Date(x.start))>=startYmd && ymd(new Date(x.start))<=endYmd);
+}
+function appendToShift(id, field, item){
+  if (Store.mode==="db") return Store.update("shifts",id,{[field]:firebase.firestore.FieldValue.arrayUnion(item)});
+  const sh=S.shifts.find(x=>x.id===id); return Store.update("shifts",id,{[field]:[...((sh&&sh[field])||[]),item]});
+}
+function logShiftPoint(cur,acc,force){
+  const id=myOpenShiftId(); if(!id) return;
+  const now=Date.now();
+  if (!force && shiftPointPos && now-shiftPointAt<SHIFT_POINT_MS && distM(shiftPointPos,cur)<SHIFT_POINT_M) return;
+  const sh=S.shifts.find(x=>x.id===id); if (sh && (sh.points||[]).length>=SHIFT_MAX_POINTS) return;
+  shiftPointAt=now; shiftPointPos=cur;
+  queue(()=>appendToShift(id,"points",{t:now,lat:+cur.lat.toFixed(5),lng:+cur.lng.toFixed(5),acc:acc?Math.round(acc):null}));
+}
+function logShiftJob(j,type){
+  const m=me(); if(!m || !jobCrew(j).includes(m.id)) return;
+  const id=myOpenShiftId(); if(!id) return;
+  const loc=locFor(m.id);
+  queue(()=>appendToShift(id,"events",{t:Date.now(),type,jobId:j.id,client:j.client||"",service:j.service||"",
+    lat:loc&&loc.lat!=null?+loc.lat.toFixed(5):null,lng:loc&&loc.lng!=null?+loc.lng.toFixed(5):null}));
+}
+function beginShift(m, since){
+  const id=newId(); shiftPointAt=0; shiftPointPos=null;
+  queue(()=>Store.set("shifts",id,{businessId:S.businessId,empId:m.id,userId:S.myUserId,name:m.name,start:since,end:null,points:[],events:[],createdAt:Date.now()}));
+  return id;
+}
+function endShift(id){ if (id) return queue(()=>Store.update("shifts",id,{end:Date.now()})); }
+function mapsRoute(points){
+  if (!points || points.length<2) return null;
+  const step=Math.max(1,Math.ceil(points.length/10));
+  const pts=points.filter((_,i)=>i%step===0); if (pts[pts.length-1]!==points[points.length-1]) pts.push(points[points.length-1]);
+  return "https://www.google.com/maps/dir/"+pts.slice(0,11).map(p=>p.lat+","+p.lng).join("/");
+}
+const hhmm=t=>new Date(t).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+const hrs=h=>(Math.round(h*100)/100).toFixed(2).replace(/\.?0+$/,"")+" h";
+function openShiftLog(e){
+  const body=$("#shiftDlgBody"); const canFix=S.isOwner;
+  const draw=()=>{
+    body.replaceChildren();
+    const list=S.shifts.filter(x=>x.empId===e.id).sort((a,b)=>b.start-a.start);
+    const ws=ymd(weekStart(new Date())), we=ymd(new Date());
+    const week=shiftsFor(e.id,ws,we).reduce((n,x)=>n+shiftHours(x),0);
+    body.append(el("div",{class:"row",style:"margin-bottom:6px"},el("h2",{class:"grow",style:"margin:0;font:600 22px var(--display)"},"Shift log \u00b7 "+e.name),
+      el("button",{class:"btn small",type:"button",onclick:()=>$("#shiftDlg").close()},"Close")));
+    body.append(el("p",{class:"kv",style:"margin:0 0 12px"},"This week: ",el("b",{},hrs(week))," clocked. Location points are saved only while on shift."));
+    if (!list.length){ body.append(el("div",{class:"empty"},"No shifts logged yet. Shifts appear here once "+e.name.split(" ")[0]+" taps Start shift.")); return; }
+    list.slice(0,40).forEach(sh=>{
+      const ev=sh.events||[], pts=sh.points||[], route=mapsRoute(pts);
+      const open=!sh.end && Date.now()-sh.start<=SHIFT_FORGOT_H*36e5;
+      const d=el("details",{class:"shiftrow"});
+      d.append(el("summary",{},
+        el("span",{class:"sd"},niceDate(ymd(new Date(sh.start)))),
+        el("span",{class:"st"},hhmm(sh.start)+" \u2013 "+(sh.end?hhmm(sh.end):open?"now":"?")),
+        el("b",{class:"sh"},(!sh.end&&!open)?"?":hrs(shiftHours(sh))),
+        el("span",{class:"sf"},open?el("span",{class:"pill active"},"On shift now"):null,...shiftFlags(sh).map(([c,t])=>el("span",{class:"pill "+c},t)),
+          el("span",{class:"kv"},(n=>n+(n===1?" job":" jobs")+" done")(ev.filter(x=>x.type==="job_done").length)+" \u00b7 "+pts.length+" location points"))));
+      const inner=el("div",{class:"shiftbody"});
+      inner.append(el("div",{class:"row",style:"gap:6px"},
+        route?el("a",{class:"btn small",href:route,target:"_blank",rel:"noopener"},"Route on Google Maps"):el("span",{class:"kv"},"Not enough location points for a route."),
+        canFix?el("button",{class:"btn small ghost",type:"button",onclick:()=>fixShift(sh,draw)},"Fix times"):null));
+      if (sh.edited) inner.append(el("p",{class:"kv",style:"margin:6px 0 0"},"Fixed by the owner"+(sh.edited.note?": \u201c"+sh.edited.note+"\u201d":"")+" \u00b7 was "+hhmm(sh.edited.wasStart)+" \u2013 "+(sh.edited.wasEnd?hhmm(sh.edited.wasEnd):"no clock-out")));
+      const timeline=[...ev.map(x=>({t:x.t,kind:x.type,x})),...pts.map(x=>({t:x.t,kind:"pt",x}))].sort((a,b)=>a.t-b.t);
+      const tl=el("ol",{class:"timeline"});
+      tl.append(el("li",{class:"ev"},el("span",{class:"tt"},hhmm(sh.start)),el("b",{},"Started shift")));
+      let lastPt=0;
+      timeline.forEach(it=>{
+        const x=it.x, map=x.lat!=null?el("a",{href:"https://www.google.com/maps/search/?api=1&query="+x.lat+","+x.lng,target:"_blank",rel:"noopener"},"map"):null;
+        if (it.kind==="pt"){ if (it.t-lastPt<30*60e3 && it!==timeline[timeline.length-1]) return; lastPt=it.t;   // one point per half hour keeps the list short
+          tl.append(el("li",{class:"pt"},el("span",{class:"tt"},hhmm(it.t)),el("span",{},"Location"+(x.acc?" (\u00b1"+x.acc+" m)":"")," \u00b7 ",map))); return; }
+        tl.append(el("li",{class:"ev"},el("span",{class:"tt"},hhmm(it.t)),
+          el("span",{},el("b",{},(it.kind==="job_start"?"Started ":"Finished ")+(x.service||"job")),x.client?" \u00b7 "+x.client:"",map?[" \u00b7 ",map]:null)));
+      });
+      if (sh.end) tl.append(el("li",{class:"ev"},el("span",{class:"tt"},hhmm(sh.end)),el("b",{},"Ended shift")));
+      inner.append(tl); d.append(inner); body.append(d);
+    });
+  };
+  draw(); $("#shiftDlg").showModal();
+}
+function fixShift(sh, redraw){
+  const f=el("form",{class:"fixform"});
+  const t=v=>{ const d=new Date(v); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+  const day=ymd(new Date(sh.start));
+  f.append(el("label",{class:"f"},"Start",el("input",{type:"time",name:"s",required:true,value:t(sh.start)})),
+    el("label",{class:"f"},"End",el("input",{type:"time",name:"e",required:true,value:sh.end?t(sh.end):""})),
+    el("label",{class:"f",style:"grid-column:1/-1"},"Note (why it changed)",el("input",{name:"n",maxlength:"120",placeholder:"Forgot to clock out; left the site at 4:30"})),
+    el("div",{style:"grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"},el("button",{type:"button",class:"btn",onclick:()=>{f.remove();}},"Cancel"),el("button",{class:"btn primary"},"Save times")));
+  f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f));
+    const toMs=hm=>{ const [h,m]=hm.split(":").map(Number); const x=parseYmd(day); x.setHours(h,m,0,0); return x.getTime(); };
+    let s=toMs(d.s), e=toMs(d.e); if (e<=s) e+=864e5;   // ended after midnight
+    write(()=>Store.update("shifts",sh.id,{start:s,end:e,edited:{by:S.myEmail||"owner",at:Date.now(),note:(d.n||"").trim(),wasStart:sh.edited?sh.edited.wasStart:sh.start,wasEnd:sh.edited?sh.edited.wasEnd:(sh.end||null)}}),"Shift times saved").then(()=>setTimeout(redraw,50)); };
+  const box=document.querySelector("#shiftDlg .fixform"); if (box) box.remove();
+  $("#shiftDlgBody").prepend(f);
+}
+
 /* ---- shifts & location ---- */
 let watchId=null, bgWatcherId=null, lastWrite=0, lastSent=null, wq=Promise.resolve();
 const queue = fn => { wq = wq.then(fn).catch(e=>console.warn(e)); return wq; };
@@ -1480,14 +1701,18 @@ async function startDuty(){
   const m=me(); if(!m) return;
   S.dutyErr=null;
   if (S.demo){   // the demo pretends the phone is at a job site in Lexington, TN
-    const now=Date.now();
-    await Store.set("locations",m.id,{onDuty:true,since:now,at:now,lat:35.6509+(Math.random()-.5)*.01,lng:-88.3934+(Math.random()-.5)*.01,acc:12,businessId:S.businessId});
+    const now=Date.now(), lat=35.6509+(Math.random()-.5)*.01, lng=-88.3934+(Math.random()-.5)*.01;
+    const shiftId=beginShift(m,now);
+    await Store.set("locations",m.id,{onDuty:true,since:now,at:now,lat,lng,acc:12,shiftId,businessId:S.businessId});
+    logShiftPoint({lat,lng},12,true);
     S.watching=true; render(); toast("Shift started. In the demo your location is made up.");
     return;
   }
   const existing=locFor(m.id);
+  const resuming = existing&&existing.onDuty&&existing.shiftId;
   const since = existing&&existing.onDuty&&existing.since ? existing.since : Date.now();
-  queue(()=>Store.set("locations",m.id,{onDuty:true,since,at:existing&&existing.at||null,lat:existing&&existing.lat!=null?existing.lat:null,lng:existing&&existing.lng!=null?existing.lng:null,acc:existing&&existing.acc||null,businessId:S.businessId}));
+  const shiftId = resuming ? existing.shiftId : beginShift(m,since);
+  queue(()=>Store.set("locations",m.id,{onDuty:true,since,shiftId,at:existing&&existing.at||null,lat:existing&&existing.lat!=null?existing.lat:null,lng:existing&&existing.lng!=null?existing.lng:null,acc:existing&&existing.acc||null,businessId:S.businessId}));
 
   if (isNative()){
     try {
@@ -1533,6 +1758,7 @@ function onNativePos(location){
   if (now-lastWrite < 60000 && moved < 30) return;
   lastWrite=now; lastSent=cur; S.dutyErr=null;
   queue(()=>Store.update("locations",m.id,{lat:cur.lat,lng:cur.lng,acc:location.accuracy||null,at:now,onDuty:true}));
+  logShiftPoint(cur,location.accuracy);
 }
 function onPos(p){
   const m=me(); if(!m) return;
@@ -1542,6 +1768,7 @@ function onPos(p){
   if (now-lastWrite < 60000 && moved < 100) return;   // at most once a minute unless they moved 100 m+
   lastWrite=now; lastSent=cur; S.dutyErr=null;
   queue(()=>Store.update("locations",m.id,{lat:cur.lat,lng:cur.lng,acc:p.coords.accuracy||null,at:now,onDuty:true}));
+  logShiftPoint(cur,p.coords.accuracy);
 }
 function onPosErr(err){
   if (err.code===1) S.dutyErr="Location is blocked for this page. Allow location in your browser or phone settings, then tap Resume sharing.";
@@ -1552,6 +1779,7 @@ function onPosErr(err){
 }
 async function stopDuty(){
   const m=me(); if(!m) return;
+  endShift(myOpenShiftId());
   if (isNative() && bgWatcherId){
     try { const { BackgroundGeolocation } = Capacitor.Plugins; await BackgroundGeolocation.removeWatcher({id:bgWatcherId}); } catch(e){ console.warn(e); }
     bgWatcherId=null;
@@ -1759,6 +1987,13 @@ function payRuleText(r){
   return (r.cls==="1099"?"1099 contractor":"W-2 employee")+" · "+amt;
 }
 // What the board says each person did in the period.
+// Clocked hours from the shift log, with overtime past 40 h in any week.
+function clockedIn(empId,start,end){
+  const weeks={}; let hours=0; const list=shiftsFor(empId,start,end).filter(x=>x.end);
+  list.forEach(x=>{ const h=shiftHours(x); hours+=h; const wk=ymd(weekStart(new Date(x.start))); weeks[wk]=(weeks[wk]||0)+h; });
+  const ot=Object.values(weeks).reduce((n,h)=>n+Math.max(0,h-40),0);
+  return {shifts:list.length, hours:Math.round(hours*4)/4, ot:Math.round(ot*4)/4, open:shiftsFor(empId,start,end).filter(x=>!x.end).length};
+}
 function workIn(empId,start,end){
   const jobs=S.jobs.filter(j=>j.status==="done" && j.date && j.date>=start && j.date<=end && jobCrew(j).includes(empId));
   const weeks={}; let hours=0, revenue=0;
@@ -1780,16 +2015,20 @@ function calcPay(e,start,end){
   const r=payRateFor(e.id); const w=workIn(e.id,start,end); const ed=(S.pr.edits[e.id] ||= {});
   const t=PAY_TYPES.find(x=>x.id===(r&&r.payType))||PAY_TYPES[0];
   const rate=Number(r&&r.rate)||0; const cls=(r&&r.cls)||"w2";
-  const auto={hourly:w.hours,perjob:w.jobs,percent:w.revenue,day:w.days,piece:0,salary:1}[t.id];
+  // Hourly pay uses clocked shift hours when there are any, unless the owner picks job hours.
+  const ck=clockedIn(e.id,start,end);
+  const src = t.id==="hourly" ? (ed.src || (ck.shifts?"shifts":"jobs")) : null;
+  const hSrc = src==="shifts" ? ck : w;
+  const auto={hourly:hSrc.hours,perjob:w.jobs,percent:w.revenue,day:w.days,piece:0,salary:1}[t.id];
   const qty = ed.qty!=null&&ed.qty!=="" ? Number(ed.qty)||0 : auto;
   // W-2 hourly crew get time and a half past 40 hours in a week.
-  const otHours = (cls==="w2" && t.id==="hourly") ? Math.min(qty, ed.qty!=null&&ed.qty!=="" ? Math.max(0,qty-40*Math.max(1,Math.round((parseYmd(end)-parseYmd(start))/6048e5))) : w.ot) : 0;
+  const otHours = (cls==="w2" && t.id==="hourly") ? Math.min(qty, ed.qty!=null&&ed.qty!=="" ? Math.max(0,qty-40*Math.max(1,Math.round((parseYmd(end)-parseYmd(start))/6048e5))) : hSrc.ot) : 0;
   let base = t.id==="percent" ? qty*rate/100 : t.id==="salary" ? rate : qty*rate;
   const otPremium = otHours*rate*0.5;
   const tips=Number(ed.tips)||0, bonus=Number(ed.bonus)||0, miles=Number(ed.miles)||0;
   const wages=r2(base+otPremium+tips+bonus), reimb=r2(miles*mileageRate());
   const ytd=ytdBefore(e.id,start), other=r2(ed.deduct);
-  const out={e,r,t,w,cls,qty,auto,otHours,wages,reimb,ytd,other,tips,bonus,miles};
+  const out={e,r,t,w,ck,src,cls,qty,auto,otHours,wages,reimb,ytd,other,tips,bonus,miles};
   if (cls==="1099"){
     const paid=r2(wages+reimb);
     return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:ytd+paid>=TAX.necThreshold};
@@ -1842,7 +2081,7 @@ function viewPayroll(){
   frag.append(el("div",{class:"banner "+(recorded?"info":"warn")},
     el("span",{class:"grow"}, recorded
       ? ["This period is in the books as ",el("b",{},money(recorded.amount)),". Pay totals count toward each person's year."]
-      : "Hours, jobs and revenue below come from finished jobs on the board. Change any number, then record the payroll so it lands in the books."),
+      : "Hours come from each person's clocked shifts (or time on jobs if they didn't clock in). Jobs and revenue come from finished jobs. Change any number, then record the payroll so it lands in the books."),
     recorded
       ? el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Remove this payroll from the books?")) write(()=>Store.del("expenses",recorded.id),"Payroll removed from the books"); }},"Undo")
       : el("button",{class:"btn small primary",disabled:!rows.some(x=>x.cost>0),onclick:()=>recordPayroll(rows)},"Record payroll in the books")));
@@ -1851,7 +2090,7 @@ function viewPayroll(){
 
   const grid=el("div",{class:"team"});
   rows.forEach(x=>{
-    const {e,r,t,w,cls}=x; const ed=S.pr.edits[e.id];
+    const {e,r,t,w,ck,cls}=x; const ed=S.pr.edits[e.id];
     const card=el("article",{class:"person"});
     card.append(el("div",{class:"head"},el("div",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
       el("div",{class:"grow"},el("h3",{},e.name),el("span",{class:"kv"},payRuleText(r))),
@@ -1860,7 +2099,13 @@ function viewPayroll(){
       el("span",{class:"pill "+(cls==="1099"?"warn":"active")},cls==="1099"?"1099":"W-2"),
       cls==="1099"?el("span",{class:"pill "+(r&&r.w9?"ok":"bad")},r&&r.w9?"W-9 on file":"Collect W-9"):null,
       cls==="1099"&&x.needs1099?el("span",{class:"pill warn"},"1099-NEC needed"):null,
-      el("span",{class:"kv"},"Board: "+w.jobs+" job"+(w.jobs===1?"":"s")+" · "+w.hours+" h")));
+      el("span",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" \u00b7 "+w.hours+" h on jobs \u00b7 "+ck.hours+" h clocked")));
+    const gap=ck.shifts&&w.hours?ck.hours-w.hours:0;
+    if (ck.open) card.append(el("div",{class:"banner warn",style:"margin:0;padding:8px 12px"},el("span",{class:"grow"},ck.open+" shift"+(ck.open===1?"":"s")+" without a clock-out. Fix the times so the hours count."),el("button",{class:"btn small",onclick:()=>openShiftLog(e)},"Shift log")));
+    else if (Math.abs(gap)>=2) card.append(el("div",{class:"kv",style:"font-size:13px"},"Clocked hours are "+hrs(Math.abs(gap))+(gap>0?" more":" less")+" than time on jobs (travel, setup, breaks). ",el("a",{href:"#",onclick:ev=>{ev.preventDefault();openShiftLog(e);}},"Check the shift log")));
+    if (t.id==="hourly") card.append(el("div",{class:"row",style:"gap:6px"},el("span",{class:"kv"},"Pay hours from"),
+      el("div",{class:"seg"},[["shifts","Clocked shifts"],["jobs","Time on jobs"]].map(([id,l])=>
+        el("button",{type:"button","aria-pressed":String(x.src===id),onclick:()=>{ ed.src=id; ed.qty=null; render(); }},l)))));
     if (r){
       const inputs=el("div",{class:"expform"});
       if (t.unit) inputs.append(prNum(t.unit,ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>{ed.qty=v;}));
@@ -2233,10 +2478,15 @@ function maybeShowPendingPopup(){
   if (!pending.length) return;
   pendingPopupShown=true;
   $("#pendingCount").textContent = pending.length;
-  $("#pendingDlg").showModal();
+  $("#pendingDlg h2").firstChild.textContent="You have "; $("#pendingDlg h2").lastChild.textContent=" pending booking request(s)";
+  $("#pendingDlg .kv").textContent="New customers are waiting on you to confirm availability.";
+  delete $("#pendingViewBtn").dataset.admin; $("#pendingViewBtn").textContent="View requests";
+  if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
 }
 $("#pendingDismissBtn").addEventListener("click", ()=>$("#pendingDlg").close());
-$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close(); S.tab="requests"; render(); });
+$("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close();
+  if ($("#pendingViewBtn").dataset.admin){ if (S.adminView) return adminBackHome(); S.tab="platform"; } else S.tab="requests";
+  render(); });
 
 const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates"];
 let crewSyncT=null;
@@ -2261,7 +2511,8 @@ function subscribeAll(){
   const bid=S.businessId;
   // Crew never load the team's locations: only their own, once we know which team member they are.
   let myLocSub=null;
-  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || c!=="locations").forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
+  if (!S.isOwner && S.myUserId) unsubs.push(Store.subscribeWhere("shifts","userId",S.myUserId,arr=>{ if (S.businessId!==bid) return; S.shifts=arr; render(); }, bid));
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || (c!=="locations" && c!=="shifts")).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
     if (S.businessId!==bid) return;          // a late update from a business we've left
     S[c]=arr; render();
     if (c==="employees" && !S.isOwner){
@@ -2353,7 +2604,8 @@ async function signOutApp(){
     if (bgWatcherId){ const BG=window.Capacitor&&Capacitor.Plugins.BackgroundGeolocation; if (BG) await withinMs(BG.removeWatcher({id:bgWatcherId}),1500); bgWatcherId=null; }
     if (watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; }
     S.watching=false;
-    if (m && loc && loc.onDuty) await withinMs(Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}),2500);
+    if (m && loc && loc.onDuty){ if (loc.shiftId) await withinMs(Store.update("shifts",loc.shiftId,{end:Date.now()}),2500);
+      await withinMs(Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}),2500); }
     syncRunnerContext(false);
   } catch(e){ console.warn(e); }
   // This phone stops getting the business's alerts.
@@ -2416,12 +2668,23 @@ function wireGate(){
   $("#gateRegBtn").addEventListener("click", async ()=>{
     const name=$("#gateRegName").value.trim(), email=$("#gateRegEmail").value.trim(),
       phone=$("#gateRegPhone").value.trim(), password=$("#gateRegPassword").value;
+    const isCrew=$("#gateRegCrew").checked, category=$("#gateRegType").value, bizName=$("#gateRegBizName").value.trim();
     if (!name||!email||!password) return gateMsg("Fill in your name, email, and a password.");
+    if (!isCrew && !bizName) return gateMsg("Enter your business name, or tick \u201cI'm joining a crew\u201d.");
+    if (!isCrew && !CATEGORIES.includes(category)) return gateMsg("Choose your type of business, or tick \u201cI'm joining a crew\u201d.");
     try {
       const cred = await auth.createUserWithEmailAndPassword(email,password);
-      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set({name,email,phone,createdAt:Date.now()});
+      const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew){ acct.plannedCategory=category; acct.plannedBusinessName=bizName; }
+      await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set(acct);
       try { await cred.user.sendEmailVerification(); } catch(e){ console.warn(e); }
     } catch(e){ gateMsg(friendlyAuthError(e)); }
+  });
+  // Crew members join an existing business, so they don't pick a business type.
+  $("#gateRegCrew").addEventListener("change", ()=>{
+    const crew=$("#gateRegCrew").checked;
+    $("#gateRegTypeWrap").classList.toggle("hidden",crew);
+    $("#gateRegCrewNote").classList.toggle("hidden",!crew);
+    gateMsg("");
   });
   $("#gateForgotBtn").addEventListener("click", async ()=>{
     const email=$("#gateLoginEmail").value.trim();
@@ -2459,14 +2722,27 @@ function showVerify(user){
 }
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(){ hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
+function showBizOnboard(category, bizName){
+  if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
+  if (bizName && !$("#bizName").value) $("#bizName").value=bizName;
+  hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showPendingApproval(biz){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
   $("#pendingApprovalMsg").textContent = biz.status==="suspended"
     ? "\""+(biz.name||"Your business")+"\" has been suspended. Contact support if you believe this is a mistake."
     : "\""+(biz.name||"Your business")+"\" is waiting for approval. You'll get full access as soon as it's reviewed.";
+  $("#pendingAgainBtn").classList.add("hidden"); $("#pendingOwnerBtn").classList.add("hidden");
   $("#pendingApproval").classList.remove("hidden");
 }
+// A crew member whose employer hasn't added their email yet.
+function showCrewWaiting(email){
+  hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
+  $("#pendingApprovalMsg").textContent="We couldn't find a team that added "+(email||"your email")+" yet. Ask your employer to add you on their Team tab with this exact email, then tap Check again.";
+  $("#pendingAgainBtn").classList.remove("hidden"); $("#pendingOwnerBtn").classList.remove("hidden");
+  $("#pendingApproval").classList.remove("hidden");
+}
+$("#pendingAgainBtn").addEventListener("click",()=>{ if (auth.currentUser) routeUser(auth.currentUser); });
+$("#pendingOwnerBtn").addEventListener("click",()=>showBizOnboard());
 function showApp(){ hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=false; }
 
 async function addOwnerByEmail(){
@@ -2701,11 +2977,11 @@ const DEMO_PROFILES={
     projects:[
       {key:"pHend",name:"Henderson kitchen remodel",client:"Henderson family",phone:"731-555-0190",address:"112 Oak Ridge Dr, Lexington, TN",start:-24,end:18,contract:38500,status:"active",leadId:"eMarcus",
         notes:"Gut and rebuild. Shaker cabinets, quartz counters, tile backsplash. Family is living in the house; keep the dining room clear.",
-        phases:[["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],["Rough plumbing",-19,"done",["eLuis"],4200,7,true],["Electrical rough-in",-16,"done",["eEli"],3600,8,true],["Drywall hang & finish",0,"in_progress",["eRay","eKendra"],4400],["Cabinet install",3,"assigned",["eMarcus","eTasha"],7800],["Countertops & backsplash",9,"assigned",["eTasha"],8650],["Final punch list",16,"new",[],6000]],
+        phases:[["Demo & haul-off",-24,"done",["eMarcus","eTasha","eKendra"],3850,8.5,true],["Rough plumbing",-19,"done",["eLuis"],4200,7,true],["Electrical rough-in",-16,"done",["eEli"],3600,8,true],["Drywall hang & finish",-3,"done",["eRay","eKendra"],4400,8,true],["Cabinet install",0,"in_progress",["eMarcus","eTasha"],7800],["Countertops & backsplash",6,"assigned",["eTasha"],8650],["Final punch list",16,"new",[],6000]],
         costs:[[-26,"Permits & fees",285,"Henderson County building permit"],[-19,"Materials",1180.42,"Ferguson, PEX and fittings"],[-15,"Subcontractors",2400,"Volt Electric Co., rough-in","coVolt"],[-10,"Materials",986.17,"Lowe’s, drywall and mud"],[-5,"Materials",6214.88,"Lowe’s, shaker cabinets"],[-2,"Subcontractors",2100,"Ray’s Drywall LLC, first draw","coRay"]]},
       {key:"pCarter",name:"Carter bathroom remodel",client:"Carter home",phone:"731-555-0172",address:"905 W Church St, Lexington, TN",start:-6,end:12,contract:14200,status:"active",leadId:"eTasha",
         notes:"Tub to walk-in shower conversion. Client picked the tile already; it's in the garage.",
-        phases:[["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],["Plumbing reroute",0,"in_progress",["eLuis"],3200],["Shower tile",4,"assigned",["eTasha"],4800],["Vanity & fixtures",10,"new",[],4800]],
+        phases:[["Demo",-6,"done",["eTasha","eKendra"],1400,6,true],["Plumbing reroute",-1,"done",["eLuis"],3200,6,false],["Shower tile",0,"in_progress",["eTasha"],4800],["Vanity & fixtures",10,"new",[],4800]],
         costs:[[-7,"Permits & fees",95,"Plumbing permit"],[-6,"Materials",642.3,"Ferguson, shower valve and drain"],[-3,"Materials",1148.6,"Floor & Decor, thinset and trim"],[-1,"Tool rental",165,"Sunbelt, tile saw (3 days)"]]},
       {key:"pBrooks",name:"Brooks rental deck",client:"Brooks rental",phone:"731-555-0111",address:"31 Pine Hollow Rd, Lexington, TN",start:12,end:22,contract:9800,status:"planning",leadId:"eMarcus",
         notes:"12x16 pressure-treated deck with stairs. Permit submitted.",
@@ -2927,7 +3203,8 @@ function demoSeed(type){
   const firstWeekly=weekStart(dayOf(-63));
   const lumpEnd=ymd(new Date(firstWeekly.getFullYear(),firstWeekly.getMonth(),firstWeekly.getDate()-1));
   const lumpPeople=Object.entries(P.lump).map(([k,paid])=>({empId:k,name:C.employees[k].name,cls:rates[k].cls,paid,net:rates[k].cls==="w2"?cents(paid*.86):paid,erTax:rates[k].cls==="w2"?cents(paid*.1):0}));
-  put("expenses",{date:lumpEnd,category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
+  // Booked before the 3-month window the demo charts cover, so it doesn't show as one giant spike.
+  put("expenses",{date:D(-100),category:"Payroll",amount:cents(lumpPeople.reduce((n,p)=>n+p.paid+p.erTax,0)),vendor:"Payroll, January through "+niceDate(lumpEnd),
     payrollRun:{start:now.getFullYear()+"-01-01",end:lumpEnd,people:lumpPeople},createdAt:at(-64,18)});
   const jobsArr=Object.values(C.jobs);
   const ws=weekStart(now), lastWeekStart=ymd(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-7));
@@ -2957,9 +3234,41 @@ function demoSeed(type){
     log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
   });
 
-  // Crew out on jobs right now
+  // Shift log: the last three weeks, one shift per person per working day, built from their finished jobs
+  const home=[35.6509,-88.3934];
+  const spotOf=name=>{ let h=7; for (const c of String(name)) h=(h*31+c.charCodeAt(0))|0; return [35.6509+((h&1023)/1023-.5)*.07, -88.3934+(((h>>10)&1023)/1023-.5)*.08]; };
+  const jitter=(pt,m)=>[+(pt[0]+(rnd()-.5)*m).toFixed(5), +(pt[1]+(rnd()-.5)*m*1.2).toFixed(5)];
+  const byDay={};
+  Object.entries(C.jobs).filter(([,j])=>j.status==="done"&&j.startedAt&&j.completedAt&&j.date>=D(-21)).forEach(([jid,j])=>
+    jobCrew(j).forEach(k=>{ if (C.employees[k]) (byDay[k+"|"+j.date] ||= []).push([jid,j]); }));
+  let forgot=false;
+  Object.entries(byDay).sort().forEach(([key,list])=>{
+    const k=key.split("|")[0]; list.sort((a,b)=>a[1].startedAt-b[1].startedAt);
+    const start=list[0][1].startedAt-Math.round(R(15,40))*6e4, end=list[list.length-1][1].completedAt+Math.round(R(10,30))*6e4;
+    const points=[], events=[]; let t=start, pos=jitter(home,.01);
+    const addPt=(tt,pt)=>points.push({t:Math.round(tt),lat:pt[0],lng:pt[1],acc:Math.round(R(5,20))});
+    addPt(t,pos);
+    list.forEach(([jid,j])=>{
+      const site=spotOf(j.client);
+      for (let tt=t+5*60e3; tt<j.startedAt; tt+=5*60e3){ const f=(tt-t)/(j.startedAt-t); addPt(tt,[+(pos[0]+(site[0]-pos[0])*f).toFixed(5),+(pos[1]+(site[1]-pos[1])*f).toFixed(5)]); }
+      events.push({t:j.startedAt,type:"job_start",jobId:jid,client:j.client,service:j.service,lat:+site[0].toFixed(5),lng:+site[1].toFixed(5)});
+      for (let tt=j.startedAt+5*60e3; tt<j.completedAt; tt+=Math.round(R(5,9))*60e3) addPt(tt,jitter(site,.0006));
+      events.push({t:j.completedAt,type:"job_done",jobId:jid,client:j.client,service:j.service,lat:+site[0].toFixed(5),lng:+site[1].toFixed(5)});
+      t=Math.max(t,j.completedAt); pos=site;
+    });
+    addPt(end,jitter(pos,.002));
+    const sh={empId:k,userId:C.employees[k].userId,name:C.employees[k].name,start,end,points:points.slice(0,400),events,createdAt:start};
+    // one missed clock-out, so the owner sees what that looks like
+    if (!forgot && k===P.crew[2][0] && list[0][1].date>=D(-8) && list[0][1].date<=D(-2)){ forgot=true; sh.end=null; }
+    put("shifts",sh);
+  });
+
+  // Crew out on jobs right now, each with an open shift
   const spots=[[35.6612,-88.4021,80,5],[35.6475,-88.4011,190,3],[35.6606,-88.4030,400,4.5]];
-  P.live.forEach((k,i)=>{ const [lat,lng,secAgo,hrs]=spots[i]; put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since:Date.now()-hrs*36e5},k); });
+  P.live.forEach((k,i)=>{ const [lat,lng,secAgo,hrs]=spots[i]; const since=Date.now()-hrs*36e5, pts=[];
+    for (let tt=since; tt<Date.now()-secAgo*1000; tt+=6*60e3) pts.push({t:Math.round(tt),lat:+(lat+(rnd()-.5)*.004).toFixed(5),lng:+(lng+(rnd()-.5)*.004).toFixed(5),acc:10});
+    const sid=put("shifts",{empId:k,userId:C.employees[k].userId,name:C.employees[k].name,start:since,end:null,points:pts,events:[],createdAt:since});
+    put("locations",{onDuty:true,lat,lng,acc:9,at:Date.now()-secAgo*1000,since,shiftId:sid},k); });
   return {business,colls:C};
 }
 function startDemo(type){
@@ -3040,11 +3349,18 @@ async function routeUser(user){
       platformAdminSubscribed = true;
       firebase.firestore().collection("businesses").onSnapshot(snap=>{
         S.allBusinesses = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        adminWatchNew("biz", S.allBusinesses.filter(b=>b.status==="pending"), b=>"New business waiting for approval: "+(b.name||"unnamed")+(b.category?" ("+b.category+")":""));
         render();
       });
+      S.usersLoaded = true;
+      firebase.firestore().collection("crewAccounts").limit(1000).onSnapshot(snap=>{
+        S.allUsers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        adminWatchNew("acct", S.allUsers.filter(u=>u.role==="owner"), u=>"New sign-up: "+(u.name||u.email||"someone")+(u.plannedBusinessName?" \u00b7 "+u.plannedBusinessName:""));
+        render();
+      }, e=>console.warn("crewAccounts",e));
     }
-    let myPhone = "";
-    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists) myPhone = acctDoc.data().phone||""; } catch(e){}
+    let myPhone = "", acct = {};
+    try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists){ acct = acctDoc.data()||{}; myPhone = acct.phone||""; } } catch(e){}
     let biz;
     try { biz = await resolveBusiness(user.uid, user.email, myPhone, user.emailVerified); }
     catch(e){ console.warn(e); showGate(); gateMsg("Couldn’t load your business. Check your connection and sign in again."); return; }
@@ -3053,7 +3369,8 @@ async function routeUser(user){
       else enterBusiness(biz);
     }
     else if (!user.emailVerified) showVerify(user);
-    else showBizOnboard();
+    else if (acct.role==="crew") showCrewWaiting(user.email);
+    else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName);
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
