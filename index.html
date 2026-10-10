@@ -6,7 +6,7 @@
 <title>Dayzift · Run your service business from one board</title>
 <meta name="description" content="Dayzift brings booking requests, your crew's day, projects, payroll and the books into one place for contractors, plumbers, electricians, cleaning, lawn care and other crews.">
 <meta name="author" content="LIT America">
-<meta name="theme-color" content="#1F7A69">
+<meta name="theme-color" content="#FBFBFD">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-only.png">
 <meta property="og:title" content="Dayzift · Run your service business from one board">
@@ -20,363 +20,228 @@
 <meta property="og:url" content="https://dayzift.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --teal:#1F7A69; --teal-deep:#145848; --teal-soft:#DDF0EA; --sun:#F2C230; --sun-soft:#FCF2CF;
-  --ink:#16302C; --muted:#56706B; --bg:#FBFAF6; --surface:#FFFFFF; --line:#E2E8E4; --orange:#D9480F;
-  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif; --body:"Nunito Sans","Segoe UI",system-ui,sans-serif;
-}
-*,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
+:root{--ink:#1D1D1F;--muted:#6E6E73;--soft:#86868B;--gray:#F5F5F7;--line:#D2D2D7;--sun:#F2C230;--green:#1F7A69;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
-a{color:var(--teal)}
-:focus-visible{outline:3px solid var(--sun);outline-offset:3px;border-radius:6px}
-.w{max-width:1140px;margin:0 auto;padding:0 20px}
-h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;margin:0}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:800;text-decoration:none;font-size:16px;border:2px solid transparent;white-space:nowrap}
-.btn.sun{background:var(--sun);color:#2A2305}
-.btn.sun:hover{background:#E8B51C}
-.btn.line{border-color:currentColor;color:inherit}
-.btn.teal{background:var(--teal);color:#fff}
-.btn.teal:hover{background:var(--teal-deep)}
+body{margin:0;background:#fff;color:var(--ink);font:400 17px/1.47 var(--font);-webkit-font-smoothing:antialiased;letter-spacing:-.011em}
+a{color:inherit}
+img{max-width:100%}
+.w{max-width:1080px;margin:0 auto;padding:0 22px}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.03em;color:var(--ink)}
+.skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;background:#fff;padding:8px 12px;border-radius:8px;z-index:99}
 
 /* nav */
-.nav{position:sticky;top:0;z-index:20;background:var(--teal);color:#fff;border-bottom:1px solid rgba(255,255,255,.12);transition:box-shadow .2s}
-.nav.scrolled{box-shadow:0 6px 24px rgba(10,40,34,.25)}
-.nav .w{display:flex;align-items:center;gap:16px;height:72px}
-.logo{display:inline-flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font:800 27px/1 var(--display);letter-spacing:-.035em}
-.logo svg{width:38px;height:38px;flex:none}
-.nav nav{display:flex;gap:6px;margin-left:auto;align-items:center}
-.nav nav a:not(.btn){color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:8px 12px;border-radius:999px;opacity:.88}
-.nav nav a:not(.btn):hover{opacity:1;background:rgba(255,255,255,.1)}
-.nav .btn{padding:9px 18px;font-size:15px;margin-left:6px}
-@media (max-width:760px){.nav nav a.hide-sm{display:none}.logo{font-size:24px}.logo svg{width:34px;height:34px}}
-@media (prefers-reduced-motion:reduce){.nav{transition:none}}
+.nav{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.8);backdrop-filter:saturate(1.8) blur(20px);-webkit-backdrop-filter:saturate(1.8) blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
+.nav .w{display:flex;align-items:center;height:52px;gap:8px}
+.logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:19px;letter-spacing:-.02em}
+.logo svg{width:26px;height:26px}
+.nav nav{margin-left:auto;display:flex;align-items:center;gap:4px}
+.nav nav a{font-size:13px;text-decoration:none;color:var(--ink);opacity:.85;padding:6px 10px;border-radius:999px}
+.nav nav a:hover{opacity:1}
+.nav nav a.pill{opacity:1;padding:7px 14px;margin-left:6px}
+@media (max-width:640px){.nav nav a.hide-sm{display:none}}
+
+.pill{display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff!important;text-decoration:none;border-radius:999px;font-weight:600;font-size:17px;padding:12px 22px;transition:background .2s}
+.pill:hover{background:#000}
+.more{color:var(--green);text-decoration:none;font-size:17px;font-weight:500}
+.more:hover{text-decoration:underline}
+.ctas{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap}
 
 /* hero */
-.hero{background:var(--teal);color:#fff;padding:64px 0 0;overflow:hidden;position:relative}
-.hero .w{display:grid;grid-template-columns:1fr 1.05fr;gap:48px;align-items:end}
-@media (max-width:900px){.hero .w{grid-template-columns:1fr;gap:36px}}
-.hero .kicker{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--sun);margin-bottom:16px}
-.hero .kicker::before{content:"";width:22px;height:2px;background:var(--sun);border-radius:2px}
-.hero h1{font-size:clamp(40px,6vw,66px);line-height:1;font-weight:800;text-wrap:balance}
-.hero h1 em{font-style:normal;color:var(--sun)}
-.hero p.lede{font-size:19px;opacity:.92;max-width:38ch;margin:20px 0 28px}
-.hero .ctas{display:flex;gap:12px;flex-wrap:wrap}
-.hero .platforms{display:flex;flex-wrap:wrap;gap:8px 18px;margin:22px 0 0;padding:0 0 60px;list-style:none;font-size:14px;font-weight:700;opacity:.85}
-.hero .platforms li{display:inline-flex;align-items:center;gap:7px}
-.hero .platforms svg{width:17px;height:17px;stroke:var(--sun);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-@media (max-width:900px){.hero .platforms{padding-bottom:0}}
-.hero .note{font-size:14px;opacity:.8;margin-top:-40px;padding-bottom:56px}
-.sunrise{position:absolute;left:50%;bottom:-260px;width:620px;height:520px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle,rgba(242,194,48,.22),rgba(242,194,48,0) 65%);pointer-events:none}
-
-/* mock board */
-.stage{position:relative;z-index:1}
-.mock{background:#F3F7F5;border-radius:18px 18px 0 0;padding:16px;color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.18)}
-.mock .dots{display:flex;gap:6px;margin-bottom:12px}.mock .dots i{width:9px;height:9px;border-radius:50%;background:#D5DFDB}
-.crewdots{display:inline-flex;margin-top:5px}.crewdots .dot{border:2px solid #fff;width:20px;height:20px;margin-left:-5px}.crewdots .dot:first-child{margin-left:0}
-.phone{position:absolute;right:-26px;bottom:-1px;width:160px;background:#0F2A25;border-radius:26px 26px 0 0;padding:10px 9px 0;box-shadow:0 -8px 30px rgba(0,0,0,.3)}
-.phone .scr{background:#FBFAF6;border-radius:18px 18px 0 0;padding:9px 10px 11px;color:var(--ink);font-size:12px;line-height:1.35}
-.phone .notch{width:46px;height:5px;border-radius:5px;background:#2B4741;margin:0 auto 8px}
-.phone .t{font:800 14px var(--display);margin-bottom:3px}
-.phone .on{display:flex;align-items:center;gap:6px;font-weight:800;color:#2F8A4E;margin-bottom:6px;font-size:11px}
-.phone .on i{width:8px;height:8px;border-radius:50%;background:#2F8A4E}
-.phone .next{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin-bottom:7px}
-.phone .next b{display:block;font-family:var(--display);font-size:13px}
-.phone .act{background:var(--orange);color:#fff;border-radius:999px;text-align:center;font-weight:800;padding:6px 0}
-@media (max-width:1180px){.phone{right:-12px}}
-@media (min-width:901px){.mock{padding-bottom:84px}}
-@media (max-width:900px){.phone{display:none}}
-.mock .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.mock .bar b{font:800 18px var(--display)}
-.mock .pill{font-size:12px;font-weight:800;background:var(--sun);border-radius:999px;padding:3px 10px}
-.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.col{background:#E6EFEB;border-radius:12px;padding:8px}
-.col h4{margin:2px 4px 8px;font:700 13px var(--body);color:var(--muted);display:flex;align-items:center;gap:6px}
-.col h4 i{width:8px;height:8px;border-radius:2px;display:inline-block}
-.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 9px;margin-bottom:7px;font-size:13px;line-height:1.35}
-.card .s{font-size:11px;font-weight:800;color:var(--orange)}
-.card b{display:block;font-family:var(--display);font-size:14px}
-.card .m{display:flex;justify-content:space-between;color:var(--muted);margin-top:3px}
-.card .who{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;font-weight:700}
-.dot{width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;font-size:9px;font-weight:800}
-.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2F8A4E;margin-left:3px}
-@media (max-width:520px){.cols{grid-template-columns:repeat(2,1fr)}.cols .col:nth-child(3){display:none}}
+.hero{text-align:center;padding:72px 0 0;overflow:hidden}
+.prod{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:21px;margin:0 0 10px;letter-spacing:-.02em}
+.prod svg{width:28px;height:28px}
+.hero h1{font-size:clamp(46px,8vw,92px);line-height:1.02;letter-spacing:-.045em;font-weight:700}
+.hero .sub{font-size:clamp(19px,2.3vw,24px);line-height:1.35;color:var(--muted);max-width:30em;margin:18px auto 30px;font-weight:500;letter-spacing:-.015em}
+.hero .fine{font-size:13px;color:var(--soft);margin-top:16px}
+.devices{position:relative;width:min(940px,100%);margin:56px auto 0;padding:0 4% 0 0}
+.laptop .scr{border:min(14px,1.6vw) solid #1D1D1F;border-bottom-width:min(18px,2vw);border-radius:min(26px,3vw) min(26px,3vw) 0 0;background:#fff;aspect-ratio:16/10;overflow:hidden;box-shadow:0 0 0 1px #3a3a3c}
+.laptop .scr img{display:block;width:100%;height:100%;object-fit:cover;object-position:top left}
+.laptop .base{position:relative;height:min(16px,1.9vw);margin:0 -7%;background:linear-gradient(#E3E3E6,#BDBDC2 60%,#9C9CA1);border-radius:0 0 18px 18px}
+.laptop .base::before{content:"";position:absolute;left:50%;top:0;width:16%;height:40%;transform:translateX(-50%);background:#C8C8CC;border-radius:0 0 8px 8px}
+.phone{position:absolute;right:0;bottom:-6%;width:23%;aspect-ratio:9/19.5;border:min(9px,1.1vw) solid #1D1D1F;border-radius:min(42px,5vw);overflow:hidden;background:#fff;box-shadow:0 30px 60px -20px rgba(0,0,0,.35),0 0 0 1px #3a3a3c}
+.phone img{display:block;width:100%;height:100%;object-fit:cover;object-position:top;padding-top:9%;background:#F7F6F3}
+.phone::before{content:"";position:absolute;left:50%;top:2.4%;width:30%;height:3.2%;transform:translateX(-50%);background:#1D1D1F;border-radius:999px;z-index:2}
+.hero .floor{height:80px}
+.trades{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 26px;padding:clamp(70px,8vw,110px) 22px 64px;color:var(--muted);font-size:15px;font-weight:500}
+.trades b{color:var(--ink);font-weight:600}
 
 /* sections */
-section{padding:84px 0}
-.eyebrow{font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
-.sec-h{font-size:clamp(30px,4vw,44px);line-height:1.08;margin:8px 0 14px;max-width:22ch}
-.sec-p{color:var(--muted);max-width:60ch;margin:0}
-.trades{background:var(--sun-soft);padding:20px 0}
-.trades .w{display:flex;gap:10px 26px;flex-wrap:wrap;align-items:center;justify-content:center;font-weight:800}
-.trades span.l{color:var(--muted);font-weight:700}
+section{padding:100px 0}
+.gray{background:var(--gray)}
+.dark{background:#000;color:#F5F5F7}
+.sh{text-align:center;max-width:820px;margin:0 auto 56px}
+.sh h2{font-size:clamp(34px,5vw,56px);line-height:1.07;letter-spacing:-.04em}
+.sh p{font-size:clamp(17px,2vw,21px);color:var(--muted);margin:14px auto 0;max-width:36em;font-weight:500}
 
-.feats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:40px}
-@media (max-width:760px){.feats{grid-template-columns:1fr}}
-.feat{position:relative;background:linear-gradient(to top,#EAF4EF 0,#F6FAF8 120px,var(--surface) 190px);border:1px solid var(--line);border-radius:20px;overflow:hidden;min-width:0;padding-bottom:132px}
-/* A small, tilted thumbnail of the screen in the card's corner. */
-.feat .shot{position:absolute;right:-18px;bottom:-22px;width:min(54%,280px);display:block;transform:rotate(-7deg);transform-origin:bottom right;pointer-events:none}
-.feat .shot img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:10px;border:4px solid #fff;
-  box-shadow:0 1px 0 var(--line),0 14px 30px rgba(20,88,72,.22);background:#F7F6F3}
-@media (max-width:760px){.feat{padding-bottom:124px}.feat .shot{width:62%;bottom:-30px}}
-@media (min-width:761px){.feat:last-child:nth-child(odd){grid-column:1/-1;padding-bottom:30px;min-height:220px}.feat:last-child:nth-child(odd) .txt{max-width:62%}}
-.feat .txt{padding:22px 24px 24px}
-.feat .hd{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.feat .ic{width:40px;height:40px;border-radius:11px;background:var(--teal-soft);display:grid;place-items:center;flex:none}
-.feat .ic svg{width:24px;height:24px;stroke:var(--teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.feat h3{font-size:21px;margin:0}
-.feat p{margin:0;color:var(--muted);font-size:16px}
+/* feature tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:760px){.tiles{grid-template-columns:1fr}}
+.tile{background:#fff;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.tile .tt{padding:40px 40px 26px;text-align:center}
+.tile .eb{margin:0 0 6px;font-size:15px;font-weight:600;color:var(--green)}
+.tile h3{font-size:clamp(26px,3.2vw,36px);line-height:1.1;letter-spacing:-.035em}
+.tile .tp{margin:12px auto 0;color:var(--muted);font-size:16px;max-width:30em}
+.tile .ti{margin-top:auto;padding:0 32px}
+.tile .ti img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:14px 14px 0 0;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 -10px 40px -12px rgba(0,0,0,.18)}
+.tile.wide{grid-column:1/-1}
+.tile.wide .tt{max-width:720px;margin:0 auto}
+.tile.wide .ti{max-width:860px;margin:auto auto 0;width:100%}
+.tile.side{flex-direction:row;align-items:center}
+.tile.side .tt{text-align:left;flex:1;padding:48px}
+.tile.side .tt .tp{margin-left:0}
+.tile.side .ti{flex:1.2;padding:40px 0 0;align-self:flex-end}
+.tile.side .ti img{border-radius:14px 0 0 0}
+@media (max-width:760px){.tile.side{flex-direction:column}.tile.side .tt{text-align:center;padding:40px 28px 26px}.tile.side .tt .tp{margin-left:auto}.tile.side .ti{padding:0 24px;width:100%}.tile.side .ti img{border-radius:14px 14px 0 0}}
+.tile.dark{background:#000}.tile.dark h3{color:#F5F5F7}.tile.dark .eb{color:var(--sun)}.tile.dark .tp{color:#A1A1A6}
+@media (max-width:760px){.tile .tt{padding:34px 24px 22px}.tile .ti{padding:0 20px}}
 
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:40px;counter-reset:s}
-@media (max-width:800px){.steps{grid-template-columns:1fr}}
-.step{border-top:3px solid var(--teal);padding-top:18px}
-.step::before{counter-increment:s;content:counter(s);font:800 44px/1 var(--display);color:var(--sun);display:block;margin-bottom:8px}
-.step h3{font-size:22px;margin-bottom:6px}
-.step p{margin:0;color:var(--muted)}
+/* how it works */
+.steps{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+@media (max-width:760px){.steps{grid-template-columns:1fr;gap:28px}}
+.steps .n{display:block;font-size:56px;font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--line);margin-bottom:14px}
+.steps h3{font-size:22px;letter-spacing:-.02em;margin-bottom:8px}
+.steps p{margin:0;color:var(--muted)}
 
-.story{background:var(--teal);color:#fff}
-.story .w{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-@media (max-width:800px){.story .w{grid-template-columns:1fr}}
-.story .eyebrow{color:var(--sun)}
-.story p{opacity:.92}
-.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.fact{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:18px}
-.fact b{display:block;font:800 22px var(--display);color:var(--sun);margin-bottom:4px}
-.fact span{font-size:15px;opacity:.9}
+/* story */
+.story .w{display:grid;grid-template-columns:1.05fr 1fr;gap:60px;align-items:center}
+@media (max-width:820px){.story .w{grid-template-columns:1fr;gap:36px}}
+.story .eb{color:var(--sun);font-weight:600;margin:0 0 10px}
+.story h2{color:#F5F5F7;font-size:clamp(32px,4.4vw,48px);line-height:1.08;letter-spacing:-.04em}
+.story p.lead{color:#A1A1A6;font-size:19px;margin:18px 0 0}
+.facts{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #333336}
+.facts div{padding:22px 18px 22px 0;border-bottom:1px solid #333336}
+.facts div:nth-child(odd){border-right:1px solid #333336;padding-right:18px}
+.facts div:nth-child(even){padding-left:22px}
+.facts b{display:block;color:#F5F5F7;font-size:17px;font-weight:600;margin-bottom:4px}
+.facts span{color:#A1A1A6;font-size:15px}
 
-.faq{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 28px;margin-top:34px}
-@media (max-width:800px){.faq{grid-template-columns:1fr}}
-.faq h3{font-size:19px;margin-bottom:4px}
-.faq p{margin:0;color:var(--muted);font-size:16px}
+/* faq */
+.faq{max-width:760px;margin:0 auto;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:20px;align-items:center;padding:22px 0;font-size:19px;font-weight:600;letter-spacing:-.02em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-weight:400;font-size:26px;color:var(--soft);transition:transform .2s;flex:none}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin:0 0 22px;color:var(--muted);max-width:44em}
 
+/* final */
 .final{text-align:center}
-.final .sec-h{margin-left:auto;margin-right:auto}
-.final .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+.final h2{font-size:clamp(36px,5.6vw,64px);letter-spacing:-.045em;line-height:1.05}
+.final p{color:var(--muted);font-size:21px;font-weight:500;margin:14px 0 30px}
 
-footer{background:#0F2A25;color:#CFE3DD;padding:34px 0;font-size:15px}
-footer .w{display:flex;gap:16px 28px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-footer a{color:#fff}
-footer .sig a{font-weight:800}
-
-
-/* ---- Ambient hero ---- */
-:root{--ink-d:#0F2621;--glass:rgba(255,255,255,.62);--glass-line:rgba(255,255,255,.75)}
-body{background:#F7F8F5}
-.nav{background:rgba(247,248,245,.55);backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);border-bottom:1px solid rgba(15,38,33,.06);color:var(--ink-d)}
-.nav.scrolled{box-shadow:0 8px 30px rgba(15,38,33,.08)}
-.nav .logo,.nav nav a:not(.btn){color:var(--ink-d)!important}
-.nav nav a:not(.btn):hover{background:rgba(15,38,33,.06)!important}
-.nav .btn.sun{background:var(--ink-d);color:#fff}
-.nav .btn.sun:hover{background:#1F7A69}
-.amb{position:relative;overflow:hidden;isolation:isolate;margin-top:-73px;padding-top:73px}
-.amb .orbs{position:absolute;inset:-20% -10% -10%;z-index:-1;pointer-events:none;filter:blur(70px) saturate(1.15)}
-.amb .orbs i{position:absolute;border-radius:50%;opacity:.55;animation:drift 22s ease-in-out infinite alternate}
-.amb .o1{width:46vw;height:46vw;left:-6vw;top:2vw;background:#43B39A}
-.amb .o2{width:40vw;height:40vw;right:-4vw;top:-6vw;background:#F6CE52;animation-delay:-6s!important}
-.amb .o3{width:34vw;height:34vw;left:34vw;top:20vw;background:#A7E3D2;animation-delay:-11s!important}
-.amb .o4{width:30vw;height:30vw;right:6vw;top:26vw;background:#F9B88F;opacity:.42!important;animation-delay:-3s!important}
-@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(3vw,-2vw) scale(1.06)}100%{transform:translate(-2vw,2vw) scale(.97)}}
-@media (prefers-reduced-motion:reduce){.amb .orbs i{animation:none}}
-.amb::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(247,248,245,0) 70%,#F7F8F5 100%)}
-.hero{background:none!important;color:var(--ink-d);padding:88px 0 40px}
-.hero .w{display:grid;grid-template-columns:1fr 1.08fr;gap:56px;align-items:center}
-@media (max-width:960px){.hero .w{grid-template-columns:1fr;gap:44px}.hero{padding-top:56px}}
-.pillk{display:inline-flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(12px);border-radius:999px;padding:6px 14px 6px 6px;font-size:13.5px;font-weight:700;color:#2C4A43;box-shadow:0 4px 16px rgba(15,38,33,.06)}
-.pillk b{background:var(--ink-d);color:#fff;border-radius:999px;padding:3px 10px;font-size:12px;letter-spacing:.02em}
-.hero h1{font-size:clamp(42px,5.4vw,70px);line-height:1.02;font-weight:800;letter-spacing:-.04em;margin:22px 0 0;color:var(--ink-d);text-wrap:balance}
-.hero h1 span{background:linear-gradient(100deg,#1F7A69 10%,#2FA287 45%,#D9A21B 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p.lede{font-size:19px;line-height:1.6;color:#46605A;max-width:44ch;margin:22px 0 32px}
-.ctas{display:flex;gap:12px;flex-wrap:wrap}
-.hero .btn{padding:14px 24px}
-.hero .btn.pri{background:var(--ink-d);color:#fff;box-shadow:0 10px 24px -8px rgba(15,38,33,.5)}
-.hero .btn.pri:hover{background:#1F7A69}
-.hero .btn.gl{background:var(--glass);border:1px solid var(--glass-line);color:var(--ink-d);backdrop-filter:blur(10px)}
-.trust{display:flex;flex-wrap:wrap;gap:8px 22px;list-style:none;padding:0;margin:28px 0 0;font-size:14px;font-weight:700;color:#4E6761}
-.trust li{display:inline-flex;align-items:center;gap:7px}.trust svg{color:#1F7A69}
-.stage{position:relative}
-.win{position:relative;border-radius:20px;padding:10px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(20px);box-shadow:0 50px 100px -30px rgba(15,38,33,.35),0 18px 40px -20px rgba(15,38,33,.2)}
-.win .tb{display:flex;gap:6px;padding:4px 6px 10px}.win .tb i{width:10px;height:10px;border-radius:50%;background:rgba(15,38,33,.14)}
-.win img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top left;border-radius:12px;background:#fff}
-.chip{position:absolute;display:flex;align-items:center;gap:12px;padding:12px 16px 12px 12px;border-radius:16px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);backdrop-filter:blur(16px);box-shadow:0 20px 40px -16px rgba(15,38,33,.3);font-size:14px;font-weight:800;color:var(--ink-d);white-space:nowrap}
-.chip small{display:block;font-weight:600;font-size:12.5px;color:#617A74}
-.chip .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;flex:none;font-size:12px;font-weight:800}
-.c1{top:-22px;right:-14px}.c2{left:-30px;bottom:56px}.c3{right:22px;bottom:-26px}
-.phone2{position:absolute;right:-26px;bottom:-54px;width:170px;border-radius:30px;padding:8px;background:#0F2621;box-shadow:0 30px 60px -20px rgba(15,38,33,.55)}
-.phone2 .s{background:#F7F8F5;border-radius:23px;padding:22px 12px 14px;font-size:11px;color:var(--ink-d)}
-@media (max-width:960px){.c1{right:6px}.c2{left:6px}.c3{display:none}}
-@media (max-width:560px){.chip{font-size:12.5px;padding:9px 12px 9px 9px}.chip .ic{width:30px;height:30px}.c2{bottom:28px}}
-.trades{background:transparent!important;border-top:1px solid rgba(15,38,33,.06);border-bottom:1px solid rgba(15,38,33,.06)}
-.trades .w span:not(.l){font-weight:800;color:#2C4A43}
-
-/* ---- Ambient style through the page ---- */
-section{position:relative}
-.glow{position:absolute;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(80px);opacity:.38}
-#features,#how,.faqsec,.final{isolation:isolate;overflow:hidden}
-.feat{background:rgba(255,255,255,.72)!important;border:1px solid rgba(255,255,255,.9)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  box-shadow:0 1px 0 rgba(15,38,33,.04),0 20px 44px -26px rgba(15,38,33,.28);transition:transform .25s,box-shadow .25s}
-.feat::before{content:"";position:absolute;inset:auto 0 0 0;height:150px;background:linear-gradient(to top,rgba(167,227,210,.35),rgba(167,227,210,0));pointer-events:none}
-.feat:hover{transform:translateY(-3px);box-shadow:0 1px 0 rgba(15,38,33,.04),0 28px 54px -26px rgba(15,38,33,.35)}
-@media (prefers-reduced-motion:reduce){.feat{transition:none}.feat:hover{transform:none}}
-.feat .ic{background:linear-gradient(135deg,#DDF0EA,#FCF2CF)!important}
-#how{background:transparent!important;border:0!important}
-.step{background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.9)!important;border-radius:20px;padding:24px!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 44px -28px rgba(15,38,33,.3)}
-.step::before{background:linear-gradient(120deg,#1F7A69,#D9A21B);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-.story{background:#0F2621!important;overflow:hidden;isolation:isolate}
-.story .glow{opacity:.5}
-.fact{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.12)!important;backdrop-filter:blur(10px)}
-.faq>div{background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);border-radius:18px;padding:20px 22px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.final .panel{max-width:820px;margin:0 auto;padding:54px 28px;border-radius:28px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.9);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 40px 80px -40px rgba(15,38,33,.35)}
-.final .btn.teal{background:#0F2621;box-shadow:0 10px 24px -8px rgba(15,38,33,.5)}
-.final .btn.teal:hover{background:#1F7A69}
-footer{background:#0B1B17!important}
-
+footer{background:var(--gray);border-top:1px solid var(--line);font-size:12px;color:var(--muted);padding:22px 0 30px}
+footer .w{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
+footer a{color:var(--ink);text-decoration:none}footer a:hover{text-decoration:underline}
+footer .sig a{font-weight:600}
 </style>
 </head>
 <body>
-
+<a class="skip" href="#main">Skip to content</a>
 <header class="nav">
   <div class="w">
-    <a class="logo" href="/" aria-label="Dayzift home">
-      <svg aria-hidden="true" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>
-      Dayzift
-    </a>
+    <a class="logo" href="/" aria-label="Dayzift home"><svg aria-hidden="true" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dayzift</a>
     <nav aria-label="Main">
       <a href="#features" class="hide-sm">Features</a>
       <a href="#how" class="hide-sm">How it works</a>
+      <a href="#faq" class="hide-sm">Questions</a>
       <a href="/app">Sign in</a>
-      <a class="btn sun" href="/app?register">Get started</a>
+      <a class="pill" href="/app?register">Get started</a>
     </nav>
   </div>
 </header>
 
-<main>
-<div class="amb">
-<div class="orbs" aria-hidden="true"><i class="o1"></i><i class="o2"></i><i class="o3"></i><i class="o4"></i></div>
-<section class="hero" aria-labelledby="hero-h"><div class="w">
-  <div>
-    <span class="pillk"><b>New</b> Invoices and job costing</span>
-    <h1 id="hero-h">Run your crew business <span>from one place.</span></h1>
-    <p class="lede">Jobs, crews, shifts, invoices and payroll, together in one clear app. Built for contractors, plumbers, cleaners and every crew on the move.</p>
-    <div class="ctas"><a class="btn pri" href="/app?register">Start free</a><a class="btn gl" href="/app">Sign in</a></div>
-    <ul class="trust"><li><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>iPhone, Android and computer</li><li><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Made in Tennessee</li><li><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Your data stays private</li></ul>
-  </div>
-  <div class="stage">
-    <div class="win"><div class="tb" aria-hidden="true"><i></i><i></i><i></i></div><img src="/shots/board.webp" alt="The Dayzift job board with jobs moving from new to done"></div>
-    <div class="chip c1"><span class="ic" style="background:#1F7A69"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>Invoice INV-1024 paid<small>Carter home · $3,200.00</small></span></div>
-    <div class="chip c2"><span class="ic" style="background:#3E7FB8">EW</span><span>Eli started his shift<small>7:58 AM · Henderson remodel</small></span></div>
-    <div class="chip c3"><span class="ic" style="background:#D9A21B">$</span><span>Payroll ready<small>Week of Oct 5 · 6 people</small></span></div>
-  </div>
-</div></section>
-
-
-<div class="trades"><div class="w"><span class="l">Made for</span><span>Builders &amp; remodelers</span><span>Plumbing</span><span>Electrical</span><span>HVAC</span><span>Roofing</span><span>Cleaning</span><span>Lawn care</span><span>Handyman</span><span>…and other crews on the move</span></div></div>
-</div>
-
-<section id="features" aria-labelledby="f-h">
-  <div class="glow" aria-hidden="true" style="background:#A7E3D2;width:520px;height:520px;left:-160px;top:180px"></div><div class="glow" aria-hidden="true" style="background:#F6CE52;width:460px;height:460px;right:-140px;top:620px"></div>
+<main id="main">
+<section class="hero" aria-labelledby="hero-h" style="padding-bottom:0">
   <div class="w">
-    <div class="eyebrow">What Dayzift does</div>
-    <h2 class="sec-h" id="f-h">Less juggling between texts, notebooks and spreadsheets.</h2>
-    <p class="sec-p">Everything a small crew business runs on, in one app that works on a laptop in the office and a phone on the job. These are real screens from Dayzift, filled with sample data.</p>
-    <div class="feats">
-      <article class="feat">
-        <div class="shot"><img src="/shots/requests.webp" alt="Booking requests waiting in Dayzift, with Convert to job and Decline buttons" width="1336" height="1150" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div><h3>Booking requests you won’t miss</h3></div><p>Requests from your website land in Dayzift and alert every owner by email, text or phone notification, with reminders until someone answers.</p></div>
+    <p class="prod"><svg aria-hidden="true" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dayzift</p>
+    <h1 id="hero-h">The whole crew.<br>One app.</h1>
+    <p class="sub">Jobs, shifts, invoices and payroll for contractors, plumbers, cleaners and every crew on the move.</p>
+    <div class="ctas"><a class="pill" href="/app?register">Get started</a><a class="more" href="#features">Learn more ›</a></div>
+    <p class="fine">Works on iPhone, Android and any computer.</p>
+    <div class="devices" role="img" aria-label="The Dayzift job board on a laptop, and a crew member's jobs on a phone">
+      <div class="laptop"><div class="scr"><img src="/shots/board.webp" alt=""></div><div class="base"></div></div>
+      <div class="phone"><img src="/shots/phone-crew.webp" alt=""></div>
+    </div>
+  </div>
+  <div class="trades"><span>Made for</span><b>Builders</b><b>Remodelers</b><b>Plumbing</b><b>Electrical</b><b>HVAC</b><b>Roofing</b><b>Cleaning</b><b>Lawn care</b><b>Handyman</b></div>
+</section>
+
+<section id="features" class="gray" aria-labelledby="f-h">
+  <div class="w">
+    <div class="sh"><h2 id="f-h">Everything your crew business runs on.</h2><p>Less juggling between texts, notebooks and spreadsheets. These are real screens from Dayzift, filled with sample data.</p></div>
+    <div class="tiles">
+      <article class="tile dark wide">
+        <div class="tt"><p class="eb">Invoices</p><h3>Get paid faster.</h3><p class="tp">Turn finished jobs into an invoice in one tap, with billable materials and markup, sales tax, deposits and retainage. Email or text the link, see when it's opened, and let Dayzift send the overdue reminders. Clients pay you directly.</p></div>
+        <div class="ti"><img src="/shots/invoices.webp" alt="Invoices in Dayzift: outstanding and overdue totals, jobs ready to bill and a list of invoices with their status" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/board.webp" alt="The Dayzift job board with New, Assigned, In progress and Done columns" width="1400" height="669" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg></div><h3>A job board for the whole crew</h3></div><p>Turn a request into a job, put one or more people on it, and watch it move from new to done. Each crew member sees their own jobs on their phone.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Job board</p><h3>Every job. Every crew. One board.</h3><p class="tp">Turn a request into a job, put one or more people on it, and watch it move from new to done. Each crew member sees their own jobs on their phone.</p></div>
+        <div class="ti"><img src="/shots/board.webp" alt="The Dayzift job board with New, Assigned, In progress and Done columns" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/team.webp" alt="Crew cards showing who is on shift, their last location and their current job" width="1344" height="662" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div><h3>Crew shifts and locations</h3></div><p>Crew members start a shift and the office sees where they are, with one tap to route to the next job. Every shift is logged with its hours, route and job check-ins, so you can check hours before you pay. Sharing stops the moment the shift ends.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Shifts</p><h3>Know who’s on the clock.</h3><p class="tp">Crew members start a shift and the office sees where they are, with one tap to route to the next job. Every shift is logged with its hours, route and job check-ins, so you can check hours before you pay. Sharing stops the moment the shift ends.</p></div>
+        <div class="ti"><img src="/shots/team.webp" alt="Crew cards showing who is on shift, their last location and their current job" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/books.webp" alt="Monthly books: money in, money out, profit, and a list of transactions" width="1400" height="606" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div><h3>Books that keep themselves</h3></div><p>Finished jobs count as income automatically. Materials, rentals and subs logged on a job count as its costs, so you see each job's profit. Snap receipts and export the month for your accountant.</p></div>
+      <article class="tile wide side">
+        <div class="tt"><p class="eb">Payroll</p><h3>Payroll, worked out for you.</h3><p class="tp">Hours and jobs from the board turn into pay: hourly with overtime, per job, percent of the job or day rate. W-2 tax estimates, take-home pay, and a 1099 list for January. Dayzift never moves your money.</p></div>
+        <div class="ti"><img src="/shots/payroll.webp" alt="Payroll for the week: gross pay, take-home pay and each crew member's pay stub" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/invoices.webp" alt="Invoices in Dayzift: outstanding and overdue totals, jobs ready to bill and a list of invoices with their status" width="1400" height="741" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg></div><h3>Invoices that get you paid</h3></div><p>Turn finished jobs into an invoice in one tap, with billable materials and markup, sales tax, deposits and retainage. Email or text the link, see when it's opened, and let Dayzift send the overdue reminders. Clients pay you directly.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Books</p><h3>Books that keep themselves.</h3><p class="tp">Finished jobs count as income automatically. Materials, rentals and subs logged on a job count as its costs, so you see each job's profit. Snap receipts and export the month for your accountant.</p></div>
+        <div class="ti"><img src="/shots/books.webp" alt="Monthly books: money in, money out, profit, and a list of transactions" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/insights.webp" alt="Insights: monthly earnings, profit and a weekly earnings vs expenses chart" width="1400" height="717" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div><h3>Insights at a glance</h3></div><p>See earnings against expenses by day, week or month, which services sell, your busiest days, top clients and how each crew member is doing.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Projects</p><h3>Big jobs, under control.</h3><p class="tp">Run a remodel or build as one project with phases, a lead on site and crews on each phase. Track costs against the contract, and get warned before a sub’s insurance or license runs out.</p></div>
+        <div class="ti"><img src="/shots/projects.webp" alt="Two remodel projects with phases done, contract, billed and costs so far" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/rewards.webp" alt="A rewards program with members and their points balances" width="1104" height="700" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7Z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7Z"/></svg></div><h3>Rewards that bring clients back</h3></div><p>Customers earn points on every paid job and redeem them for discounts. You see every member’s balance and history.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Requests</p><h3>Never miss a booking.</h3><p class="tp">Requests from your website land in Dayzift and alert every owner by email, text or phone notification, with reminders until someone answers.</p></div>
+        <div class="ti"><img src="/shots/requests.webp" alt="Booking requests waiting in Dayzift, with Convert to job and Decline buttons" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/projects.webp" alt="Two remodel projects with phases done, contract, billed and costs so far" width="1400" height="675" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/></svg></div><h3>Projects and subcontractors</h3></div><p>Run a remodel or build as one project with phases, a lead on site and crews on each phase. Track costs against the contract, and get warned before a sub’s insurance or license runs out.</p></div>
+      <article class="tile ">
+        <div class="tt"><p class="eb">Insights</p><h3>See how you’re really doing.</h3><p class="tp">See earnings against expenses by day, week or month, which services sell, your busiest days, top clients and how each crew member is doing.</p></div>
+        <div class="ti"><img src="/shots/insights.webp" alt="Insights: monthly earnings, profit and a weekly earnings vs expenses chart" loading="lazy" decoding="async"></div>
       </article>
-      <article class="feat">
-        <div class="shot"><img src="/shots/payroll.webp" alt="Payroll for the week: gross pay, take-home pay and each crew member's pay stub" width="1400" height="1161" loading="lazy" decoding="async"></div>
-        <div class="txt"><div class="hd"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></div><h3>Payroll from the board</h3></div><p>Hours and jobs from the board turn into pay: hourly with overtime, per job, percent of the job or day rate. W-2 tax estimates, take-home pay, and a 1099 list for January. Dayzift never moves your money.</p></div>
+      <article class="tile wide side">
+        <div class="tt"><p class="eb">Rewards</p><h3>Bring clients back.</h3><p class="tp">Customers earn points on every paid job and redeem them for discounts. You see every member’s balance and history.</p></div>
+        <div class="ti"><img src="/shots/rewards.webp" alt="A rewards program with members and their points balances" loading="lazy" decoding="async"></div>
       </article>
     </div>
   </div>
 </section>
 
-<section id="how" aria-labelledby="h-h" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-  <div class="glow" aria-hidden="true" style="background:#43B39A;width:480px;height:420px;left:30%;top:20px;opacity:.28"></div>
+<section id="how" aria-labelledby="h-h">
   <div class="w">
-    <div class="eyebrow">How it works</div>
-    <h2 class="sec-h" id="h-h">Up and running in an afternoon.</h2>
-    <div class="steps">
-      <div class="step"><h3>Create your account</h3><p>Sign up with your email, then register your business: name, trade and city.</p></div>
-      <div class="step"><h3>We approve your business</h3><p>We review every new business before it goes live, so the platform stays real businesses only.</p></div>
-      <div class="step"><h3>Bring in your crew</h3><p>Add your team by email or phone. When they sign up with it, they land on your board, ready to start shifts.</p></div>
-    </div>
+    <div class="sh"><h2 id="h-h">Up and running in an afternoon.</h2></div>
+    <ol class="steps"><li><span class="n">1</span><h3>Create your account</h3><p>Sign up with your email, then register your business: name, trade and city.</p></li><li><span class="n">2</span><h3>We approve your business</h3><p>We review every new business before it goes live, so the platform stays real businesses only.</p></li><li><span class="n">3</span><h3>Bring in your crew</h3><p>Add your team by email or phone. When they sign up with it, they land on your board, ready to start shifts.</p></li></ol>
   </div>
 </section>
 
-<section class="story" aria-labelledby="s-h">
-  <div class="glow" aria-hidden="true" style="background:#1F7A69;width:620px;height:620px;left:-200px;top:-200px"></div><div class="glow" aria-hidden="true" style="background:#F2C230;width:420px;height:420px;right:-120px;bottom:-200px;opacity:.28"></div>
+<section class="story dark" aria-labelledby="s-h">
   <div class="w">
-    <div>
-      <div class="eyebrow">Built on the job</div>
-      <h2 class="sec-h" id="s-h">Made with a real crew, not in a boardroom.</h2>
-      <p>Dayzift started as the crew board for Stanfill Elite Clean Pros, a husband-and-wife cleaning company in Lexington, Tennessee. Every feature earned its place by saving them time on a real workday. Now it runs crews of every kind, from cleaning teams to builders, plumbers and roofers.</p>
-    </div>
-    <div class="facts">
-      <div class="fact"><b>Office + phone</b><span>Runs on any computer, tablet or phone, with apps for iPhone and Android.</span></div>
-      <div class="fact"><b>Owners & crew</b><span>Owners see the whole team, payroll and the books. Crew see only their own jobs and shift.</span></div>
-      <div class="fact"><b>Your own space</b><span>Each business gets its own private board and records.</span></div>
-      <div class="fact"><b>Local support</b><span>Real people in West Tennessee at support@dazift.com.</span></div>
-    </div>
+    <div><p class="eb">Built on the job</p><h2 id="s-h">Made with a real crew, not in a boardroom.</h2><p class="lead">Dayzift started as the crew board for Stanfill Elite Clean Pros, a husband-and-wife cleaning company in Lexington, Tennessee. Every feature earned its place by saving them time on a real workday. Now it runs crews of every kind, from cleaning teams to builders, plumbers and roofers.</p></div>
+    <div class="facts"><div><b>Office + phone</b><span>Runs on any computer, tablet or phone, with apps for iPhone and Android.</span></div><div><b>Owners & crew</b><span>Owners see the whole team, payroll and the books. Crew see only their own jobs and shift.</span></div><div><b>Your own space</b><span>Each business gets its own private board and records.</span></div><div><b>Local support</b><span>Real people in West Tennessee at support@dazift.com.</span></div></div>
   </div>
 </section>
 
-<section class="faqsec" aria-labelledby="q-h">
-  <div class="glow" aria-hidden="true" style="background:#F9B88F;width:420px;height:420px;right:-120px;top:40px;opacity:.3"></div>
+<section id="faq" aria-labelledby="q-h">
   <div class="w">
-    <div class="eyebrow">Questions</div>
-    <h2 class="sec-h" id="q-h">Good to know.</h2>
-    <div class="faq">
-      <div><h3>Do my crew need their own logins?</h3><p>Yes, each person signs up with their own email. Add them on your Team tab first, and Dayzift links them to your business when they register.</p></div>
-      <div><h3>Is location tracked all the time?</h3><p>No. A crew member’s location is shared only while they’re on shift, and ending the shift stops it right away. Each shift’s hours and route are kept in a log the owner and that crew member can see.</p></div>
-      <div><h3>Is there a phone app?</h3><p>Yes. Dayzift works on any phone's web browser today, and our iPhone and Android apps are coming to the App Store and Google Play.</p></div>
-      <div><h3>Does Dayzift handle payments?</h3><p>No. Dayzift writes and sends your invoices and tracks who has paid, but the money goes straight to you: cash, check, Zelle, or your own Stripe, Square or PayPal link.</p></div>
-      <div><h3>Can I have more than one owner?</h3><p>Yes. Invite a partner or manager as a co-owner and they get full access, including the books.</p></div>
-    </div>
+    <div class="sh"><h2 id="q-h">Good to know.</h2></div>
+    <div class="faq"><details><summary>Do my crew need their own logins?</summary><p>Yes, each person signs up with their own email. Add them on your Team tab first, and Dayzift links them to your business when they register.</p></details><details><summary>Is location tracked all the time?</summary><p>No. A crew member’s location is shared only while they’re on shift, and ending the shift stops it right away. Each shift’s hours and route are kept in a log the owner and that crew member can see.</p></details><details><summary>Is there a phone app?</summary><p>Yes. Dayzift works on any phone's web browser today, and our iPhone and Android apps are coming to the App Store and Google Play.</p></details><details><summary>Does Dayzift handle payments?</summary><p>No. Dayzift writes and sends your invoices and tracks who has paid, but the money goes straight to you: cash, check, Zelle, or your own Stripe, Square or PayPal link.</p></details><details><summary>Can I have more than one owner?</summary><p>Yes. Invite a partner or manager as a co-owner and they get full access, including the books.</p></details></div>
   </div>
 </section>
 
-<section class="final" aria-labelledby="c-h" style="padding-top:20px">
-  <div class="glow" aria-hidden="true" style="background:#43B39A;width:520px;height:420px;left:10%;top:0"></div><div class="glow" aria-hidden="true" style="background:#F6CE52;width:480px;height:420px;right:8%;top:60px"></div>
-  <div class="w"><div class="panel">
-    <h2 class="sec-h" id="c-h">Ready to put your day on one board?</h2>
-    <p class="sec-p" style="margin:0 auto">Create your account, register your business, and we’ll get you approved.</p>
-    <div class="ctas">
-      <a class="btn teal" href="/app?register">Get started</a>
-      <a class="btn line" href="mailto:support@dazift.com" style="color:var(--teal)">Email us</a>
-    </div>
-  </div></div>
+<section class="final gray" aria-labelledby="c-h">
+  <div class="w">
+    <h2 id="c-h">Put your whole day in one place.</h2>
+    <p>Create your account, register your business, and we’ll get you approved.</p>
+    <div class="ctas"><a class="pill" href="/app?register">Get started</a><a class="more" href="mailto:support@dazift.com">Email us ›</a></div>
+  </div>
 </section>
 </main>
 
@@ -386,10 +251,6 @@ footer{background:#0B1B17!important}
     <span class="sig">A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener">LIT America</a></span>
   </div>
 </footer>
-<script>
-document.getElementById("yr").textContent=new Date().getFullYear();
-// a soft shadow under the header once the page scrolls
-(()=>{ const n=document.querySelector(".nav"); const f=()=>n.classList.toggle("scrolled",scrollY>8); addEventListener("scroll",f,{passive:true}); f(); })();
-</script>
+<script>document.getElementById("yr").textContent=new Date().getFullYear();</script>
 </body>
 </html>
