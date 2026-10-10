@@ -310,7 +310,9 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <label class="f">Phone<input id="gateRegPhone" type="tel" autocomplete="tel"></label>
       <label class="f">Password (6+ characters)<input id="gateRegPassword" type="password" autocomplete="new-password"></label>
       <label class="checkline"><input type="checkbox" id="gateRegCrew"><span><b>I'm joining a crew</b><small>Your employer added you to their team. You don't need to set up a business.</small></span></label>
-      <label class="f" id="gateRegTypeWrap">Type of business
+      <div class="gate-form" id="gateRegTypeWrap">
+      <label class="f">Business name<input id="gateRegBizName" type="text" autocomplete="organization" maxlength="120" placeholder="e.g. Ridgeline Builders"></label>
+      <label class="f">Type of business
         <select id="gateRegType">
           <option value="" selected disabled>Choose your type of business</option>
           <option>Cleaning</option>
@@ -325,6 +327,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
           <option>Other</option>
         </select>
       </label>
+      </div>
       <p class="kv hidden" id="gateRegCrewNote" style="margin:0;font-size:13px">Sign up with the same email your employer added. Once you confirm it, you'll land on their board.</p>
       <button class="btn primary" id="gateRegBtn">Create account</button>
     </div>
@@ -2614,12 +2617,13 @@ function wireGate(){
   $("#gateRegBtn").addEventListener("click", async ()=>{
     const name=$("#gateRegName").value.trim(), email=$("#gateRegEmail").value.trim(),
       phone=$("#gateRegPhone").value.trim(), password=$("#gateRegPassword").value;
-    const isCrew=$("#gateRegCrew").checked, category=$("#gateRegType").value;
+    const isCrew=$("#gateRegCrew").checked, category=$("#gateRegType").value, bizName=$("#gateRegBizName").value.trim();
     if (!name||!email||!password) return gateMsg("Fill in your name, email, and a password.");
+    if (!isCrew && !bizName) return gateMsg("Enter your business name, or tick \u201cI'm joining a crew\u201d.");
     if (!isCrew && !CATEGORIES.includes(category)) return gateMsg("Choose your type of business, or tick \u201cI'm joining a crew\u201d.");
     try {
       const cred = await auth.createUserWithEmailAndPassword(email,password);
-      const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew) acct.plannedCategory=category;
+      const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew){ acct.plannedCategory=category; acct.plannedBusinessName=bizName; }
       await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set(acct);
       try { await cred.user.sendEmailVerification(); } catch(e){ console.warn(e); }
     } catch(e){ gateMsg(friendlyAuthError(e)); }
@@ -2667,8 +2671,9 @@ function showVerify(user){
 }
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
-function showBizOnboard(category){
+function showBizOnboard(category, bizName){
   if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
+  if (bizName && !$("#bizName").value) $("#bizName").value=bizName;
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showPendingApproval(biz){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
@@ -3307,7 +3312,7 @@ async function routeUser(user){
     }
     else if (!user.emailVerified) showVerify(user);
     else if (acct.role==="crew") showCrewWaiting(user.email);
-    else showBizOnboard(acct.plannedCategory);
+    else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName);
 }
 auth.onAuthStateChanged(async function(user){
   if (S.demo) return;   // the demo never signs in or loads a real business
