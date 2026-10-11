@@ -19,9 +19,9 @@ const SMTP_PASS = defineSecret("SMTP_PASS");
 const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.in" });
 const SMTP_PORT = defineString("SMTP_PORT", { default: "465" });
 const SMTP_USER = defineString("SMTP_USER", { default: "support@dayzift.com" });
-const ADMIN_EMAIL = defineString("ADMIN_EMAIL", { default: "samala_netha@yahoo.com" });
-// A copy of every sign-up / approval alert also goes here (the Zoho mailbox), so it can be read from Zoho Mail too.
-const ALERT_COPY_EMAIL = defineString("ALERT_COPY_EMAIL", { default: "info@dayzift.com" });
+// Who gets the admin alerts (new sign-ups, businesses waiting for approval). Separate several with commas.
+const ADMIN_EMAILS = defineString("ADMIN_EMAILS", { default: "samala_netha@yahoo.com, dayzift@yahoo.com" });
+const adminList = () => ADMIN_EMAILS.value().split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 const APP_URL = "https://dayzift.com/app";
 
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -42,12 +42,12 @@ async function sendEmail(subject, heading, rows, note) {
   const text = `${heading}\n${note}\n\n` + rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\nOpen Platform Admin: ${APP_URL}`;
   const port = Number(SMTP_PORT.value()) || 465;
   const transport = nodemailer.createTransport({ host: SMTP_HOST.value(), port, secure: port === 465, auth: { user: SMTP_USER.value(), pass: SMTP_PASS.value() } });
-  await transport.sendMail({ from: `Dayzift <${SMTP_USER.value()}>`, to: [ADMIN_EMAIL.value(), ALERT_COPY_EMAIL.value()].filter(Boolean).join(", "), subject, text, html });
+  await transport.sendMail({ from: `Dayzift <${SMTP_USER.value()}>`, to: adminList().join(", "), subject, text, html });
 }
 
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
 async function sendPush(title, body) {
-  const snap = await admin.firestore().collection("devices").where("email", "==", ADMIN_EMAIL.value().toLowerCase()).get();
+  const snap = await admin.firestore().collection("devices").where("email", "in", adminList().slice(0, 10)).get();
   const tokens = snap.docs.map((d) => d.id).filter(Boolean);
   if (!tokens.length) { logger.info("No admin phone registered for push"); return; }
   const res = await admin.messaging().sendEachForMulticast({
