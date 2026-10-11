@@ -16,9 +16,9 @@ setGlobalOptions({ region: "us-central1", maxInstances: 3 });
 // The SMTP password is stored in Secret Manager: firebase functions:secrets:set SMTP_PASS
 const SMTP_PASS = defineSecret("SMTP_PASS");
 // Everything else has a default; change them in functions/.env if needed.
-const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.com" });
+const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.in" });
 const SMTP_PORT = defineString("SMTP_PORT", { default: "465" });
-const SMTP_USER = defineString("SMTP_USER", { default: "support@dazift.com" });
+const SMTP_USER = defineString("SMTP_USER", { default: "support@dayzift.com" });
 const ADMIN_EMAIL = defineString("ADMIN_EMAIL", { default: "samala_netha@yahoo.com" });
 const APP_URL = "https://dayzift.com/app";
 
