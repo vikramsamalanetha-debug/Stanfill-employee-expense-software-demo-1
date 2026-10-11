@@ -20,6 +20,9 @@ const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.in" });
 const SMTP_PORT = defineString("SMTP_PORT", { default: "465" });
 const SMTP_USER = defineString("SMTP_USER", { default: "support@dayzift.com" });
 const ADMIN_EMAIL = defineString("ADMIN_EMAIL", { default: "samala_netha@yahoo.com" });
+// Phone alerts go to phones signed in to the app with this login (the platform admin account).
+// Kept separate from ADMIN_EMAIL so alert emails can go to any inbox.
+const ADMIN_LOGIN = defineString("ADMIN_LOGIN", { default: "samala_netha@yahoo.com" });
 const APP_URL = "https://dayzift.com/app";
 
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -45,7 +48,7 @@ async function sendEmail(subject, heading, rows, note) {
 
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
 async function sendPush(title, body) {
-  const snap = await admin.firestore().collection("devices").where("email", "==", ADMIN_EMAIL.value().toLowerCase()).get();
+  const snap = await admin.firestore().collection("devices").where("email", "==", ADMIN_LOGIN.value().toLowerCase()).get();
   const tokens = snap.docs.map((d) => d.id).filter(Boolean);
   if (!tokens.length) { logger.info("No admin phone registered for push"); return; }
   const res = await admin.messaging().sendEachForMulticast({
