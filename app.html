@@ -798,7 +798,8 @@ function drawWho(){
   }
   if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   // Settings lives here only (not also as a tab), so it's always in reach, even on a phone.
-  if (!S.adminView) w.append(el("button",{class:"btn ghost settings-btn","aria-pressed":String(S.tab==="settings"),onclick:()=>{S.tab="settings";render();window.scrollTo(0,0);}},"\u2699 Settings"));
+  // The platform admin gets it too when viewing a client, to see their owners and setup (view only).
+  w.append(el("button",{class:"btn ghost settings-btn","aria-pressed":String(S.tab==="settings"),onclick:()=>{S.tab="settings";render();window.scrollTo(0,0);}},"\u2699 Settings"));
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
@@ -945,8 +946,26 @@ function settingsNotify(){
 function settingsAccess(){
   const owners=S.business.ownerUids||(S.business.ownerUid?[S.business.ownerUid]:[]);
   const frag=document.createDocumentFragment();
-  frag.append(setPanel("Owners","Owners have full access to everything, including the books and settings.",
-    setRow("Owners with full access",String(owners.length)+(owners.length===1?" person":" people"),el("button",{class:"btn small",onclick:addOwnerByEmail},"Add owner"))));
+  // Who each owner is: the platform admin can see every account; an owner sees themself,
+  // crew records linked to an account, and the owner emails stored on the business.
+  const seen=new Set(), list=[];
+  owners.forEach(uid=>{
+    const u=(S.allUsers||[]).find(x=>x.id===uid)||{};
+    const emp=S.employees.find(e=>e.userId===uid)||{};
+    const email=((uid===S.myUserId?S.myEmail:"")||u.email||emp.email||"").toLowerCase();
+    if(email) seen.add(email);
+    list.push({name:u.name||emp.name||"",email,you:uid===S.myUserId&&!S.adminView});
+  });
+  const extra=(S.business.ownerEmails||[]).map(x=>(x||"").toLowerCase()).filter(x=>x&&!seen.has(x));
+  list.forEach(o=>{ if(!o.email&&extra.length) o.email=extra.shift(); });   // older accounts: fill in from the business's owner emails
+  extra.forEach(email=>list.push({name:"",email,you:false}));
+  const ownersPanel=setPanel("Owners","Owners have full access to everything, including the books and settings.",
+    setRow("Owners with full access",String(list.length)+(list.length===1?" person":" people"),el("button",{class:"btn small",onclick:addOwnerByEmail},"Add owner")));
+  list.forEach(o=>ownersPanel.append(setRow(
+    (o.name||o.email||"Owner account")+(o.you?" (you)":""),
+    o.name&&o.email ? el("a",{href:"mailto:"+o.email},o.email) : (o.email?"":"Email not on file"),
+    null)));
+  frag.append(ownersPanel);
   const pendingEmp=S.employees.filter(e=>!e.userId&&(e.email||e.phone));
   const pendingOwners=(S.business.pendingOwnerEmails||[]).concat(S.business.pendingOwnerPhones||[]);
   const pp=setPanel("Pending invites","People you added who haven't registered yet.");
