@@ -1,6 +1,7 @@
-# Builds the Dayzift Android app (APK) from the web app on every push to main,
+
+# Builds the Dazift Android app (APK) from the web app on every push to main,
 # and publishes it as the "latest" release so the phone can download it from:
-#   https://github.com/<owner>/<repo>/releases/latest/download/Dayzift.apk
+#   https://github.com/<owner>/<repo>/releases/latest/download/Dazift.apk
 # A product of LIT America — www.litamerica.net
 name: Build Android app
 
@@ -62,7 +63,7 @@ jobs:
 
       - name: App icon and splash screen
         continue-on-error: true
-        run: npx capacitor-assets generate --android --iconBackgroundColor '#F2C230' --iconBackgroundColorDark '#F2C230' --splashBackgroundColor '#1F7A69' --splashBackgroundColorDark '#0F2A25'
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#1F7A69' --splashBackgroundColor '#1F7A69'
 
       - name: Location permissions and version number
         run: |
@@ -88,19 +89,19 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../Dayzift.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../Dazift.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Dayzift-apk
-          path: Dayzift.apk
+          name: Dazift-apk
+          path: Dazift.apk
 
       - name: Publish as latest release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete android-latest --cleanup-tag -y || true
-          gh release create android-latest Dayzift.apk \
-            --title "Dayzift Android app (build ${{ github.run_number }})" \
-            --notes "Install on your phone: open this page on the phone and tap Dayzift.apk. A product of LIT America — https://www.litamerica.net" \
+          gh release create android-latest Dazift.apk \
+            --title "Dazift Android app (build ${{ github.run_number }})" \
+            --notes "Install on your phone: open this page on the phone and tap Dazift.apk. A product of LIT America — https://www.litamerica.net" \
             --latest
