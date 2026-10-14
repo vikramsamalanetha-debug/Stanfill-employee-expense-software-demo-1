@@ -13,12 +13,14 @@ const nodemailer = require("nodemailer");
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1", maxInstances: 3 });
 
-// The SMTP password is stored in Secret Manager: firebase functions:secrets:set SMTP_PASS
+// All Dayzift email (alerts, bookings, invoices) is sent from the LIT America Yahoo account.
+// The password is a Yahoo *app password*, stored in Secret Manager: firebase functions:secrets:set SMTP_PASS
+// (Yahoo only lets an account send as itself, so emails always come from SMTP_USER.)
 const SMTP_PASS = defineSecret("SMTP_PASS");
-// Everything else has a default; change them in functions/.env if needed.
-const SMTP_HOST = defineString("SMTP_HOST", { default: "smtppro.zoho.in" });
+// Everything else has a default; change them in functions/.env.stanfill-clean-pros if needed.
+const SMTP_HOST = defineString("SMTP_HOST", { default: "smtp.mail.yahoo.com" });
 const SMTP_PORT = defineString("SMTP_PORT", { default: "465" });
-const SMTP_USER = defineString("SMTP_USER", { default: "support@dayzift.com" });
+const SMTP_USER = defineString("SMTP_USER", { default: "litamerica@yahoo.com" });
 // Who gets the admin alerts (new sign-ups, businesses waiting for approval). Separate several with commas.
 const ADMIN_EMAILS = defineString("ADMIN_EMAILS", { default: "samala_netha@yahoo.com, dayzift@yahoo.com" });
 const adminList = () => ADMIN_EMAILS.value().split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -200,7 +202,7 @@ exports.invoiceReminders = onSchedule({ schedule: "every day 09:00", timeZone: "
 //  2) the customer gets a "we received your request" email;
 //  3) owners get a reminder every 2 hours (daytime, Central), up to 3 times, until someone answers;
 //  4) when the request is approved or declined (in the app or from the email), the customer is emailed.
-// Emails come from "<Business> via Dayzift" <support@dayzift.com>; replies go to the business / the customer.
+// Emails come from "<Business>" <litamerica@yahoo.com>; replies go to the business / the customer.
 const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onRequest } = require("firebase-functions/v2/https");
 const crypto = require("crypto");
