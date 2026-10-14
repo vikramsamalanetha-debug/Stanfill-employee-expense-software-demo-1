@@ -44,6 +44,48 @@ a{color:var(--primary)}
 .tabs button{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap}
 .tabs button[aria-selected="true"]{background:var(--primary);color:var(--primary-ink)}
 .settings-btn[aria-pressed="true"]{background:var(--surface-2);color:var(--ink)}
+/* Sections: Home, Jobs, Team, Money, More. A pill bar on computers, a bottom bar on phones. */
+.groups{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;margin-bottom:12px;width:max-content;max-width:100%;overflow-x:auto}
+.groups button{border:0;background:transparent;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:15px;position:relative}
+.groups button[aria-current="page"]{background:var(--primary);color:var(--primary-ink)}
+.groups svg{width:18px;height:18px;flex:none}
+.groups .dot{background:var(--danger);color:#fff;border-radius:999px;font-size:11px;line-height:18px;min-width:18px;height:18px;padding:0 5px;font-weight:800;text-align:center;box-sizing:border-box}
+.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.subtabs:empty{display:none}
+.subtabs .chip{font-size:14px;padding:7px 14px}
+@media (max-width:700px){
+  .groups{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0;width:auto;border-radius:0;justify-content:space-around;
+    background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px rgba(0,0,0,.06)}
+  .groups button{flex:1;flex-direction:column;gap:3px;padding:6px 2px;border-radius:12px;font-size:12px;min-width:0}
+  .groups button[aria-current="page"]{background:var(--primary-soft);color:var(--primary)}
+  .groups svg{width:22px;height:22px}
+  .groups .dot{position:absolute;top:1px;left:calc(50% + 4px);font-size:10px;line-height:16px;min-width:16px;height:16px;padding:0 4px}
+  #view .sched li{grid-template-columns:62px minmax(0,1fr)}
+  #view .sched .what b{white-space:normal}
+  #view .sched li>.pill,#view .sched li>.btn{grid-column:2;justify-self:start}
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom))!important}
+  #mainApp{padding-bottom:88px}
+}
+/* Home */
+.hello{margin:0 0 14px;font:750 24px/1.2 var(--display)}
+.home-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}
+@media (max-width:900px){.home-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;text-align:left;cursor:pointer;font:inherit;color:inherit;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat:hover{border-color:var(--primary)}
+.stat b{font:750 30px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat .l{font-weight:700}
+.stat .s{color:var(--muted);font-size:13px}
+.stat.hot{border-color:var(--primary);background:var(--primary-soft)}
+.home-cols{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+@media (max-width:900px){.home-cols{grid-template-columns:1fr}}
+.sched{list-style:none;margin:0;padding:0}
+.sched li{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.sched li:first-child{border-top:0}
+.sched .tm{font-weight:800;font-variant-numeric:tabular-nums}
+.sched .what{min-width:0}
+.sched .what b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sched .what span{color:var(--muted);font-size:13px}
+.shift-big{width:100%;justify-content:center;font-size:18px;padding:16px;margin:0 0 18px}
 
 /* buttons & fields */
 .btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font-size:14px}
@@ -523,18 +565,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     <div class="whoami" id="whoami"></div>
   </header>
   <div id="banners"></div>
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" data-tab="platform" aria-selected="false" id="platformTabBtn" hidden>Platform Admin</button>
-    <button role="tab" data-tab="requests" aria-selected="false" data-owner>Booking Requests</button>
-    <button role="tab" data-tab="board" aria-selected="true">Job board</button>
-    <button role="tab" data-tab="projects" aria-selected="false" data-feature="projects" hidden>Projects</button>
-    <button role="tab" data-tab="rewards" aria-selected="false" data-owner data-feature="rewards">Rewards</button>
-    <button role="tab" data-tab="insights" aria-selected="false" data-owner>Insights</button>
-    <button role="tab" data-tab="team" aria-selected="false">Team &amp; locations</button>
-    <button role="tab" data-tab="invoices" aria-selected="false" data-owner>Invoices</button>
-    <button role="tab" data-tab="payroll" aria-selected="false" data-owner>Payroll</button>
-    <button role="tab" data-tab="books" aria-selected="false" data-owner>Books</button>
-  </nav>
+  <nav class="groups" id="groupNav" aria-label="Sections"></nav>
+  <nav class="subtabs" id="subNav" aria-label="Pages in this section"></nav>
   <main id="view"></main>
   <footer class="lit-credit app-foot">Dayzift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
 </div>
@@ -745,7 +777,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], tab:"board", demo:false, who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], tab:"home", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -756,23 +788,16 @@ const locFor = id => S.locations.find(l=>l.id===id);
 let renderQueued=false;
 function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); }); }
 function draw(){
-  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===S.tab)));
-  const platformBtn = $("#platformTabBtn");
-  if (platformBtn){ platformBtn.hidden = !S.isPlatformAdmin;
-    const n=S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length;
-    platformBtn.textContent = "Platform Admin"+(n?" ("+n+")":""); }
-  // Crew see the job board, team and their account. The books, requests, rewards and insights are for owners.
-  document.querySelectorAll(".tabs button[data-owner]").forEach(b=>{ b.hidden = !S.isOwner; });
-  document.querySelectorAll(".tabs button[data-feature=projects]").forEach(b=>{ b.hidden = !hasProjects(); });
   const tag=$("#appTagline"); if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
-  const teamTab=document.querySelector('.tabs button[data-tab="team"]'); if (teamTab) teamTab.textContent = S.isOwner ? "Team & locations" : "My shift";
-  document.querySelectorAll(".tabs button[data-feature=rewards]").forEach(b=>{ b.hidden = !S.isOwner || !hasRewards(); });
-  if (!S.isOwner && ["requests","rewards","insights","books","payroll","invoices"].includes(S.tab)) S.tab="board";
+  if (!S.isOwner && ["requests","rewards","insights","books","payroll","invoices","platform"].includes(S.tab)) S.tab="home";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
-  if (S.tab==="rewards" && !hasRewards()) S.tab="board";
+  if (S.tab==="rewards" && !hasRewards()) S.tab="home";
+  if (S.tab==="platform" && !S.isPlatformAdmin) S.tab="home";
+  drawNav();
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
-  if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
+  if (S.tab==="home") v.append(viewHome());
+  else if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="projects") v.append(viewProjects());
   else if (S.tab==="payroll") v.append(viewPayroll());
   else if (S.tab==="invoices") v.append(viewInvoices());
@@ -791,15 +816,13 @@ function drawWho(){
   if (m){
     const loc=locFor(m.id); const on = loc && loc.onDuty;
     w.append(el("span",{class:"kv"},"Signed in as ", el("b",{},m.name)));
-    w.append(on ? el("button",{class:"btn",onclick:stopDuty},"End shift")
-                : el("button",{class:"btn lemon",onclick:startDuty},"Start shift"));
+    if (!(S.tab==="home" && !S.isOwner))     // crew get a big shift button on their Today page instead
+      w.append(on ? el("button",{class:"btn",onclick:stopDuty},"End shift")
+                  : el("button",{class:"btn lemon",onclick:startDuty},"Start shift"));
   } else if (S.myEmail){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
   if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
-  // Settings lives here only (not also as a tab), so it's always in reach, even on a phone.
-  // The platform admin gets it too when viewing a client, to see their owners and setup (view only).
-  w.append(el("button",{class:"btn ghost settings-btn","aria-pressed":String(S.tab==="settings"),onclick:()=>{S.tab="settings";render();window.scrollTo(0,0);}},"\u2699 Settings"));
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
@@ -909,6 +932,133 @@ function viewRewards(){
     row.append(body); mp.append(row);
   });
   frag.append(mp);
+  return frag;
+}
+
+/* ---- Navigation: five sections instead of ten tabs ---- */
+const NAV_ICONS={
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  jobs:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  team:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 5.4"/>',
+  money:'<rect x="2.5" y="6" width="19" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5v.01M18 15.5v.01"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  shift:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  account:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/>'};
+const navIcon=k=>{ const t=document.createElement("template");
+  t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+NAV_ICONS[k]+'</svg>';
+  return t.content.firstChild; };
+const pendingBookings=()=>S.bookings.filter(b=>(b.status||"pending")==="pending");
+function navGroups(){
+  if (!S.isOwner) return [
+    {id:"home",label:"Today",icon:"home",tabs:[["home","Today"]]},
+    {id:"jobs",label:"My jobs",icon:"jobs",tabs:[["board","My jobs"]]},
+    {id:"shift",label:"My shift",icon:"shift",tabs:[["team","My shift"]]},
+    {id:"more",label:"Account",icon:"account",tabs:[["settings","Account"]]}];
+  const nReq=pendingBookings().length;
+  const nAdmin=S.isPlatformAdmin ? S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length : 0;
+  return [
+    {id:"home",label:"Home",icon:"home",tabs:[["home","Today"]]},
+    {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests","Booking requests"+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null]},
+    {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["payroll","Payroll"]]},
+    {id:"money",label:"Money",icon:"money",tabs:[["invoices","Invoices"],["books","Books"],["insights","Insights"]]},
+    {id:"more",label:"More",icon:"more",badge:nAdmin,tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"],S.isPlatformAdmin?["platform","Platform Admin"+(nAdmin?" ("+nAdmin+")":"")]:null]}
+  ].map(g=>({...g,tabs:g.tabs.filter(Boolean)}));
+}
+// Each section remembers the page you were last on, so tapping "Money" goes back to Invoices or Books.
+const lastInGroup={};
+function goTab(tab){
+  if (tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
+  S.tab=tab; render(); window.scrollTo(0,0);
+}
+function drawNav(){
+  const groups=navGroups();
+  const cur=groups.find(g=>g.tabs.some(t=>t[0]===S.tab))||groups[0];
+  lastInGroup[cur.id]=S.tab;
+  const gn=$("#groupNav"), sn=$("#subNav"); if (!gn||!sn) return;
+  gn.replaceChildren(...groups.map(g=>el("button",{type:"button","aria-current":g===cur?"page":"false",
+    onclick:()=>{ const keep=lastInGroup[g.id]; goTab(g.tabs.some(t=>t[0]===keep)?keep:g.tabs[0][0]); }},
+    navIcon(g.icon), el("span",{},g.label), g.badge?el("span",{class:"dot","aria-label":g.badge+" waiting"},String(g.badge)):null)));
+  sn.replaceChildren(...(cur.tabs.length>1 ? cur.tabs.map(([id,label])=>
+    el("button",{type:"button",class:"chip","aria-pressed":String(S.tab===id),onclick:()=>goTab(id)},label)) : []));
+}
+
+/* ---- Home: what needs attention today ---- */
+function greeting(){ const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
+function crewNames(j){ return jobCrew(j).map(id=>(empById(id)||{}).name).filter(Boolean).map(n=>n.split(" ")[0]).join(", "); }
+function schedRow(j,showCrew){
+  const st=j.status||"new", lab=(STATUSES.find(x=>x.id===st)||STATUSES[0]).label.replace(" jobs","");
+  return el("li",{},
+    el("span",{class:"tm"}, j.time?niceTime(j.time):"Any time"),
+    el("span",{class:"what"}, el("b",{},(j.service||"Job")+" · "+(j.client||"Client")),
+      el("span",{}, [showCrew?(crewNames(j)||"Not assigned yet"):"", j.address||""].filter(Boolean).join(" · "))),
+    el("span",{class:"pill"+(st==="done"?" done":"")},lab));
+}
+function stat(n,label,sub,tab,hot){
+  return el("button",{type:"button",class:"stat"+(hot?" hot":""),onclick:()=>goTab(tab)},el("b",{},String(n)),el("span",{class:"l"},label),el("span",{class:"s"},sub));
+}
+function viewHome(){ return S.isOwner ? viewHomeOwner() : viewHomeCrew(); }
+function viewHomeOwner(){
+  const frag=document.createDocumentFragment(), t=today();
+  const m=me(), first=((m&&m.name)||"").split(" ")[0];
+  frag.append(el("h2",{class:"hello"},greeting()+(first?", "+first:"")));
+  const pend=pendingBookings();
+  const todays=S.jobs.filter(j=>j.date===t).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+  const going=todays.filter(j=>j.status==="in_progress").length, left=todays.filter(j=>j.status!=="done").length;
+  const onShift=S.employees.filter(e=>{ const l=locFor(e.id); return l&&l.onDuty; });
+  const openInv=S.invoices.filter(i=>i.open), owed=openInv.reduce((a,i)=>a+(Number(i.balance)||0),0);
+  const late=openInv.filter(i=>i.dueDate&&i.dueDate<t).length;
+  frag.append(el("div",{class:"home-stats"},
+    stat(pend.length, pend.length===1?"Request waiting":"Requests waiting", pend.length?"Tap to answer":"All caught up","requests",pend.length>0),
+    stat(todays.length, todays.length===1?"Job today":"Jobs today", todays.length?(going?going+" in progress · ":"")+left+" to go":"Nothing scheduled","board"),
+    stat(onShift.length, "On shift now", onShift.length?onShift.map(e=>e.name.split(" ")[0]).join(", "):"Nobody clocked in","team"),
+    stat(money(owed).replace(/\.00$/,""), "Unpaid", openInv.length?openInv.length+" invoice"+(openInv.length>1?"s":"")+(late?" · "+late+" overdue":""):"No open invoices","invoices",late>0)));
+  const cols=el("div",{class:"home-cols"});
+  // Today's schedule (or the next few jobs when today is empty)
+  const sched=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Today's schedule"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>goTab("board")},"Job board")));
+  if (todays.length) sched.append(el("ul",{class:"sched"},...todays.map(j=>schedRow(j,true))));
+  else {
+    const next=S.jobs.filter(j=>j.date>t&&j.status!=="done").sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,4);
+    sched.append(el("div",{class:"empty"},"Nothing on the schedule today."));
+    if (next.length){ sched.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
+      sched.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,true); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
+  }
+  if (!S.viewOnly) sched.append(el("div",{class:"acts",style:"margin-top:12px"},el("button",{type:"button",class:"btn primary",onclick:()=>openJob()},"New job")));
+  cols.append(sched);
+  // Booking requests waiting for an answer
+  const req=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Waiting for you"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>goTab("requests")},"All requests")));
+  if (!pend.length) req.append(el("div",{class:"empty"},"No booking requests waiting. New ones from your website show up here."));
+  else req.append(el("ul",{class:"sched"},...pend.slice().sort((a,b)=>(a.requestedDate||"").localeCompare(b.requestedDate||"")).slice(0,5).map(b=>
+    el("li",{},el("span",{class:"tm"},niceDate((b.requestedDate||"").slice(0,10)).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),
+      el("span",{class:"what"},el("b",{},(b.service||"Request")+" · "+(b.name||"Customer")),el("span",{},b.phone||"")),
+      el("button",{type:"button",class:"btn small primary",onclick:()=>goTab("requests")},"Answer")))));
+  cols.append(req);
+  frag.append(cols);
+  return frag;
+}
+function viewHomeCrew(){
+  const frag=document.createDocumentFragment(), t=today(), m=me();
+  frag.append(el("h2",{class:"hello"},greeting()+(m?", "+m.name.split(" ")[0]:"")));
+  if (!m){
+    frag.append(el("div",{class:"panel"},el("p",{style:"margin:0 0 12px"},"Link your name to your account to see your jobs and start your shift."),
+      el("button",{type:"button",class:"btn primary",onclick:()=>goTab("team")},"Link my name")));
+    return frag;
+  }
+  const loc=locFor(m.id), on=loc&&loc.onDuty;
+  frag.append(on ? el("button",{type:"button",class:"btn shift-big",onclick:stopDuty},"End shift")
+                 : el("button",{type:"button",class:"btn lemon shift-big",onclick:startDuty},"Start shift"));
+  if (S.dutyErr) frag.append(el("div",{class:"banner warn"},S.dutyErr));
+  const mine=S.jobs.filter(j=>jobCrew(j).includes(m.id)&&j.status!=="done");
+  const todays=mine.filter(j=>j.date===t).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
+  const p=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"My jobs today"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>goTab("board")},"All my jobs")));
+  if (todays.length) p.append(el("ul",{class:"sched"},...todays.map(j=>schedRow(j,false))));
+  else p.append(el("div",{class:"empty"},"No jobs for you today."));
+  const next=mine.filter(j=>j.date>t).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,3);
+  if (next.length){ p.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
+    p.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,false); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
+  frag.append(p);
   return frag;
 }
 
@@ -3297,10 +3447,6 @@ async function clearSample(){
 }
 
 /* ---------- wiring ---------- */
-document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
-  if (b.dataset.tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
-  S.tab=b.dataset.tab; render();
-}));
 setInterval(()=>{ if(!document.querySelector("dialog[open]")) render(); },60000); // refresh "x min ago"
 let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=window.innerWidth<640; if(n!==rw){ rw=n; render(); } });
 window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
@@ -3457,7 +3603,7 @@ function resetToSignedOut(){
   unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
   COLLS.forEach(c=>{ S[c]=[]; });
   Object.assign(S,{myUserId:null,myEmail:null,isOwner:false,isPlatformAdmin:false,business:null,businessId:null,homeBusiness:null,
-    adminView:false,viewOnly:false,tab:"board",who:"all",projFilter:null,pr:null,dutyErr:null});
+    adminView:false,viewOnly:false,tab:"home",who:"all",projFilter:null,pr:null,dutyErr:null});
   pendingPopupShown=false; booted=false; clearTimeout(crewSyncT);
   document.title="Dayzift";
   showGate(); window.scrollTo(0,0);
@@ -3729,7 +3875,7 @@ function enterBusiness(biz, opts){
   booted=true;
   Store.mode="db"; Store.db=firebase.firestore();
   subscribeAll();
-  if (S.adminView && (S.tab==="platform"||S.tab==="settings")) S.tab="board";
+  if (S.adminView && (S.tab==="platform"||S.tab==="settings")) S.tab="home";
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
 }
@@ -4202,7 +4348,7 @@ function startDemo(type){
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false;
-  if (!["board","projects","team","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="board";
+  if (!["home","board","projects","team","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
   document.title=biz.name+" · Dayzift demo";
