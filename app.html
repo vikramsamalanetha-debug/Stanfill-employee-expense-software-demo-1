@@ -1001,7 +1001,8 @@ const NAV_ICONS={
 const navIcon=k=>{ const t=document.createElement("template");
   t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+NAV_ICONS[k]+'</svg>';
   return t.content.firstChild; };
-const pendingBookings=()=>S.bookings.filter(b=>(b.status||"pending")==="pending");
+const changePending=b=>!!(b.change&&b.change.type==="reschedule"&&b.change.status==="pending"&&b.status!=="cancelled");
+const pendingBookings=()=>S.bookings.filter(b=>(b.status||"pending")==="pending"||changePending(b));
 function navGroups(){
   if (S.console){
     const nAdmin=S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length;
@@ -1359,11 +1360,11 @@ function viewRequests(){
   const frag=document.createDocumentFragment();
   const showAll = S.reqShowAll;
   const list = S.bookings
-    .filter(b => showAll || (b.status||"pending")==="pending")
+    .filter(b => showAll || (b.status||"pending")==="pending" || changePending(b))
     .sort((a,b)=>(a.requestedDate||"").localeCompare(b.requestedDate||""));
 
   frag.append(el("div",{class:"toolbar"},
-    el("span",{class:"kv grow"}, el("b",{},String(S.bookings.filter(b=>(b.status||"pending")==="pending").length)), " pending request(s) from the website"),
+    el("span",{class:"kv grow"}, el("b",{},String(pendingBookings().length)), " request(s) waiting for you"),
     el("div",{class:"chips"},
       el("button",{class:"chip","aria-pressed":String(!showAll),onclick:()=>{S.reqShowAll=false;render();}},"Pending"),
       el("button",{class:"chip","aria-pressed":String(!!showAll),onclick:()=>{S.reqShowAll=true;render();}},"All"))));
@@ -1389,7 +1390,7 @@ function viewRequests(){
     card.append(el("h3",{},b.name||"Unknown"));
     card.append(el("div",{class:"meta"},
       el("span",{},niceDate(dateStr)),
-      el("span",{class:"paid "+(status==="pending"?"no":"yes")}, status)));
+      el("span",{class:"paid "+(status==="confirmed"?"yes":"no")}, status)));
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
     if (b.details) card.append(el("div",{class:"notes"},b.details));
     if (b.wantsRewards && hasRewards()) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
@@ -1398,7 +1399,18 @@ function viewRequests(){
     if (b.reminderCount) trail.push(b.reminderCount+" reminder"+(b.reminderCount>1?"s":"")+" sent");
     if (b.respondedVia) trail.push((status==="confirmed"?"Approved":"Declined")+(b.respondedVia==="email"?" from an email link":" in the app"));
     if (b.customerNotifiedAt) trail.push("customer emailed");
+    if (status==="cancelled") trail.push("Cancelled by the customer");
+    if (b.change && b.change.type==="reschedule" && b.change.status==="approved") trail.push("Moved from "+niceDate((b.change.from||"").slice(0,10)));
+    if (b.change && b.change.type==="reschedule" && b.change.status==="declined") trail.push("Date change declined");
     if (trail.length) card.append(el("div",{class:"kv"},trail.join(" · ")));
+    if (changePending(b)){
+      const ch=b.change, answer=ok=>write(()=>Store.update("bookings",b.id,{change:{...ch,status:ok?"approved":"declined",answeredVia:"app",answeredAt:Date.now()}}),ok?"New date approved. The customer is being emailed.":"Original date kept. The customer is being emailed.");
+      card.append(el("div",{class:"notes",style:"background:var(--primary-soft)"},el("b",{},"Date change request: "),
+        "wants to move from "+niceDate((ch.from||"").slice(0,10))+" to ",el("b",{},niceDate((ch.to||"").slice(0,10)))));
+      card.append(el("div",{class:"acts"},
+        el("button",{class:"btn small primary",onclick:()=>answer(true)},"Approve new date"),
+        el("button",{class:"btn small ghost",onclick:()=>answer(false)},"Keep original date")));
+    }
     if (status==="pending"){
       const acts=el("div",{class:"acts"});
       acts.append(el("button",{class:"btn small primary",onclick:()=>convertBookingToJob(b)},"Convert to job"));

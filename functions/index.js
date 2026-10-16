@@ -307,6 +307,7 @@ async function pushOwners(biz, bizId, title, body) {
 
 async function emailCustomer(bk, biz, kind) {
   const to = await customerEmailFor(bk); if (!to) return false;
+  const ch = bk.change || {};
   const name = bizLabel(biz), day = reqDay(bk.requestedDate), svc = bk.service || "your service";
   const site = biz.website && /^https:\/\//i.test(biz.website) ? biz.website : "";
   const msgs = {
@@ -316,11 +317,21 @@ async function emailCustomer(bk, biz, kind) {
       `Good news! ${name} confirmed your ${svc}${day ? " for " + day : ""}. We'll see you then.`],
     declined: [`About your request for ${day || svc}`,
       `Thanks for thinking of ${name}. Unfortunately we can't take your ${svc} request${day ? " for " + day : ""}. Get in touch and we'll gladly find another day that works.`],
+    change_received: [`We got your date change: ${svc}`,
+      `We received your request to move your ${svc} from ${reqDay(ch.from)} to ${reqDay(ch.to)}. Your original date stays booked until we confirm the new one by email.`],
+    change_ok: [`Confirmed: your new date is ${reqDay(ch.to)}`,
+      `You're all set! ${name} moved your ${svc} from ${reqDay(ch.from)} to ${reqDay(ch.to)}. We'll see you then.`],
+    change_no: [`About your date change for ${svc}`,
+      `Sorry, we can't move your ${svc} to ${reqDay(ch.to)}. Your original date, ${reqDay(ch.from)}, is still booked. Get in touch and we'll find another day that works.`],
+    change_late: [`About your date change for ${svc}`,
+      `Your ${svc} on ${reqDay(ch.from)} is less than 24 hours away, so it can't be changed online anymore. Please get in touch with us directly and we'll do our best to help.`],
+    cancelled: [`Cancelled: ${svc}${day ? " on " + day : ""}`,
+      `Your ${svc}${day ? " on " + day : ""} with ${name} is cancelled. We hope to see you again soon. You can book another day on our website any time.`],
   }[kind];
   const bizMail = okEmail(biz.email) ? biz.email : "";
   const contact = [biz.phone ? "call " + nicePhone(biz.phone) : "", bizMail ? "email " + bizMail : ""].filter(Boolean).join(" or ");
   const html = shell(name, `<p style="margin:0 0 14px">Hi ${esc(firstName(bk.name))},</p><p style="margin:0 0 16px">${esc(msgs[1])}</p>
-      ${rowsHtml([["Service", bk.service], ["Date", day]].filter(([, v]) => v))}
+      ${rowsHtml((/^change_/.test(kind) ? [["Service", bk.service], ["Booked date", reqDay(ch.from)], ["New date", reqDay(ch.to)]] : [["Service", bk.service], ["Date", day]]).filter(([, v]) => v))}
       ${site ? btn(site, "Visit our website", "#F2C230", "#2A2305") : ""}
       ${contact ? `<p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(contact)}.</p>` : ""}`, `Sent with Dayzift for ${esc(name)}`);
   const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\n` + (contact ? `Questions? Please ${contact}.\n\n` : "") + `${name}\nSent with Dayzift · A product of LIT America`;
@@ -357,16 +368,95 @@ exports.notifyNewBooking = onDocumentCreated({ document: "bookings/{id}", secret
 });
 
 // 4) Approved or declined: tell the customer (once).
+// Customers can change the date or cancel up to 24 hours before (counted from 8 AM on the booked day).
+const changeCutoff = (iso) => { const t = Date.parse(iso || ""); return isNaN(t) ? 0 : t + 8 * 36e5 - 24 * 36e5; };
+
+// Owners: a customer wants a different date (Approve / Decline), or cancelled.
+async function emailOwnersAbout(id, bk, biz, kind, key) {
+  const to = await ownerEmailsFor(biz); if (!to.length) return false;
+  const cust = await customerEmailFor(bk), ch = bk.change || {};
+  const link = (a) => `${ACTION_URL}?id=${encodeURIComponent(id)}&k=${key}&a=${a}`;
+  const late = kind === "cancel" && Date.now() > changeCutoff(ch.from || bk.requestedDate);
+  const subject = kind === "change"
+    ? `Date change request: ${bk.name || "customer"} wants ${reqDay(ch.to)} instead of ${reqDay(ch.from)}`
+    : `Cancelled: ${bk.service || "booking"}, ${reqDay(ch.from || bk.requestedDate)} (${bk.name || "customer"})`;
+  const lead = kind === "change"
+    ? `${bk.name || "A customer"} wants to move their ${bk.service || "booking"}. The original date stays booked until you approve.`
+    : `${bk.name || "A customer"} cancelled their ${bk.service || "booking"}${late ? " with less than 24 hours' notice" : ""}. If it's on your job board, remove or reschedule it there.`;
+  const rows = (kind === "change"
+    ? [["Service", bk.service], ["Booked date", reqDay(ch.from)], ["Wants instead", reqDay(ch.to)]]
+    : [["Service", bk.service], ["Date", reqDay(ch.from || bk.requestedDate)]])
+    .concat([["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)], ["Account email", cust]]).filter(([, v]) => v);
+  const buttons = kind === "change"
+    ? btn(link("moveok"), "Approve new date", "#1F7A69", "#fff") + btn(link("moveno"), "Keep original date", "#fff;border:1px solid #D9D4CB", "#1D1B18") : "";
+  const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}${buttons}${btn(REQUESTS_URL, "Open in Dayzift", "#F2C230", "#2A2305")}`, "Dayzift booking alert");
+  const text = `${lead}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n")
+    + (kind === "change" ? `\n\nApprove new date: ${link("moveok")}\nKeep original date: ${link("moveno")}` : "") + `\nOpen in Dayzift: ${REQUESTS_URL}\n\nDayzift · A product of LIT America`;
+  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
+  return true;
+}
+
 exports.notifyBookingAnswer = onDocumentUpdated({ document: "bookings/{id}", secrets: [SMTP_PASS] }, async (event) => {
   const before = event.data.before.data() || {}, after = event.data.after.data() || {};
+  if (after.demo || !after.businessId) return;
+  const id = event.params.id, ref = event.data.after.ref, db = admin.firestore();
+  const bc = before.change || {}, ac = after.change || {};
+  let biz = null;
+  const loadBiz = async () => biz || (biz = (await db.doc("businesses/" + after.businessId).get()).data());
+  const safe = async (label, fn) => { try { await fn(); } catch (e) { logger.error(label + " failed", e); } };
+
+  // A) The customer asked for a different date.
+  if (ac.type === "reschedule" && ac.status === "pending" && ac.at !== bc.at) {
+    if (!bizOpen(await loadBiz())) return;
+    if (Date.now() > changeCutoff(ac.from)) {      // too close to the appointment: they need to call
+      await ref.update({ "change.status": "too_late" });
+      return safe("Late change email", () => emailCustomer(after, biz, "change_late"));
+    }
+    const key = crypto.randomBytes(18).toString("hex");
+    await db.doc("bookingKeys/" + id).set({ key, businessId: after.businessId, createdAt: Date.now(), kind: "change" });
+    await Promise.all([
+      safe("Owner change email", () => emailOwnersAbout(id, after, biz, "change", key)),
+      safe("Owner change push", () => pushOwners(biz, after.businessId, "Date change request", [after.name, reqDay(ac.to)].filter(Boolean).join(" \u00b7 "))),
+      safe("Customer change email", () => emailCustomer(after, biz, "change_received")),
+    ]);
+    return;
+  }
+
+  // B) The owner answered a date change (in the app or from the email).
+  if (ac.type === "reschedule" && bc.status === "pending" && (ac.status === "approved" || ac.status === "declined")) {
+    if (!bizOpen(await loadBiz())) return;
+    if (ac.status === "approved") {
+      await ref.update({ requestedDate: ac.to, status: "confirmed", customerNotifiedAt: after.customerNotifiedAt || Date.now() });
+      // move the job made from this booking to the new day
+      const newDay = new Date(ac.to).toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+      const jobs = await db.collection("jobs").where("fromBookingId", "==", id).get();
+      await Promise.all(jobs.docs.filter((d) => d.get("businessId") === after.businessId && d.get("status") !== "done").map((d) => d.ref.update({ date: newDay })));
+    }
+    await safe("Customer change answer email", () => emailCustomer(after, biz, ac.status === "approved" ? "change_ok" : "change_no"));
+    await db.doc("bookingKeys/" + id).delete().catch(() => {});
+    return;
+  }
+
+  // C) The customer cancelled.
+  if (after.status === "cancelled" && before.status !== "cancelled") {
+    if (!bizOpen(await loadBiz())) return;
+    await Promise.all([
+      safe("Owner cancel email", () => emailOwnersAbout(id, after, biz, "cancel", "")),
+      safe("Owner cancel push", () => pushOwners(biz, after.businessId, "Booking cancelled", [after.name, reqDay((ac.from) || after.requestedDate)].filter(Boolean).join(" \u00b7 "))),
+      safe("Customer cancel email", () => emailCustomer(after, biz, "cancelled")),
+    ]);
+    await db.doc("bookingKeys/" + id).delete().catch(() => {});
+    return;
+  }
+
+  // D) The owner answered the original request.
   const st = after.status;
-  if (st === before.status || !["confirmed", "declined"].includes(st) || after.customerNotifiedAt || after.demo) return;
-  const biz = (await admin.firestore().doc("businesses/" + after.businessId).get()).data();
-  if (!bizOpen(biz)) return;
+  if (st === before.status || !["confirmed", "declined"].includes(st) || after.customerNotifiedAt) return;
+  if (!bizOpen(await loadBiz())) return;
   try {
-    if (await emailCustomer(after, biz, st)) await event.data.after.ref.update({ customerNotifiedAt: Date.now() });
+    if (await emailCustomer(after, biz, st)) await ref.update({ customerNotifiedAt: Date.now() });
   } catch (e) { logger.error("Customer answer email failed", e); }
-  await admin.firestore().doc("bookingKeys/" + event.params.id).delete().catch(() => {});   // links stop working once answered
+  await db.doc("bookingKeys/" + id).delete().catch(() => {});   // links stop working once answered
 });
 
 // 3) Every hour, 7 AM to 8 PM Central: remind owners about requests nobody has answered (every 2 hours, 3 times max).
@@ -402,13 +492,30 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
 <p style="margin:22px 0 0"><a href="${REQUESTS_URL}" style="color:#1F7A69;font-weight:700">Open Dayzift</a></p></div>
 <p style="text-align:center;font-size:12px;color:#8A8278;margin-top:16px">Dayzift · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></body></html>`);
   const src = req.method === "POST" ? (req.body || {}) : (req.query || {});
-  const id = String(src.id || "").slice(0, 128), k = String(src.k || "").slice(0, 80), a = src.a === "decline" ? "decline" : src.a === "confirm" ? "confirm" : "";
+  const id = String(src.id || "").slice(0, 128), k = String(src.k || "").slice(0, 80), a = ["confirm", "decline", "moveok", "moveno"].includes(src.a) ? src.a : "";
   if (!id || !k || !a || !/^[\w-]+$/.test(id)) return page("Link not valid", "This link is incomplete. Open Dayzift to answer the request.");
   const db = admin.firestore();
   const [keySnap, bkSnap] = await Promise.all([db.doc("bookingKeys/" + id).get(), db.doc("bookings/" + id).get()]);
   const bk = bkSnap.data(), stored = keySnap.exists && keySnap.get("key");
   const keyOk = stored && stored.length === k.length && crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(k));
   if (!bk) return page("Request not found", "This booking request no longer exists.");
+  if (a === "moveok" || a === "moveno") {     // answering a date change
+    const ch = bk.change || {};
+    if (bk.status === "cancelled") return page("Booking cancelled", "The customer has cancelled this booking.");
+    if (ch.type !== "reschedule" || ch.status !== "pending") return page("Already answered", "This date change was already answered.");
+    if (!keyOk) return page("Link expired", "This link has expired. Open Dayzift to answer the request.");
+    const what2 = `${esc(bk.service || "Booking")} for ${esc(bk.name || "customer")}: ${esc(reqDay(ch.from))} \u2192 <b>${esc(reqDay(ch.to))}</b>`;
+    if (req.method !== "POST") {
+      return page(a === "moveok" ? "Approve the new date?" : "Keep the original date?", what2 + ".",
+        `<form method="post"><input type="hidden" name="id" value="${esc(id)}"><input type="hidden" name="k" value="${esc(k)}"><input type="hidden" name="a" value="${a}">
+         <button style="font:inherit;font-weight:800;border:0;border-radius:999px;padding:12px 22px;cursor:pointer;background:${a === "moveok" ? "#1F7A69" : "#1D1B18"};color:#fff">${a === "moveok" ? "Yes, move it" : "Yes, keep the original"}</button></form>
+         <p style="margin:14px 0 0;color:#6A655D;font-size:14px">The customer gets an email right away.</p>`);
+    }
+    await bkSnap.ref.update({ "change.status": a === "moveok" ? "approved" : "declined", "change.answeredVia": "email", "change.answeredAt": Date.now() });
+    return page(a === "moveok" ? "Moved \u2713" : "Original date kept", what2 + (a === "moveok"
+      ? ". The customer is being emailed, and the job on your board moves to the new day."
+      : ". The customer is being emailed that the original date stands."));
+  }
   if ((bk.status || "pending") !== "pending") return page("Already answered", `This request was already <b>${esc(bk.status)}</b>.`);
   if (!keyOk) return page("Link expired", "This link has expired. Open Dayzift to answer the request.");
   const what = `${esc(bk.service || "Request")} for ${esc(bk.name || "customer")}${bk.requestedDate ? " on " + esc(reqDay(bk.requestedDate)) : ""}`;
