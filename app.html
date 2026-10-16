@@ -927,7 +927,8 @@ function draw(){
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="insights") v.append(viewInsights());
   else if (S.tab==="settings") v.append(viewSettings());
-  else v.append(viewBooks());
+  else if (S.tab==="books") v.append(viewBooks());
+  else { S.tab="home"; v.append(viewHome()); }   // anything unknown goes Home, never Books
 }
 
 function drawWho(){
@@ -4447,7 +4448,7 @@ function enterBusiness(biz, opts){
   booted=true;
   Store.mode="db"; Store.db=firebase.firestore();
   subscribeAll();
-  if (S.adminView && (S.tab==="platform"||S.tab==="settings")) S.tab="home";
+  S.tab="home"; S.setTab=null; S.pr=null;   // every sign-in / client opened starts on Home
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
 }
