@@ -324,6 +324,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 tr.inc td.num{color:var(--ok)}
 .expform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .morebox{border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px}
+.memo{background:var(--primary-soft);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px}
+.memo[hidden]{display:none}
 .morebox>summary{cursor:pointer;font-weight:700;font-size:14px}
 .expform .full{grid-column:1/-1}
 
@@ -1263,6 +1265,16 @@ function viewHomeOwner(){
       el("button",{type:"button",class:"btn small primary",onclick:()=>goTab("requests")},"Answer")))));
   cols.append(req);
   frag.append(cols);
+  const due=!hasProjects()&&!S.viewOnly?regularsToBook():[];
+  if (due.length){
+    const rp=el("div",{class:"panel",style:"margin-top:16px"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Regulars to book"),el("span",{class:"grow"}),
+      el("span",{class:"kv"},due.length+" due in the next week, nothing booked yet")));
+    rp.append(el("ul",{class:"sched"},...due.slice(0,8).map(p=>el("li",{},
+      el("span",{class:"tm"},p.nextDue<t?"Overdue":niceDate(p.nextDue).replace(/,? \d{4}$/,"")),
+      el("span",{class:"what"},el("b",{},p.name),el("span",{},[repeatText(p.repeat),p.service,money(p.price)].filter(Boolean).join(" \u00b7 "))),
+      el("button",{type:"button",class:"btn small primary",onclick:()=>bookNext(p.name)},"Book")))));
+    frag.append(rp);
+  }
   frag.append(homeWeekAndMoney());
   return frag;
 }
@@ -2084,6 +2096,7 @@ function jobCard(j){
   }
   if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"+ Materials"));
   if (S.isOwner && !(jobMoney(j).materials+jobMoney(j).linked>0 || st==="done")) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"Costs"));
+  if (S.isOwner && !j.projectId && !hasProjects() && !S.viewOnly) acts.append(el("button",{class:"btn small ghost",title:"New job for "+(j.client||"this client")+" with the same details",onclick:()=>bookNext(j.client)},"\u21bb Book next"));
   if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
   card.append(acts);
   return card;
@@ -2118,9 +2131,49 @@ function setStatus(j,status){
   write(()=>Store.update("jobs",j.id,patch), status==="done"?"Nice work. Job marked done.":null);
 }
 
+/* ---- Repeat clients ----
+   Dayzift remembers each client from their past jobs: address, phone, usual service and price, crew, notes,
+   time and how often they come. Nothing extra is stored; the latest job for that name is the profile. */
+const REPEATS=[["","One-time"],["7","Every week"],["14","Every 2 weeks"],["21","Every 3 weeks"],["28","Every 4 weeks"],["month","Every month"]];
+function addRepeat(ymdStr, rep, times){
+  const d=parseYmd(ymdStr); if (times==null) times=1;
+  if (rep==="month") d.setMonth(d.getMonth()+times); else d.setDate(d.getDate()+Number(rep)*times);
+  return ymd(d);
+}
+const repeatText=r=>(REPEATS.find(x=>x[0]===String(r||""))||REPEATS[0])[1];
+function clientProfiles(){
+  const by={};
+  S.jobs.filter(j=>!j.projectId && (j.client||"").trim()).forEach(j=>{ const k=normName(j.client); (by[k] ||= []).push(j); });
+  return Object.values(by).map(list=>{
+    list.sort((a,b)=>(a.date||"").localeCompare(b.date||"")||((a.createdAt||0)-(b.createdAt||0)));
+    const last=list[list.length-1], t=today();
+    const past=list.filter(j=>j.date&&j.date<=t), future=list.filter(j=>j.date&&j.date>t&&j.status!=="done");
+    // how often: what the owner set, else the usual gap between visits
+    let repeat=[...list].reverse().find(j=>j.repeat!=null&&j.repeat!=="")?.repeat||"";
+    if (!repeat && list.length>=2){ const a=parseYmd(list[list.length-2].date||t), b=parseYmd(last.date||t), gap=Math.round((b-a)/864e5);
+      repeat=[7,14,21,28].find(n=>Math.abs(gap-n)<=2)?String([7,14,21,28].find(n=>Math.abs(gap-n)<=2)):(gap>=29&&gap<=32?"month":""); }
+    const from=last.date||t; let next=repeat?addRepeat(from,repeat):"";
+    return {name:last.client.trim(),key:normName(last.client),address:last.address||"",phone:last.phone||"",service:last.service||"",price:last.price,
+      assigneeId:last.assigneeId||"",crewIds:last.crewIds||[],notes:last.notes||"",time:last.time||"",repeat:String(repeat||""),
+      visits:list.length,lastVisit:(past[past.length-1]||{}).date||"",lastJob:last,nextBooked:(future[0]||{}).date||"",nextDue:next};
+  }).sort((a,b)=>(b.lastJob.date||"").localeCompare(a.lastJob.date||""));
+}
+const clientProfile=name=>{ const k=normName(name); return k?clientProfiles().find(p=>p.key===k):null; };
+// Regulars whose next visit is due within a week and nothing is booked yet.
+function regularsToBook(){
+  const soon=addRepeat(today(),"7");
+  return clientProfiles().filter(p=>p.repeat && !p.nextBooked && p.nextDue && p.nextDue<=soon).sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
+}
+// "Book next": a new job for this client with everything filled in and the next date suggested.
+function bookNext(name){
+  const pr=clientProfile(name); if (!pr) return openJob();
+  const t=today(), base=pr.repeat?addRepeat(pr.lastJob.date||t,pr.repeat):addRepeat(pr.lastJob.date||t,"7");
+  openJob(null,{client:pr.name,_profile:true,date:base<t?t:base});
+}
+
 function openJob(j, preset){
   const f=$("#jobForm"); f.replaceChildren();
-  const isNew=!j; j=j||{date:today(),service:preset&&preset.projectId?"":SERVICES[0],status:"new",...(preset||{})};
+  const isNew=!j; j=j||{date:today(),service:preset&&preset.projectId?"":SERVICES[0],status:"new",...(preset||{})}; delete j._profile;
   // Service / phase name: pick a suggestion or type your own (e.g. "Cabinet install").
   const isPhase=()=>!!(f.querySelector("[name=projectId]")?f.querySelector("[name=projectId]").value:j.projectId);
   const used=S.jobs.filter(x=>x.projectId).map(x=>x.service);
@@ -2155,14 +2208,56 @@ function openJob(j, preset){
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":"Add job"):"Save changes"));
   const title=el("h2",{},isNew?(phase?"New phase":"New job"):(phase?"Edit phase":"Edit job"));
-  const parts = phase ? [
+  // Cleaning and other non-project businesses: a new job leads with the client. A known client fills in everything else.
+  const fast = !phase && isNew && !hasProjects();
+  let parts0=null;
+  if (fast){
+    const profs=clientProfiles();
+    const cIn=clientF.querySelector("input"); cIn.setAttribute("list","clientSuggest"); cIn.placeholder="Start typing, e.g. Hall family";
+    clientF.append(el("datalist",{id:"clientSuggest"},profs.map(p=>el("option",{value:p.name},[p.service,p.address].filter(Boolean).join(" \u00b7 ")))));
+    const repSel=el("select",{name:"repeat"},REPEATS.map(([v,l])=>el("option",{value:v,selected:String(j.repeat||"")===v},l)));
+    const cntSel=el("select",{name:"count"},[1,2,4,6,8,12].map(n=>el("option",{value:String(n)},n===1?"Just this visit":"This + next "+(n-1))));
+    const cntF=el("label",{class:"f"},"Put on the board",cntSel);
+    const repF=el("label",{class:"f"},"Repeats",repSel);
+    const memo=el("div",{class:"full memo",hidden:true});
+    const more=el("details",{class:"full morebox"},el("summary",{},"Job details",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, service, price, crew, notes")),
+      el("div",{class:"expform",style:"margin-top:10px"},addrF,svcField,priceF,phoneF,leadF,crewF,notesF));
+    const setV=(n,v)=>{ const x=f.querySelector("[name="+n+"]"); if (x) x.value=v==null?"":v; };
+    const summary=()=>{ const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
+      const names=[...new Set(crew)].map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
+      $("#jobSum").textContent=" \u00b7 "+[d.service,d.price?money(d.price):"",names.join(" + ")||"no crew yet",d.address].filter(Boolean).join(" \u00b7 "); };
+    let filledFor=null;
+    const fill=(pr)=>{
+      if (!pr){ filledFor=null; memo.hidden=true; more.open=true; return; }
+      if (filledFor===pr.key) return;          // already filled for this client: keep the owner's changes
+      filledFor=pr.key;
+      setV("address",pr.address); setV("phone",pr.phone); setV("service",pr.service); setV("price",pr.price); setV("assigneeId",pr.assigneeId); setV("notes",pr.notes);
+      if (pr.time && !f.querySelector("[name=time]").value) setV("time",pr.time);
+      f.querySelectorAll("[name=crew]").forEach(x=>{ x.checked=pr.crewIds.includes(x.value); });
+      repSel.value=pr.repeat||"";
+      const t=today(); if (!preset||!preset.date){ const nd=pr.nextDue&&pr.nextDue>t?pr.nextDue:pr.repeat?t:addRepeat(t,"1"); setV("date",nd); }
+      memo.hidden=false;
+      memo.replaceChildren(el("b",{},"\u21bb Repeat client"),
+        " \u00b7 "+pr.visits+" visit"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+(pr.repeat?" \u00b7 "+repeatText(pr.repeat).toLowerCase():"")+(pr.nextBooked?" \u00b7 booked through "+niceDate(pr.lastJob.date):""),
+        el("div",{class:"kv"},"Their usual details are filled in below. Change anything under Job details."));
+      more.open=false; summary();
+    };
+    cIn.addEventListener("change",()=>fill(clientProfile(cIn.value)));
+    cIn.addEventListener("input",()=>{ const pr=clientProfile(cIn.value); if (pr && profs.some(p=>p.name===cIn.value)) fill(pr); });
+    f.addEventListener("change",ev=>{ if (ev.target!==cIn) summary(); });
+    parts0=[title, clientF, memo, dateF, timeF, repF, cntF, more, acts];
+    setTimeout(()=>{ if (j.client) fill(clientProfile(j.client)); else { more.open=false; summary(); } cIn.focus(); },0);
+  }
+  const parts = parts0 ? parts0 : phase ? [
       title,
       el("p",{class:"kv full",style:"margin:-6px 0 2px"},"Part of ",el("b",{},proj.name),[j.client,j.address].filter(Boolean).length?" \u00b7 "+[j.client,j.address].filter(Boolean).join(" \u00b7 "):""),
       svcField, dateF, timeF, leadF, priceF, crewF,
       el("details",{class:"full morebox"},el("summary",{},"More details",el("span",{class:"kv"}," \u00b7 notes, client, address, phone, project")),
         el("div",{class:"expform",style:"margin-top:10px"},notesF,clientF,addrF,phoneF,el("span",{}),projF)),
       acts]
-    : [title, clientF, addrF, svcField, priceF, dateF, timeF, phoneF, leadF, projF, crewF, notesF, acts];
+    : [title, clientF, addrF, svcField, priceF, dateF, timeF, phoneF, leadF, projF,
+       !hasProjects()?el("label",{class:"f"},"Repeats",el("select",{name:"repeat"},REPEATS.map(([v,l])=>el("option",{value:v,selected:String(j.repeat||"")===v},l)))):null,
+       crewF, notesF, acts];
   f.append(...parts.filter(Boolean));
   f.onsubmit=e=>{
     e.preventDefault();
@@ -2180,7 +2275,14 @@ function openJob(j, preset){
     else if (data.assigneeId && status==="new") status="assigned";
     data.status=status;
     $("#jobDlg").close();
-    if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),pj?"Phase added":"Job added"); }
+    if (d.repeat!==undefined) data.repeat=d.repeat||"";
+    const count=Math.max(1,Math.min(12,Number(d.count)||1));
+    if (isNew && count>1 && data.repeat && data.date){
+      data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId;
+      write(async()=>{ for (let i=0;i<count;i++) await Store.set("jobs",newId(),{...data,date:addRepeat(data.date,data.repeat,i),createdAt:Date.now()+i}); },
+        count+" visits added for "+data.client+", "+repeatText(data.repeat).toLowerCase());
+    }
+    else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),pj?"Phase added":"Job added"); }
     else write(()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
   };
   $("#jobDlg").showModal();
