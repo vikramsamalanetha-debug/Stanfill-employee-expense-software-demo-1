@@ -2088,19 +2088,27 @@ function setStatus(j,status){
 
 function openJob(j, preset){
   const f=$("#jobForm"); f.replaceChildren();
-  const isNew=!j; j=j||{date:today(),service:SERVICES[0],status:"new",...(preset||{})};
+  const isNew=!j; j=j||{date:today(),service:preset&&preset.projectId?"":SERVICES[0],status:"new",...(preset||{})};
+  // Service / phase name: pick a suggestion or type your own (e.g. "Cabinet install").
+  const isPhase=()=>!!(f.querySelector("[name=projectId]")?f.querySelector("[name=projectId]").value:j.projectId);
+  const used=S.jobs.filter(x=>x.projectId).map(x=>x.service);
+  const sugg=[...new Set([...SERVICES,...used].filter(Boolean).map(x=>String(x).trim()))].sort((a,b)=>a.localeCompare(b));
+  const svcLabel=el("span",{},j.projectId?"Phase name":"Service");
+  const svcIn=el("input",{name:"service",required:true,maxlength:"80",value:j.service||"",list:"svcSuggest",autocomplete:"off",
+    placeholder:j.projectId?"Type a phase, e.g. Cabinet install":"Pick or type a service"});
   const activeCrew=S.employees.filter(e=>e.active!==false||jobCrew(j).includes(e.id));
   const projOpts=S.projects.filter(p=>p.status!=="done"||p.id===j.projectId);
-  f.append(el("h2",{},isNew?"New job":"Edit job"),
+  f.append(el("h2",{},isNew?(j.projectId?"New phase":"New job"):(j.projectId?"Edit phase":"Edit job")),
     el("label",{class:"f full"},"Client name",el("input",{name:"client",required:true,value:j.client||"",autocomplete:"off"})),
     el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"})),
-    el("label",{class:"f"},"Service",el("select",{name:"service",value:j.service},(SERVICES.includes(j.service)||!j.service?SERVICES:[...SERVICES,j.service]).map(s=>el("option",{},s)))),
+    el("label",{class:j.projectId?"f full":"f",id:"svcField"},svcLabel,svcIn,el("datalist",{id:"svcSuggest"},sugg.map(x=>el("option",{value:x})))),
     el("label",{class:"f"},"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??""})),
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
     el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
     el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
     el("label",{class:"f"},"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
-    hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||""},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
+    hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||"",onchange:()=>{ const ph=isPhase(); svcLabel.textContent=ph?"Phase name":"Service"; $("#svcField").className=ph?"f full":"f";
+      svcIn.placeholder=ph?"Type a phase, e.g. Cabinet install":"Pick or type a service"; }},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
     activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
       el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Also on this job"),
       el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null,
@@ -2109,11 +2117,13 @@ function openJob(j, preset){
       !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),"Job deleted"); } }},"Delete") : null,
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
-      el("button",{type:"submit",class:"btn primary"},isNew?"Add job":"Save changes")));
+      el("button",{type:"submit",class:"btn primary"},isNew?(j.projectId?"Add phase":"Add job"):"Save changes")));
   f.onsubmit=e=>{
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
-    const data={client:d.client.trim(),address:d.address.trim(),service:d.service,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
+    const svc=String(d.service||"").trim().replace(/\s+/g," ");
+    if (!svc) return toast(isPhase()?"Type a name for this phase.":"Type or pick a service.");
+    const data={client:d.client.trim(),address:d.address.trim(),service:svc,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
     data.crewIds=[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value).filter(id=>id!==data.assigneeId);
     if (hasProjects()) data.projectId=d.projectId||null;
     let status=j.status||"new";
