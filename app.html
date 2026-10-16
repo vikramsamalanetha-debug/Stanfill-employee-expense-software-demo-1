@@ -3104,11 +3104,13 @@ function showInvoiceSent(d,to,ref,due){
   const icon=el("div",{style:"width:64px;height:64px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:34px;font-weight:800;margin:6px auto 12px"},"\u2709");
   const head=el("h2",{style:"margin:0;text-align:center"},kind+" sent");
   const status=el("p",{style:"margin:8px 0 0;text-align:center;font-weight:700"},S.demo?"Demo: nothing was really emailed.":"Sending now\u2026");
+  const line=el("p",{style:"margin:10px 0 0;text-align:center;font-size:17px"},(paid?"Paid receipt ":"")+d.number+" for ",el("b",{},money(amt))," was emailed to");
+  const hint=el("p",{class:"kv",style:"margin:12px 0 0;text-align:center"},"It usually arrives within a minute. Ask them to check their spam folder if they can't find it. No need to send it again.");
   body.append(icon,head,
-    el("p",{style:"margin:10px 0 0;text-align:center;font-size:17px"},(paid?"Paid receipt ":"")+d.number+" for ",el("b",{},money(amt))," was emailed to"),
+    line,
     el("p",{style:"margin:4px 0 0;text-align:center;font-size:17px"},el("b",{},to)),
     status,
-    el("p",{class:"kv",style:"margin:12px 0 0;text-align:center"},"It usually arrives within a minute. Ask them to check their spam folder if they can't find it. No need to send it again."),
+    hint,
     el("div",{class:"acts",style:"justify-content:center;margin-top:18px"},el("button",{class:"btn primary",style:"min-width:140px;justify-content:center",onclick:()=>$("#invDlg").close()},"Done")));
   if (!$("#invDlg").open) $("#invDlg").showModal();
   if (!ref) return;
@@ -3118,7 +3120,9 @@ function showInvoiceSent(d,to,ref,due){
     if (m.status==="sent"){ status.textContent="\u2713 Delivered to "+to+"'s mail server."; status.style.color="var(--ok)"; stop(); }
     else if (m.status==="error"){ icon.textContent="!"; icon.style.background="var(--danger-soft)"; icon.style.color="var(--danger)";
       head.textContent="Email not sent"; status.style.color="var(--danger)";
-      status.textContent="It couldn't be sent"+(m.error?" ("+m.error+")":"")+". Check the address, or text or copy the link instead.";
+      line.replaceChildren(d.number+" for ",el("b",{},money(amt))," could not be emailed to");
+      hint.textContent="Nothing reached the client. Try again in a minute, or use Text the link or Copy message instead.";
+      status.textContent="Reason: "+(m.error||"the mail server refused it")+".";
       stop(); }
   }, ()=>{});
   setTimeout(()=>stop(),120000);
@@ -3136,7 +3140,7 @@ function openSend(d){
     el("div",{class:"linkbox"},el("input",{readonly:true,value:S.demo?"Links are live in your own account, not the demo":url,"aria-label":"Invoice link",onfocus:ev=>ev.target.select()})));
   const emailIn=el("input",{type:"email",value:d.client.email||"",placeholder:"client@email.com","aria-label":"Client email"});
   body.append(el("div",{class:"sendgrid"},
-    el("div",{class:"sendopt"},el("b",{},"Email it from Dayzift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via Dayzift. Replies come to "+(st.email||"you")+"."),
+    el("div",{class:"sendopt"},el("b",{},"Email it from Dayzift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via Dayzift, with your phone and email in it so the client can reach you."),
       el("div",{class:"row",style:"margin-top:6px"},emailIn,el("button",{class:"btn primary",onclick:async ev=>{
         const btn=ev.currentTarget;
         const to=emailIn.value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return note.textContent="Enter the client's email address.";

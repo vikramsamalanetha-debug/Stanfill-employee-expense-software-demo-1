@@ -122,7 +122,8 @@ function transport() {
 
 function invoiceEmail(p, key, reminder) {
   const b = p.biz || {}, url = INVOICE_BASE + key, due = Number(p.dueNowBal) || 0;
-  const first = String((p.client && p.client.name) || "").split(" ")[0] || "there";
+  const first = firstName(p.client && p.client.name);
+  const ask = [b.phone ? "call " + nicePhone(b.phone) : "", okEmail(b.email) ? "email " + b.email : ""].filter(Boolean).join(" or ");
   const dueText = p.terms === "Due on receipt" ? "due on receipt" : "due " + niceDate(p.dueDate);
   const subject = reminder
     ? `Reminder: invoice ${p.number} from ${b.name} is past due`
@@ -144,11 +145,11 @@ function invoiceEmail(p, key, reminder) {
       </table>
       ${pay}<a href="${esc(url)}" style="display:inline-block;background:#F2C230;color:#2A2305;padding:11px 20px;border-radius:999px;font-weight:800;text-decoration:none;margin:0 0 8px">View invoice</a>
       ${p.payNote ? `<p style="margin:16px 0 0;color:#1D1B18"><b>How to pay:</b> ${esc(p.payNote)}</p>` : ""}
-      <p style="margin:18px 0 0;color:#6A655D;font-size:14px">Questions? Reply to this email${b.phone ? " or call " + esc(b.phone) : ""}.</p>
+      ${ask ? `<p style="margin:18px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(ask)}.</p>` : ""}
     </div>
     <p style="margin:16px 0 0;font-size:12px;color:#8A8278;text-align:center">Sent with Dayzift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></div>`;
   const text = `Hi ${first},\n\n${intro}\n\nView invoice: ${url}\n` + (p.payLink ? `Pay online: ${p.payLink}\n` : "") + (p.payNote ? `How to pay: ${p.payNote}\n` : "")
-    + `\nQuestions? Reply to this email${b.phone ? " or call " + b.phone : ""}.\n\n${b.name}\nSent with Dayzift · A product of LIT America`;
+    + (ask ? `\nQuestions? Please ${ask}.\n` : "") + `\n${b.name}\nSent with Dayzift · A product of LIT America`;
   return { subject, html, text };
 }
 
@@ -156,7 +157,8 @@ async function mailInvoice(p, key, to, reminder) {
   const b = p.biz || {};
   const name = String(b.name || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
   const msg = invoiceEmail(p, key, reminder);
-  await transport().sendMail({ from: `"${name} via Dayzift" <${SMTP_USER.value()}>`, to, replyTo: okEmail(b.email) ? b.email : undefined, ...msg });
+  // No Reply-To: Yahoo refuses mail that asks for replies to go to another address. The business's contact is in the email instead.
+  await transport().sendMail({ from: `"${name} via Dayzift" <${SMTP_USER.value()}>`, to, ...msg });
 }
 
 // Same rule as the app: only businesses waiting for approval or suspended are blocked.
