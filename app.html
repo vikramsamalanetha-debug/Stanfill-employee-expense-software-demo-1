@@ -323,6 +323,8 @@ td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 tr.inc td.num{color:var(--ok)}
 .expform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.morebox{border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px}
+.morebox>summary{cursor:pointer;font-weight:700;font-size:14px}
 .expform .full{grid-column:1/-1}
 
 /* job costs */
@@ -844,6 +846,9 @@ function el(tag, props, ...kids){
   if (val!==undefined) n.value = val;
   return n;
 }
+// Leaving out a part of a page (cond ? el(...) : null) must never print the word "null".
+[Element.prototype,DocumentFragment.prototype].forEach(P=>["append","prepend","replaceChildren"].forEach(m=>{ const o=P[m];
+  P[m]=function(...k){ return o.apply(this,k.flat().filter(x=>x!=null&&x!==false)); }; }));
 const money = n => { const v=Number(n)||0; return (v<0?"\u2212$":"$") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
@@ -2125,31 +2130,48 @@ function openJob(j, preset){
     placeholder:j.projectId?"Type a phase, e.g. Cabinet install":"Pick or type a service"});
   const activeCrew=S.employees.filter(e=>e.active!==false||jobCrew(j).includes(e.id));
   const projOpts=S.projects.filter(p=>p.status!=="done"||p.id===j.projectId);
-  f.append(el("h2",{},isNew?(j.projectId?"New phase":"New job"):(j.projectId?"Edit phase":"Edit job")),
-    el("label",{class:"f full"},"Client name",el("input",{name:"client",required:true,value:j.client||"",autocomplete:"off"})),
-    el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"})),
-    el("label",{class:j.projectId?"f full":"f",id:"svcField"},svcLabel,svcIn,el("datalist",{id:"svcSuggest"},sugg.map(x=>el("option",{value:x})))),
-    el("label",{class:"f"},"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??""})),
-    el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""})),
-    el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""})),
-    el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""})),
-    el("label",{class:"f"},"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name)))),
-    hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||"",onchange:()=>{ const ph=isPhase(); svcLabel.textContent=ph?"Phase name":"Service"; $("#svcField").className=ph?"f full":"f";
-      svcIn.placeholder=ph?"Type a phase, e.g. Cabinet install":"Pick or type a service"; }},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null,
-    activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
-      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Also on this job"),
-      el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null,
-    el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:hasProjects()?"Materials on site, lockbox code, inspection time…":"Gate code, pets, rooms to skip…"},j.notes||"")),
-    el("div",{class:"acts"},
-      !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),"Job deleted"); } }},"Delete") : null,
+  // A phase belongs to a project, so client, address and phone come from the project. The form only asks for
+  // what's new: name, when, who and price. Everything else sits under "More details".
+  const proj=j.projectId&&S.projects.find(p=>p.id===j.projectId);
+  if (proj){ if (!j.client) j.client=proj.client||proj.name||""; if (!j.address) j.address=proj.address||""; if (!j.phone) j.phone=proj.phone||""; }
+  const phase=!!proj;
+  const svcField=el("label",{class:phase?"f full":"f",id:"svcField"},svcLabel,svcIn,el("datalist",{id:"svcSuggest"},sugg.map(x=>el("option",{value:x}))));
+  const clientF=el("label",{class:"f full"},"Client name",el("input",{name:"client",required:!phase,value:j.client||"",autocomplete:"off"}));
+  const addrF=el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"}));
+  const priceF=el("label",{class:"f"},phase?"Phase price":"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??"",placeholder:phase?"0.00":""}));
+  const dateF=el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""}));
+  const timeF=el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""}));
+  const phoneF=el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""}));
+  const leadF=el("label",{class:"f"},phase?"Crew lead":"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name))));
+  const projF=hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||"",onchange:()=>{ const ph=isPhase(); svcLabel.textContent=ph?"Phase name":"Service"; $("#svcField").className=ph?"f full":"f";
+      svcIn.placeholder=ph?"Type a phase, e.g. Cabinet install":"Pick or type a service"; }},el("option",{value:""},"Not part of a project"),projOpts.map(p=>el("option",{value:p.id},p.name)))) : null;
+  const crewF=activeCrew.length>1 ? el("fieldset",{class:"full",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;margin:0"},
+      el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},phase?"Also on this phase":"Also on this job"),
+      el("div",{class:"checks"},activeCrew.map(e=>el("label",{},el("input",{type:"checkbox",name:"crew",value:e.id,checked:(j.crewIds||[]).includes(e.id)}),e.name)))) : null;
+  const notesF=el("label",{class:"f full"},"Notes for the crew",el("textarea",{name:"notes",placeholder:hasProjects()?"Materials on site, lockbox code, inspection time…":"Gate code, pets, rooms to skip…"},j.notes||""));
+  const acts=el("div",{class:"acts"},
+      !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm(phase?"Delete this phase?":"Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),phase?"Phase deleted":"Job deleted"); } }},"Delete") : null,
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
-      el("button",{type:"submit",class:"btn primary"},isNew?(j.projectId?"Add phase":"Add job"):"Save changes")));
+      el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":"Add job"):"Save changes"));
+  const title=el("h2",{},isNew?(phase?"New phase":"New job"):(phase?"Edit phase":"Edit job"));
+  const parts = phase ? [
+      title,
+      el("p",{class:"kv full",style:"margin:-6px 0 2px"},"Part of ",el("b",{},proj.name),[j.client,j.address].filter(Boolean).length?" \u00b7 "+[j.client,j.address].filter(Boolean).join(" \u00b7 "):""),
+      svcField, dateF, timeF, leadF, priceF, crewF,
+      el("details",{class:"full morebox"},el("summary",{},"More details",el("span",{class:"kv"}," \u00b7 notes, client, address, phone, project")),
+        el("div",{class:"expform",style:"margin-top:10px"},notesF,clientF,addrF,phoneF,el("span",{}),projF)),
+      acts]
+    : [title, clientF, addrF, svcField, priceF, dateF, timeF, phoneF, leadF, projF, crewF, notesF, acts];
+  f.append(...parts.filter(Boolean));
   f.onsubmit=e=>{
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
     const svc=String(d.service||"").trim().replace(/\s+/g," ");
     if (!svc) return toast(isPhase()?"Type a name for this phase.":"Type or pick a service.");
+    const pj=d.projectId&&S.projects.find(p=>p.id===d.projectId);   // a phase falls back to its project's client details
+    if (pj){ if (!d.client.trim()) d.client=pj.client||pj.name||""; if (!d.address.trim()) d.address=pj.address||""; if (!d.phone.trim()) d.phone=pj.phone||""; }
+    if (!d.client.trim()) return toast("Enter the client's name.");
     const data={client:d.client.trim(),address:d.address.trim(),service:svc,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
     data.crewIds=[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value).filter(id=>id!==data.assigneeId);
     if (hasProjects()) data.projectId=d.projectId||null;
@@ -2158,8 +2180,8 @@ function openJob(j, preset){
     else if (data.assigneeId && status==="new") status="assigned";
     data.status=status;
     $("#jobDlg").close();
-    if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),"Job added"); }
-    else write(()=>Store.update("jobs",j.id,data),"Job saved");
+    if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),pj?"Phase added":"Job added"); }
+    else write(()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
   };
   $("#jobDlg").showModal();
 }
