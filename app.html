@@ -120,6 +120,24 @@ a{color:var(--primary)}
 .feed li:first-child{border-top:0}
 .feed .t{color:var(--muted);font-size:12px;white-space:nowrap;margin-left:auto}
 .toggles{display:flex;flex-wrap:wrap;gap:8px}
+.bcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.bcal .dow{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:2px 0}
+.bday{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:66px;padding:6px 7px;text-align:left;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-width:0}
+.bday .n{font-weight:800;font-size:14px}
+.bday .c{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bday .w{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bday:hover:not(:disabled){border-color:var(--primary)}
+.bday.today{box-shadow:inset 0 0 0 2px var(--primary)}
+.bday.past{opacity:.35;cursor:default}
+.bday.full{background:var(--danger-soft);border-color:var(--danger-soft)} .bday.full .w{color:var(--danger)}
+.bday.off{background:var(--surface-2);border-style:dashed} .bday.off .w{color:var(--ink)}
+.bday.hol{background:#FFF1D6;border-color:#FFE2A8} .bday.hol .w{color:#8A5A0B}
+.bday.wk{background:var(--surface-2);color:var(--muted)} .bday.wk .w{color:var(--muted)}
+.bday.out{background:repeating-linear-gradient(45deg,var(--surface),var(--surface) 6px,var(--surface-2) 6px,var(--surface-2) 12px);color:var(--muted)}
+.bleg{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:13px;color:var(--muted)}
+.bleg span{display:inline-flex;align-items:center;gap:6px}
+.bleg i.bday{display:inline-block;min-height:0;width:16px;height:16px;padding:0;border-radius:4px;cursor:default}
+@media (max-width:600px){.bday{min-height:50px;padding:4px}.bday .c{display:none}.bday.hol .w{font-size:9px}.bcal{gap:4px}}
 /* Platform console */
 .client{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:start}
 .client .stats{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
@@ -1187,46 +1205,102 @@ function usHolidays(y){
 }
 const HOLIDAY_IDS=usHolidays(2026).map(h=>h.id);
 const DOW_NAMES=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
-// Default: open every day, closed on the major holidays.
-function bookingCal(){ const c=(S.business&&S.business.calendar)||{};
-  return { closedWeekdays:Array.isArray(c.closedWeekdays)?c.closedWeekdays:[], holidays:Array.isArray(c.holidays)?c.holidays:HOLIDAY_IDS.slice(), closedDates:Array.isArray(c.closedDates)?c.closedDates:[] }; }
+// Default: open every day (from tomorrow, up to 12 weeks out), closed on the major holidays, no daily limit.
+function bookingCal(){ const c=(S.business&&S.business.calendar)||{}, arr=(v,d)=>Array.isArray(v)?v:d;
+  return { closedWeekdays:arr(c.closedWeekdays,[]), holidays:arr(c.holidays,HOLIDAY_IDS.slice()), closedDates:arr(c.closedDates,[]), closedRanges:arr(c.closedRanges,[]),
+    maxPerDay:Number(c.maxPerDay)||0, minNoticeDays:c.minNoticeDays==null?1:Number(c.minNoticeDays), maxWeeksAhead:Number(c.maxWeeksAhead)||12 }; }
+// How many jobs are on a day: jobs on the board, plus confirmed bookings not turned into a job yet.
+function jobsOnDay(key){
+  const fromBk=new Set(S.jobs.map(j=>j.fromBookingId).filter(Boolean));
+  return S.jobs.filter(j=>j.date===key).length + S.bookings.filter(b=>b.status==="confirmed"&&!fromBk.has(b.id)&&(b.requestedDate||"").slice(0,10)===key).length;
+}
 function closedReason(d,cal){
   if (cal.closedWeekdays.includes(d.getDay())) return "Closed "+DOW_NAMES[d.getDay()];
   const key=ymd(d), h=usHolidays(d.getFullYear()).find(x=>cal.holidays.includes(x.id)&&ymd(x.date)===key);
   if (h) return h.name;
+  const r=cal.closedRanges.find(x=>x.from<=key&&key<=x.to);
+  if (r) return r.label||"Days off";
   if (cal.closedDates.includes(key)) return "Day off";
+  if (cal.maxPerDay && jobsOnDay(key)>=cal.maxPerDay) return "Fully booked";
   return "";
 }
+// Saving updates the business; the server publishes it for the website and works out which days are full.
 function saveBookingCal(cal, msg){
   write(async()=>{
-    const db=firebase.firestore();
-    await db.doc("businesses/"+S.businessId).update({calendar:cal});
+    await firebase.firestore().doc("businesses/"+S.businessId).update({calendar:cal});
     S.business.calendar=cal; render();
-    // the public copy the business's website reads (no other business details in it)
-    await db.doc("publicCalendars/"+S.businessId).set({...cal,updatedAt:Date.now()});
   }, msg||"Booking calendar saved");
 }
 function settingsCalendar(){
-  const cal=bookingCal(), frag=document.createDocumentFragment(), t=today();
+  const cal=bookingCal(), frag=document.createDocumentFragment(), t=today(), now=new Date(); now.setHours(0,0,0,0);
   const tog=(on,label,fn)=>el("button",{type:"button",class:"chip","aria-pressed":String(on),onclick:fn},label);
-  frag.append(setPanel("Days you're open","Highlighted days are open for bookings on your website. Tap a day to close it. You still confirm every request.",
+  const sel=(val,opts,fn,label)=>el("select",{"aria-label":label,onchange:ev=>fn(Number(ev.target.value))},...opts.map(([v,l])=>el("option",{value:String(v),selected:Number(val)===v},l)));
+  // 1) Month view: tap a day to close or reopen it
+  if (!S.calMonth) S.calMonth=t.slice(0,7);
+  const [cy,cm]=S.calMonth.split("-").map(Number), first=new Date(cy,cm-1,1), dim=new Date(cy,cm,0).getDate();
+  const earliest=new Date(now); earliest.setDate(earliest.getDate()+cal.minNoticeDays);
+  const latest=new Date(now); latest.setDate(latest.getDate()+cal.maxWeeksAhead*7);
+  const shift=n=>{ const d=new Date(cy,cm-1+n,1); S.calMonth=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); render(); };
+  const grid=el("div",{class:"bcal"},...["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(x=>el("div",{class:"dow"},x)));
+  for (let i=0;i<first.getDay();i++) grid.append(el("div",{}));
+  for (let dd=1;dd<=dim;dd++){
+    const d=new Date(cy,cm-1,dd), key=ymd(d), why=closedReason(d,cal), n=jobsOnDay(key), past=d<now;
+    const own=cal.closedDates.includes(key), out=!past&&(d<earliest||d>latest);
+    const kind=past?"past":why==="Fully booked"?"full":why&&!own?(why.startsWith("Closed ")?"wk":"hol"):own?"off":out?"out":"open";
+    const cell=el("button",{type:"button",class:"bday "+kind+(key===t?" today":""),title:why||(out?"Outside your booking window":"Open"),disabled:past,
+      onclick:()=>{
+        if (own) return saveBookingCal({...cal,closedDates:cal.closedDates.filter(x=>x!==key)},niceDate(key)+" is open again");
+        if (kind==="wk") return toast("Closed every "+DOW_NAMES[d.getDay()].slice(0,-1)+". Change it under Days you're open.");
+        if (kind==="hol") return toast(why+" is closed. Change it under Holidays or Vacations below.");
+        saveBookingCal({...cal,closedDates:[...cal.closedDates.filter(x=>x>=t),key].sort()},niceDate(key)+" closed");
+      }},
+      el("span",{class:"n"},String(dd)),
+      el("span",{class:"c"},n?(n+(cal.maxPerDay?"/"+cal.maxPerDay:"")+" job"+(n===1&&!cal.maxPerDay?"":"s")):""),
+      el("span",{class:"w"},kind==="full"?"Full":kind==="off"||kind==="wk"?"Off":kind==="hol"?why:""));
+    grid.append(cell);
+  }
+  frag.append(el("div",{class:"panel",style:"max-width:860px"},
+    el("h2",{},"Booking calendar"),
+    el("div",{class:"sub"},"This is what customers can pick on your website. Tap an open day to close it, or a closed day to open it again."),
+    el("div",{class:"row",style:"justify-content:center;gap:6px;margin-top:10px"},
+      el("button",{type:"button",class:"btn small ghost","aria-label":"Previous month",onclick:()=>shift(-1)},"\u2190"),
+      el("b",{style:"min-width:150px;text-align:center"},first.toLocaleDateString("en-US",{month:"long",year:"numeric"})),
+      el("button",{type:"button",class:"btn small ghost","aria-label":"Next month",onclick:()=>shift(1)},"\u2192")),
+    grid,
+    el("div",{class:"bleg"},...[["open","Open"],["full","Fully booked"],["off","Day off (dashed)"],["hol","Holiday or vacation"],["wk","Closed that weekday"],["out","Too soon or too far ahead"]].map(([k,l])=>el("span",{},el("i",{class:"bday "+k}),l)))));
+  // 2) Rules
+  frag.append(setPanel("Booking rules","How customers can book on your website.",
+    setRow("Jobs per day","When a day reaches this many jobs it shows as Fully booked. Counts jobs on your board and confirmed requests.",
+      sel(cal.maxPerDay,[[0,"No limit"],...[1,2,3,4,5,6,8,10,12,15].map(n=>[n,n+" a day"])],v=>saveBookingCal({...cal,maxPerDay:v}),"Jobs per day")),
+    setRow("Notice needed","How soon a customer can book.",
+      sel(cal.minNoticeDays,[[1,"From tomorrow"],[2,"2 days ahead"],[3,"3 days ahead"],[7,"1 week ahead"]],v=>saveBookingCal({...cal,minNoticeDays:v}),"Notice needed")),
+    setRow("How far ahead","The latest day customers can pick.",
+      sel(cal.maxWeeksAhead,[[2,"2 weeks"],[4,"4 weeks"],[8,"8 weeks"],[12,"12 weeks"],[26,"6 months"],[52,"1 year"]],v=>saveBookingCal({...cal,maxWeeksAhead:v}),"How far ahead"))));
+  // 3) Weekdays
+  frag.append(setPanel("Days you're open","Highlighted days are open for bookings. Tap a day to close it every week.",
     el("div",{class:"toggles"},...[1,2,3,4,5,6,0].map(dw=>tog(!cal.closedWeekdays.includes(dw),DOW_NAMES[dw],()=>{
       const set=new Set(cal.closedWeekdays); set.has(dw)?set.delete(dw):set.add(dw);
       saveBookingCal({...cal,closedWeekdays:[...set].sort()}); })))));
-  const y=new Date().getFullYear(), next=h=>{ const now=new Date(); now.setHours(0,0,0,0); return h.date>=now?h.date:usHolidays(y+1).find(x=>x.id===h.id).date; };
+  // 4) Holidays
+  const y=now.getFullYear(), next=h=>h.date>=now?h.date:usHolidays(y+1).find(x=>x.id===h.id).date;
   frag.append(setPanel("Holidays you're closed","Highlighted holidays are closed, so customers can't pick them. Tap one to take bookings that day.",
     el("div",{class:"toggles"},...usHolidays(y).map(h=>tog(cal.holidays.includes(h.id),h.name+" \u00b7 "+next(h).toLocaleDateString("en-US",{month:"short",day:"numeric"})+(cal.holidays.includes(h.id)?" \u00b7 closed":" \u00b7 open"),()=>{
       const set=new Set(cal.holidays); set.has(h.id)?set.delete(h.id):set.add(h.id);
       saveBookingCal({...cal,holidays:[...set]}); })))));
-  const upcoming=cal.closedDates.filter(d=>d>=t).sort();
-  const inp=el("input",{type:"date",min:t,"aria-label":"Day off"});
-  const p=setPanel("Other days off","Vacations, training days, fully booked days: customers can't pick these.",
-    el("div",{class:"row"},inp,el("button",{type:"button",class:"btn small primary",onclick:()=>{
-      if(!inp.value) return toast("Pick a date first.");
-      if(cal.closedDates.includes(inp.value)) return toast("That day is already off.");
-      saveBookingCal({...cal,closedDates:[...cal.closedDates.filter(d=>d>=t),inp.value].sort()},"Day off added"); }},"Add day off")));
-  if (!upcoming.length) p.append(el("div",{class:"empty"},"No days off coming up."));
-  upcoming.forEach(d=>p.append(setRow(niceDate(d),"",el("button",{class:"btn small ghost",onclick:()=>
+  // 5) Vacations and days off
+  const from=el("input",{type:"date",min:t,"aria-label":"First day off"}), to=el("input",{type:"date",min:t,"aria-label":"Last day off"});
+  const lab=el("input",{type:"text",maxlength:"30",placeholder:"Vacation","aria-label":"Label",style:"max-width:160px"});
+  const p=setPanel("Vacations and days off","Close a stretch of days in one go. Single days can also be closed by tapping them on the calendar above.",
+    el("div",{class:"row",style:"flex-wrap:wrap;gap:8px"},el("label",{class:"f"},"From",from),el("label",{class:"f"},"To",to),el("label",{class:"f"},"Label",lab),
+      el("button",{type:"button",class:"btn small primary",style:"align-self:end",onclick:()=>{
+        if(!from.value) return toast("Pick the first day off.");
+        const f=from.value, e=to.value||from.value; if(e<f) return toast("The last day is before the first day.");
+        saveBookingCal({...cal,closedRanges:[...cal.closedRanges.filter(r=>r.to>=t),{from:f,to:e,label:lab.value.trim()||"Vacation"}].sort((a,b)=>a.from.localeCompare(b.from))},"Days off added"); }},"Add days off")));
+  const ranges=cal.closedRanges.filter(r=>r.to>=t), singles=cal.closedDates.filter(d=>d>=t).sort();
+  if (!ranges.length && !singles.length) p.append(el("div",{class:"empty"},"No days off coming up."));
+  ranges.forEach(r=>p.append(setRow((r.label||"Days off")+": "+niceDate(r.from)+(r.to!==r.from?" to "+niceDate(r.to):""),"",el("button",{class:"btn small ghost",onclick:()=>
+    saveBookingCal({...cal,closedRanges:cal.closedRanges.filter(x=>x!==r&&x.to>=t)},"Days off removed")},"Remove"))));
+  singles.forEach(d=>p.append(setRow(niceDate(d),"Single day",el("button",{class:"btn small ghost",onclick:()=>
     saveBookingCal({...cal,closedDates:cal.closedDates.filter(x=>x!==d&&x>=t)},"Day off removed")},"Remove"))));
   frag.append(p);
   return frag;

@@ -83,11 +83,10 @@ service cloud.firestore {
     }
 
     // ---------- booking calendar (public) ----------
-    // The days a business takes bookings, read by its public website. Holds only the calendar.
+    // The days a business takes bookings (and which are full), read by its public website. Holds only the calendar.
     match /publicCalendars/{b} {
       allow read: if true;
-      allow write: if isOwner(b)
-        && request.resource.data.keys().hasOnly(['closedWeekdays', 'holidays', 'closedDates', 'updatedAt']);
+      allow write: if false;   // kept in step by Cloud Functions from the owner's settings and the job board
     }
 
     // ---------- team members ----------

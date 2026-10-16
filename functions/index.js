@@ -532,3 +532,79 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
     ? ". The customer is being emailed now. Add the job to your board in Dayzift whenever you're ready."
     : ". The customer is being emailed now."));
 });
+
+// ---------- Booking calendar (public copy for the business's website) ----------
+// The owner sets the calendar in Dayzift (Settings → Booking calendar). These keep publicCalendars/{bizId}
+// in step with it, and add "fullDates": days that already have as many jobs as the owner's daily limit.
+// Only these functions write publicCalendars; the website only reads it.
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const CAL_KEYS = ["closedWeekdays", "holidays", "closedDates", "closedRanges", "maxPerDay", "minNoticeDays", "maxWeeksAhead"];
+const ctDay = (v) => { const t = typeof v === "number" ? v : Date.parse(v || ""); return isNaN(t) ? "" : new Date(t).toLocaleDateString("en-CA", { timeZone: "America/Chicago" }); };
+const bookingDay = (iso) => ctDay(iso);
+
+// How many jobs are on a day: jobs on the board for that date, plus confirmed bookings not turned into a job yet.
+async function jobsOnDay(db, bizId, day) {
+  const [jobs, bks] = await Promise.all([
+    db.collection("jobs").where("businessId", "==", bizId).where("date", "==", day).get(),
+    db.collection("bookings").where("businessId", "==", bizId).where("status", "==", "confirmed").get(),
+  ]);
+  const fromBooking = new Set(jobs.docs.map((d) => d.get("fromBookingId")).filter(Boolean));
+  const extra = bks.docs.filter((d) => bookingDay(d.get("requestedDate")) === day && !fromBooking.has(d.id)).length;
+  return jobs.size + extra;
+}
+async function publishCalendar(db, bizId, biz, fullDates) {
+  const c = (biz && biz.calendar) || {};
+  const pub = { updatedAt: Date.now() };
+  CAL_KEYS.forEach((k) => { if (c[k] !== undefined) pub[k] = c[k]; });
+  if (fullDates) pub.fullDates = fullDates;
+  await db.doc("publicCalendars/" + bizId).set(pub, { merge: !fullDates });
+}
+// Re-check which days are full (today through the booking horizon).
+async function recomputeFull(db, bizId, biz) {
+  const c = (biz && biz.calendar) || {}, max = Number(c.maxPerDay) || 0;
+  if (!max) return publishCalendar(db, bizId, biz, []);
+  const today = ctDay(Date.now());
+  const horizon = ctDay(Date.now() + (Number(c.maxWeeksAhead) || 26) * 7 * 864e5);
+  const [jobs, bks] = await Promise.all([
+    db.collection("jobs").where("businessId", "==", bizId).get(),   // one filter only: no extra database index needed
+    db.collection("bookings").where("businessId", "==", bizId).where("status", "==", "confirmed").get(),
+  ]);
+  const count = {}, fromBooking = new Set();
+  jobs.docs.forEach((d) => { const day = d.get("date"); if (day && day >= today && day <= horizon) count[day] = (count[day] || 0) + 1; if (d.get("fromBookingId")) fromBooking.add(d.get("fromBookingId")); });
+  bks.docs.forEach((d) => { if (fromBooking.has(d.id)) return; const day = bookingDay(d.get("requestedDate")); if (day >= today && day <= horizon) count[day] = (count[day] || 0) + 1; });
+  return publishCalendar(db, bizId, biz, Object.keys(count).filter((d) => count[d] >= max).sort());
+}
+// Re-check just the days a change touched.
+async function recheckDays(bizId, days) {
+  days = [...new Set(days.filter(Boolean))]; if (!bizId || !days.length) return;
+  const db = admin.firestore();
+  const biz = (await db.doc("businesses/" + bizId).get()).data(); if (!biz) return;
+  const max = Number((biz.calendar || {}).maxPerDay) || 0;
+  const ref = db.doc("publicCalendars/" + bizId);
+  if (!max) return;
+  for (const day of days) {
+    const n = await jobsOnDay(db, bizId, day);
+    await ref.set({ fullDates: n >= max ? admin.firestore.FieldValue.arrayUnion(day) : admin.firestore.FieldValue.arrayRemove(day), updatedAt: Date.now() }, { merge: true });
+  }
+}
+
+// Owner changed the calendar (or the business was created): publish it and recount full days.
+exports.syncCalendar = onDocumentWritten({ document: "businesses/{id}" }, async (event) => {
+  const before = (event.data.before && event.data.before.data()) || {}, after = (event.data.after && event.data.after.data()) || null;
+  if (!after) return;
+  if (JSON.stringify(before.calendar || null) === JSON.stringify(after.calendar || null) && event.data.before && event.data.before.exists) return;
+  try { await recomputeFull(admin.firestore(), event.params.id, after); } catch (e) { logger.error("Calendar sync failed", e); }
+});
+// A job was added, moved or removed: its old and new day may have filled up or opened again.
+exports.calendarJobs = onDocumentWritten({ document: "jobs/{id}" }, async (event) => {
+  const b = (event.data.before && event.data.before.data()) || {}, a = (event.data.after && event.data.after.data()) || {};
+  if (b.date === a.date && b.businessId === a.businessId) return;
+  try { await recheckDays(a.businessId || b.businessId, [b.date, a.date]); } catch (e) { logger.error("Calendar job recheck failed", e); }
+});
+// A booking was confirmed, moved or cancelled.
+exports.calendarBookings = onDocumentWritten({ document: "bookings/{id}" }, async (event) => {
+  const b = (event.data.before && event.data.before.data()) || {}, a = (event.data.after && event.data.after.data()) || {};
+  const was = b.status === "confirmed" ? bookingDay(b.requestedDate) : "", now = a.status === "confirmed" ? bookingDay(a.requestedDate) : "";
+  if (was === now) return;
+  try { await recheckDays(a.businessId || b.businessId, [was, now]); } catch (e) { logger.error("Calendar booking recheck failed", e); }
+});
