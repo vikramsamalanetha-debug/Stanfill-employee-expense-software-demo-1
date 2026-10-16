@@ -3084,6 +3084,34 @@ function openPayment(d){
   body.append(f);
 }
 
+// A clear "it's on its way" screen after Send email, so nobody taps Send twice.
+// It follows the email until the mail server accepts it (or says why it couldn't).
+function showInvoiceSent(d,to,ref,due){
+  const body=invDlg(); body.replaceChildren();
+  const paid=!(due>0.004), amt=paid?invTotals(d).total:due, kind=paid?"Receipt":"Invoice";
+  const icon=el("div",{style:"width:64px;height:64px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:34px;font-weight:800;margin:6px auto 12px"},"\u2709");
+  const head=el("h2",{style:"margin:0;text-align:center"},kind+" sent");
+  const status=el("p",{style:"margin:8px 0 0;text-align:center;font-weight:700"},S.demo?"Demo: nothing was really emailed.":"Sending now\u2026");
+  body.append(icon,head,
+    el("p",{style:"margin:10px 0 0;text-align:center;font-size:17px"},(paid?"Paid receipt ":"")+d.number+" for ",el("b",{},money(amt))," was emailed to"),
+    el("p",{style:"margin:4px 0 0;text-align:center;font-size:17px"},el("b",{},to)),
+    status,
+    el("p",{class:"kv",style:"margin:12px 0 0;text-align:center"},"It usually arrives within a minute. Ask them to check their spam folder if they can't find it. No need to send it again."),
+    el("div",{class:"acts",style:"justify-content:center;margin-top:18px"},el("button",{class:"btn primary",style:"min-width:140px;justify-content:center",onclick:()=>$("#invDlg").close()},"Done")));
+  if (!$("#invDlg").open) $("#invDlg").showModal();
+  if (!ref) return;
+  let stop=()=>{};
+  stop=ref.onSnapshot(snap=>{
+    const m=snap.data()||{};
+    if (m.status==="sent"){ status.textContent="\u2713 Delivered to "+to+"'s mail server."; status.style.color="var(--ok)"; stop(); }
+    else if (m.status==="error"){ icon.textContent="!"; icon.style.background="var(--danger-soft)"; icon.style.color="var(--danger)";
+      head.textContent="Email not sent"; status.style.color="var(--danger)";
+      status.textContent="It couldn't be sent"+(m.error?" ("+m.error+")":"")+". Check the address, or text or copy the link instead.";
+      stop(); }
+  }, ()=>{});
+  setTimeout(()=>stop(),120000);
+  $("#invDlg").addEventListener("close",()=>stop(),{once:true});
+}
 function openSend(d){
   const body=invDlg(); body.replaceChildren();
   const t=invTotals(d), url=invUrl(d), st=invSettings(), b=S.business||{};
@@ -3097,15 +3125,21 @@ function openSend(d){
   const emailIn=el("input",{type:"email",value:d.client.email||"",placeholder:"client@email.com","aria-label":"Client email"});
   body.append(el("div",{class:"sendgrid"},
     el("div",{class:"sendopt"},el("b",{},"Email it from Dayzift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via Dayzift. Replies come to "+(st.email||"you")+"."),
-      el("div",{class:"row",style:"margin-top:6px"},emailIn,el("button",{class:"btn primary",onclick:async()=>{
+      el("div",{class:"row",style:"margin-top:6px"},emailIn,el("button",{class:"btn primary",onclick:async ev=>{
+        const btn=ev.currentTarget;
         const to=emailIn.value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return note.textContent="Enter the client's email address.";
-        if (S.demo){ note.textContent="In the demo nothing is emailed. In your account, "+to+" gets the invoice in a few seconds."; return; }
-        if (Store.mode!=="db") return note.textContent="Email works in the live app.";
+        if (!S.demo && Store.mode!=="db") return note.textContent="Email works in the live app.";
+        // Already emailed? Ask before sending a second copy.
+        const last=tsMs(d.lastEmailAt);
+        if (last && !confirm(d.number+" was already emailed "+ago(last)+(d.client.email?" to "+d.client.email:"")+".\n\nSend it again?")) return;
+        btn.disabled=true; btn.textContent="Sending\u2026";     // one tap = one email
+        if (S.demo){ showInvoiceSent(d,to,null,due); return; }
         try {
           if (to!==(d.client.email||"")){ d.client.email=to; await saveInvoice(d); }
-          await firebase.firestore().collection("mail").add({businessId:S.businessId,kind:"invoice",invoiceId:d.id,key:d.publicKey,to,createdBy:S.myUserId,createdAt:Date.now()});
-          stamp("email"); note.textContent="Sending to "+to+". It usually arrives within a minute.";
-        } catch(e){ console.warn(e); note.textContent="Couldn't send it. Check your connection and try again."; }
+          const ref=await firebase.firestore().collection("mail").add({businessId:S.businessId,kind:"invoice",invoiceId:d.id,key:d.publicKey,to,createdBy:S.myUserId,createdAt:Date.now()});
+          stamp("email"); d.lastEmailAt=Date.now();
+          showInvoiceSent(d,to,ref,due);
+        } catch(e){ console.warn(e); btn.disabled=false; btn.textContent="Send email"; note.textContent="Couldn't send it. Check your connection and try again."; }
       }},"Send email"))),
     el("div",{class:"sendopt"},el("b",{},"Text the link"),el("div",{class:"kv"},"Opens your phone's messages with the link ready."),
       el("a",{class:"btn",style:"margin-top:6px",href:"sms:"+(d.client.phone||"").replace(/[^\d+]/g,"")+"?&body="+encodeURIComponent(msg),onclick:()=>stamp("text")},"Text "+(d.client.phone||"the client"))),
