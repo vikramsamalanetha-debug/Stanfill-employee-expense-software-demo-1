@@ -228,6 +228,11 @@ const REQUESTS_URL = "https://dayzift.com/app";
 const bizLabel = (b) => String((b && b.name) || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
 const reqDay = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? String(iso).slice(0, 10)
   : d.toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "long", month: "long", day: "numeric", year: "numeric" }); };
+// Time of day the customer asked for (website booking form).
+const WIN = { morning: "Morning (8 AM–12 PM)", afternoon: "Afternoon (12–5 PM)", any: "Any time" };
+const winShort = (w) => (w === "morning" ? "morning" : w === "afternoon" ? "afternoon" : "");
+// "Tue, Oct 20, 2026, morning" — the date plus the time of day when there is one.
+const dayWin = (iso, w) => { const d = reqDay(iso); return d && winShort(w) ? d + ", " + winShort(w) : d; };
 // "Hi Jane" — but never greet someone by an email address or a number.
 const firstName = (n) => { const f = String(n || "").trim().split(/\s+/)[0]; return f && !/[@\d]/.test(f) ? f : "there"; };
 // 7316022456 → 731-602-2456 (anything that isn't a 10-digit US number is left as typed)
@@ -257,7 +262,7 @@ async function customerEmailFor(bk) {
 }
 
 function bookingRows(bk, b) {
-  return [["Service", bk.service], ["Date wanted", reqDay(bk.requestedDate)], ["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)],
+  return [["Service", bk.service], ["Date wanted", reqDay(bk.requestedDate)], ["Time", WIN[bk.timeWindow] || ""], ["Size", bk.size], ["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)],
     ["Details", bk.details], ["Rewards", bk.wantsRewards ? "Wants to join " + ((b && b.rewardsName) || "rewards") : ""]]
     .filter(([, v]) => v);
 }
@@ -274,7 +279,7 @@ async function emailOwners(bookingId, bk, biz, key, reminderNo) {
   if (!to.length) { logger.warn("No owner email for booking " + bookingId); return false; }
   const cust = await customerEmailFor(bk);
   const link = (a) => `${ACTION_URL}?id=${encodeURIComponent(bookingId)}&k=${key}&a=${a}`;
-  const day = reqDay(bk.requestedDate);
+  const day = dayWin(bk.requestedDate, bk.timeWindow);
   const subject = (reminderNo ? `Reminder: ` : `New booking request: `) + `${bk.service || "Service"}${day ? ", " + day : ""} (${bk.name || "customer"})`;
   const lead = reminderNo
     ? `This request is still waiting for an answer (reminder ${reminderNo} of 3).`
@@ -310,7 +315,8 @@ async function pushOwners(biz, bizId, title, body) {
 async function emailCustomer(bk, biz, kind) {
   const to = await customerEmailFor(bk); if (!to) return false;
   const ch = bk.change || {};
-  const name = bizLabel(biz), day = reqDay(bk.requestedDate), svc = bk.service || "your service";
+  const name = bizLabel(biz), day = dayWin(bk.requestedDate, bk.timeWindow), svc = bk.service || "your service";
+  const fromW = dayWin(ch.from, ch.fromWindow != null ? ch.fromWindow : bk.timeWindow), toW = dayWin(ch.to, ch.window != null ? ch.window : bk.timeWindow);
   const site = biz.website && /^https:\/\//i.test(biz.website) ? biz.website : "";
   const msgs = {
     received: [`We got your request: ${svc}${day ? " on " + day : ""}`,
@@ -320,20 +326,20 @@ async function emailCustomer(bk, biz, kind) {
     declined: [`About your request for ${day || svc}`,
       `Thanks for thinking of ${name}. Unfortunately we can't take your ${svc} request${day ? " for " + day : ""}. Get in touch and we'll gladly find another day that works.`],
     change_received: [`We got your date change: ${svc}`,
-      `We received your request to move your ${svc} from ${reqDay(ch.from)} to ${reqDay(ch.to)}. Your original date stays booked until we confirm the new one by email.`],
-    change_ok: [`Confirmed: your new date is ${reqDay(ch.to)}`,
-      `You're all set! ${name} moved your ${svc} from ${reqDay(ch.from)} to ${reqDay(ch.to)}. We'll see you then.`],
+      `We received your request to move your ${svc} from ${fromW} to ${toW}. Your original date stays booked until we confirm the new one by email.`],
+    change_ok: [`Confirmed: your new date is ${toW}`,
+      `You're all set! ${name} moved your ${svc} from ${fromW} to ${toW}. We'll see you then.`],
     change_no: [`About your date change for ${svc}`,
-      `Sorry, we can't move your ${svc} to ${reqDay(ch.to)}. Your original date, ${reqDay(ch.from)}, is still booked. Get in touch and we'll find another day that works.`],
+      `Sorry, we can't move your ${svc} to ${toW}. Your original date, ${fromW}, is still booked. Get in touch and we'll find another day that works.`],
     change_late: [`About your date change for ${svc}`,
-      `Your ${svc} on ${reqDay(ch.from)} is less than 24 hours away, so it can't be changed online anymore. Please get in touch with us directly and we'll do our best to help.`],
+      `Your ${svc} on ${fromW} is less than 24 hours away, so it can't be changed online anymore. Please get in touch with us directly and we'll do our best to help.`],
     cancelled: [`Cancelled: ${svc}${day ? " on " + day : ""}`,
       `Your ${svc}${day ? " on " + day : ""} with ${name} is cancelled. We hope to see you again soon. You can book another day on our website any time.`],
   }[kind];
   const bizMail = okEmail(biz.email) ? biz.email : "";
   const contact = [biz.phone ? "call " + nicePhone(biz.phone) : "", bizMail ? "email " + bizMail : ""].filter(Boolean).join(" or ");
   const html = shell(name, `<p style="margin:0 0 14px">Hi ${esc(firstName(bk.name))},</p><p style="margin:0 0 16px">${esc(msgs[1])}</p>
-      ${rowsHtml((/^change_/.test(kind) ? [["Service", bk.service], ["Booked date", reqDay(ch.from)], ["New date", reqDay(ch.to)]] : [["Service", bk.service], ["Date", day]]).filter(([, v]) => v))}
+      ${rowsHtml((/^change_/.test(kind) ? [["Service", bk.service], ["Booked date", fromW], ["New date", toW]] : [["Service", bk.service], ["Date", reqDay(bk.requestedDate)], ["Time", WIN[bk.timeWindow] || ""]]).filter(([, v]) => v))}
       ${site ? btn(site, "Visit our website", "#F2C230", "#2A2305") : ""}
       ${contact ? `<p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(contact)}.</p>` : ""}`, `Sent with Dayzift for ${esc(name)}`);
   const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\n` + (contact ? `Questions? Please ${contact}.\n\n` : "") + `${name}\nSent with Dayzift · A product of LIT America`;
@@ -357,7 +363,7 @@ exports.notifyNewBooking = onDocumentCreated({ document: "bookings/{id}", secret
     const mine = await db.collection("bookings").where("uid", "==", bk.uid).select("createdAt").get();
     spam = mine.docs.filter((d) => { const c = d.get("createdAt"); return c && (c.toMillis ? c.toMillis() : c) > Date.now() - 864e5; }).length > 5;
   }
-  const day = reqDay(bk.requestedDate);
+  const day = dayWin(bk.requestedDate, bk.timeWindow);
   const results = await Promise.allSettled([
     emailOwners(snap.id, bk, biz, key, 0),
     pushOwners(biz, bk.businessId, "New booking request", [bk.name, bk.service, day].filter(Boolean).join(" · ")),
@@ -377,17 +383,18 @@ const changeCutoff = (iso) => { const t = Date.parse(iso || ""); return isNaN(t)
 async function emailOwnersAbout(id, bk, biz, kind, key) {
   const to = await ownerEmailsFor(biz); if (!to.length) return false;
   const cust = await customerEmailFor(bk), ch = bk.change || {};
+  const fromW = dayWin(ch.from, ch.fromWindow != null ? ch.fromWindow : bk.timeWindow), toW = dayWin(ch.to, ch.window != null ? ch.window : bk.timeWindow);
   const link = (a) => `${ACTION_URL}?id=${encodeURIComponent(id)}&k=${key}&a=${a}`;
   const late = kind === "cancel" && Date.now() > changeCutoff(ch.from || bk.requestedDate);
   const subject = kind === "change"
-    ? `Date change request: ${bk.name || "customer"} wants ${reqDay(ch.to)} instead of ${reqDay(ch.from)}`
-    : `Cancelled: ${bk.service || "booking"}, ${reqDay(ch.from || bk.requestedDate)} (${bk.name || "customer"})`;
+    ? `Date change request: ${bk.name || "customer"} wants ${toW} instead of ${fromW}`
+    : `Cancelled: ${bk.service || "booking"}, ${dayWin(ch.from || bk.requestedDate, bk.timeWindow)} (${bk.name || "customer"})`;
   const lead = kind === "change"
     ? `${bk.name || "A customer"} wants to move their ${bk.service || "booking"}. The original date stays booked until you approve.`
     : `${bk.name || "A customer"} cancelled their ${bk.service || "booking"}${late ? " with less than 24 hours' notice" : ""}. If it's on your job board, remove or reschedule it there.`;
   const rows = (kind === "change"
-    ? [["Service", bk.service], ["Booked date", reqDay(ch.from)], ["Wants instead", reqDay(ch.to)]]
-    : [["Service", bk.service], ["Date", reqDay(ch.from || bk.requestedDate)]])
+    ? [["Service", bk.service], ["Booked date", fromW], ["Wants instead", toW]]
+    : [["Service", bk.service], ["Date", dayWin(ch.from || bk.requestedDate, bk.timeWindow)]])
     .concat([["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)], ["Account email", cust]]).filter(([, v]) => v);
   const buttons = kind === "change"
     ? btn(link("moveok"), "Approve new date", "#1F7A69", "#fff") + btn(link("moveno"), "Keep original date", "#fff;border:1px solid #D9D4CB", "#1D1B18") : "";
@@ -418,7 +425,7 @@ exports.notifyBookingAnswer = onDocumentUpdated({ document: "bookings/{id}", sec
     await db.doc("bookingKeys/" + id).set({ key, businessId: after.businessId, createdAt: Date.now(), kind: "change" });
     await Promise.all([
       safe("Owner change email", () => emailOwnersAbout(id, after, biz, "change", key)),
-      safe("Owner change push", () => pushOwners(biz, after.businessId, "Date change request", [after.name, reqDay(ac.to)].filter(Boolean).join(" \u00b7 "))),
+      safe("Owner change push", () => pushOwners(biz, after.businessId, "Date change request", [after.name, dayWin(ac.to, ac.window)].filter(Boolean).join(" \u00b7 "))),
       safe("Customer change email", () => emailCustomer(after, biz, "change_received")),
     ]);
     return;
@@ -428,11 +435,12 @@ exports.notifyBookingAnswer = onDocumentUpdated({ document: "bookings/{id}", sec
   if (ac.type === "reschedule" && bc.status === "pending" && (ac.status === "approved" || ac.status === "declined")) {
     if (!bizOpen(await loadBiz())) return;
     if (ac.status === "approved") {
-      await ref.update({ requestedDate: ac.to, status: "confirmed", customerNotifiedAt: after.customerNotifiedAt || Date.now() });
-      // move the job made from this booking to the new day
+      const newWin = ac.window != null ? ac.window : (after.timeWindow || "");
+      await ref.update({ requestedDate: ac.to, timeWindow: newWin, status: "confirmed", customerNotifiedAt: after.customerNotifiedAt || Date.now() });
+      // move the job made from this booking to the new day (and time of day)
       const newDay = new Date(ac.to).toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
       const jobs = await db.collection("jobs").where("fromBookingId", "==", id).get();
-      await Promise.all(jobs.docs.filter((d) => d.get("businessId") === after.businessId && d.get("status") !== "done").map((d) => d.ref.update({ date: newDay })));
+      await Promise.all(jobs.docs.filter((d) => d.get("businessId") === after.businessId && d.get("status") !== "done").map((d) => d.ref.update({ date: newDay, window: newWin })));
     }
     await safe("Customer change answer email", () => emailCustomer(after, biz, ac.status === "approved" ? "change_ok" : "change_no"));
     await db.doc("bookingKeys/" + id).delete().catch(() => {});
@@ -538,54 +546,45 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
 // in step with it, and add "fullDates": days that already have as many jobs as the owner's daily limit.
 // Only these functions write publicCalendars; the website only reads it.
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
-const CAL_KEYS = ["closedWeekdays", "holidays", "closedDates", "closedRanges", "maxPerDay", "minNoticeDays", "maxWeeksAhead"];
+const CAL_KEYS = ["closedWeekdays", "holidays", "closedDates", "closedRanges", "maxPerDay", "minNoticeDays", "maxWeeksAhead", "windows", "maxMorning", "maxAfternoon"];
 const ctDay = (v) => { const t = typeof v === "number" ? v : Date.parse(v || ""); return isNaN(t) ? "" : new Date(t).toLocaleDateString("en-CA", { timeZone: "America/Chicago" }); };
 const bookingDay = (iso) => ctDay(iso);
+// Which half of the day a job is in: its start time if the owner set one, else what the customer asked for. "" = no set time.
+const jobWin = (j) => j.time ? (j.time < "12:00" ? "morning" : "afternoon") : (j.window === "morning" || j.window === "afternoon") ? j.window : "";
 
-// How many jobs are on a day: jobs on the board for that date, plus confirmed bookings not turned into a job yet.
-async function jobsOnDay(db, bizId, day) {
-  const [jobs, bks] = await Promise.all([
-    db.collection("jobs").where("businessId", "==", bizId).where("date", "==", day).get(),
-    db.collection("bookings").where("businessId", "==", bizId).where("status", "==", "confirmed").get(),
-  ]);
-  const fromBooking = new Set(jobs.docs.map((d) => d.get("fromBookingId")).filter(Boolean));
-  const extra = bks.docs.filter((d) => bookingDay(d.get("requestedDate")) === day && !fromBooking.has(d.id)).length;
-  return jobs.size + extra;
-}
-async function publishCalendar(db, bizId, biz, fullDates) {
-  const c = (biz && biz.calendar) || {};
-  const pub = { updatedAt: Date.now() };
-  CAL_KEYS.forEach((k) => { if (c[k] !== undefined) pub[k] = c[k]; });
-  if (fullDates) pub.fullDates = fullDates;
-  await db.doc("publicCalendars/" + bizId).set(pub, { merge: !fullDates });
-}
-// Re-check which days are full (today through the booking horizon).
+// Re-check which days and half-days are full (today through the booking horizon) and publish them.
+// Counts jobs on the board plus confirmed bookings not turned into a job yet.
 async function recomputeFull(db, bizId, biz) {
   const c = (biz && biz.calendar) || {}, max = Number(c.maxPerDay) || 0;
-  if (!max) return publishCalendar(db, bizId, biz, []);
-  const today = ctDay(Date.now());
-  const horizon = ctDay(Date.now() + (Number(c.maxWeeksAhead) || 26) * 7 * 864e5);
-  const [jobs, bks] = await Promise.all([
-    db.collection("jobs").where("businessId", "==", bizId).get(),   // one filter only: no extra database index needed
-    db.collection("bookings").where("businessId", "==", bizId).where("status", "==", "confirmed").get(),
-  ]);
-  const count = {}, fromBooking = new Set();
-  jobs.docs.forEach((d) => { const day = d.get("date"); if (day && day >= today && day <= horizon) count[day] = (count[day] || 0) + 1; if (d.get("fromBookingId")) fromBooking.add(d.get("fromBookingId")); });
-  bks.docs.forEach((d) => { if (fromBooking.has(d.id)) return; const day = bookingDay(d.get("requestedDate")); if (day >= today && day <= horizon) count[day] = (count[day] || 0) + 1; });
-  return publishCalendar(db, bizId, biz, Object.keys(count).filter((d) => count[d] >= max).sort());
+  const wins = c.windows !== false, maxM = wins ? Number(c.maxMorning) || 0 : 0, maxA = wins ? Number(c.maxAfternoon) || 0 : 0;
+  const pub = { updatedAt: Date.now(), fullDates: [], fullSlots: [] };
+  CAL_KEYS.forEach((k) => { if (c[k] !== undefined) pub[k] = c[k]; });
+  if (max || maxM || maxA) {
+    const today = ctDay(Date.now());
+    const horizon = ctDay(Date.now() + (Number(c.maxWeeksAhead) || 26) * 7 * 864e5);
+    const [jobs, bks] = await Promise.all([
+      db.collection("jobs").where("businessId", "==", bizId).get(),   // one filter only: no extra database index needed
+      db.collection("bookings").where("businessId", "==", bizId).where("status", "==", "confirmed").get(),
+    ]);
+    const count = {}, fromBooking = new Set();
+    const add = (day, w) => { if (!day || day < today || day > horizon) return; const k = count[day] || (count[day] = { n: 0, morning: 0, afternoon: 0 }); k.n++; if (w) k[w]++; };
+    jobs.docs.forEach((d) => { if (d.get("fromBookingId")) fromBooking.add(d.get("fromBookingId")); add(d.get("date"), jobWin(d.data())); });
+    bks.docs.forEach((d) => { if (!fromBooking.has(d.id)) add(bookingDay(d.get("requestedDate")), winShort(d.get("timeWindow"))); });
+    Object.keys(count).sort().forEach((day) => {
+      const k = count[day];
+      const mFull = maxM && k.morning >= maxM, aFull = maxA && k.afternoon >= maxA;
+      if (mFull) pub.fullSlots.push(day + "|morning");
+      if (aFull) pub.fullSlots.push(day + "|afternoon");
+      if ((max && k.n >= max) || (mFull && aFull)) pub.fullDates.push(day);
+    });
+  }
+  await db.doc("publicCalendars/" + bizId).set(pub);
 }
-// Re-check just the days a change touched.
-async function recheckDays(bizId, days) {
-  days = [...new Set(days.filter(Boolean))]; if (!bizId || !days.length) return;
+async function recheckBiz(bizId) {
+  if (!bizId) return;
   const db = admin.firestore();
   const biz = (await db.doc("businesses/" + bizId).get()).data(); if (!biz) return;
-  const max = Number((biz.calendar || {}).maxPerDay) || 0;
-  const ref = db.doc("publicCalendars/" + bizId);
-  if (!max) return;
-  for (const day of days) {
-    const n = await jobsOnDay(db, bizId, day);
-    await ref.set({ fullDates: n >= max ? admin.firestore.FieldValue.arrayUnion(day) : admin.firestore.FieldValue.arrayRemove(day), updatedAt: Date.now() }, { merge: true });
-  }
+  await recomputeFull(db, bizId, biz);
 }
 
 // Owner changed the calendar (or the business was created): publish it and recount full days.
@@ -598,13 +597,13 @@ exports.syncCalendar = onDocumentWritten({ document: "businesses/{id}" }, async 
 // A job was added, moved or removed: its old and new day may have filled up or opened again.
 exports.calendarJobs = onDocumentWritten({ document: "jobs/{id}" }, async (event) => {
   const b = (event.data.before && event.data.before.data()) || {}, a = (event.data.after && event.data.after.data()) || {};
-  if (b.date === a.date && b.businessId === a.businessId) return;
-  try { await recheckDays(a.businessId || b.businessId, [b.date, a.date]); } catch (e) { logger.error("Calendar job recheck failed", e); }
+  if (b.date === a.date && b.businessId === a.businessId && jobWin(b) === jobWin(a)) return;
+  try { await recheckBiz(a.businessId || b.businessId); } catch (e) { logger.error("Calendar job recheck failed", e); }
 });
 // A booking was confirmed, moved or cancelled.
 exports.calendarBookings = onDocumentWritten({ document: "bookings/{id}" }, async (event) => {
   const b = (event.data.before && event.data.before.data()) || {}, a = (event.data.after && event.data.after.data()) || {};
-  const was = b.status === "confirmed" ? bookingDay(b.requestedDate) : "", now = a.status === "confirmed" ? bookingDay(a.requestedDate) : "";
+  const was = b.status === "confirmed" ? bookingDay(b.requestedDate) + winShort(b.timeWindow) : "", now = a.status === "confirmed" ? bookingDay(a.requestedDate) + winShort(a.timeWindow) : "";
   if (was === now) return;
-  try { await recheckDays(a.businessId || b.businessId, [was, now]); } catch (e) { logger.error("Calendar booking recheck failed", e); }
+  try { await recheckBiz(a.businessId || b.businessId); } catch (e) { logger.error("Calendar booking recheck failed", e); }
 });
