@@ -226,7 +226,10 @@ const REQUESTS_URL = "https://dayzift.com/app";
 const bizLabel = (b) => String((b && b.name) || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
 const reqDay = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? String(iso).slice(0, 10)
   : d.toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "long", month: "long", day: "numeric", year: "numeric" }); };
-const firstName = (n) => String(n || "").trim().split(/\s+/)[0] || "there";
+// "Hi Jane" — but never greet someone by an email address or a number.
+const firstName = (n) => { const f = String(n || "").trim().split(/\s+/)[0]; return f && !/[@\d]/.test(f) ? f : "there"; };
+// 7316022456 → 731-602-2456 (anything that isn't a 10-digit US number is left as typed)
+const nicePhone = (p) => { const d = String(p || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""); return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : String(p || ""); };
 
 // Who hears about new requests: the alert emails set in Settings, otherwise every owner.
 async function ownerEmailsFor(biz) {
@@ -252,7 +255,7 @@ async function customerEmailFor(bk) {
 }
 
 function bookingRows(bk, b) {
-  return [["Service", bk.service], ["Date wanted", reqDay(bk.requestedDate)], ["Name", bk.name], ["Contact", bk.phone],
+  return [["Service", bk.service], ["Date wanted", reqDay(bk.requestedDate)], ["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)],
     ["Details", bk.details], ["Rewards", bk.wantsRewards ? "Wants to join " + ((b && b.rewardsName) || "rewards") : ""]]
     .filter(([, v]) => v);
 }
@@ -274,7 +277,8 @@ async function emailOwners(bookingId, bk, biz, key, reminderNo) {
   const lead = reminderNo
     ? `This request is still waiting for an answer (reminder ${reminderNo} of 3).`
     : `You have a new booking request from your website.`;
-  const rows = bookingRows(bk, biz).concat(cust && cust !== bk.phone ? [["Email", cust]] : []);
+  // "Account email" is who actually sent the request (their sign-in); the rest is what they typed.
+  const rows = bookingRows(bk, biz).concat(cust && cust !== bk.phone ? [["Account email", cust]] : []);
   const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}
       ${btn(link("confirm"), "Approve", "#1F7A69", "#fff")}${btn(link("decline"), "Decline", "#fff;border:1px solid #D9D4CB", "#1D1B18")}${btn(REQUESTS_URL, "Open in Dayzift", "#F2C230", "#2A2305")}
       <p style="margin:14px 0 0;color:#6A655D;font-size:14px">${cust ? "Customer email: " + esc(cust) + ". " : ""}Call, text or email the customer at the contact above.</p>`,
@@ -314,7 +318,7 @@ async function emailCustomer(bk, biz, kind) {
       `Thanks for thinking of ${name}. Unfortunately we can't take your ${svc} request${day ? " for " + day : ""}. Get in touch and we'll gladly find another day that works.`],
   }[kind];
   const bizMail = okEmail(biz.email) ? biz.email : "";
-  const contact = [biz.phone ? "call " + biz.phone : "", bizMail ? "email " + bizMail : ""].filter(Boolean).join(" or ");
+  const contact = [biz.phone ? "call " + nicePhone(biz.phone) : "", bizMail ? "email " + bizMail : ""].filter(Boolean).join(" or ");
   const html = shell(name, `<p style="margin:0 0 14px">Hi ${esc(firstName(bk.name))},</p><p style="margin:0 0 16px">${esc(msgs[1])}</p>
       ${rowsHtml([["Service", bk.service], ["Date", day]].filter(([, v]) => v))}
       ${site ? btn(site, "Visit our website", "#F2C230", "#2A2305") : ""}
