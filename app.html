@@ -120,6 +120,36 @@ a{color:var(--primary)}
 .feed li:first-child{border-top:0}
 .feed .t{color:var(--muted);font-size:12px;white-space:nowrap;margin-left:auto}
 .toggles{display:flex;flex-wrap:wrap;gap:8px}
+.perbar{align-items:center;gap:8px}
+.perbar .pergroup{display:flex;align-items:center;gap:6px;min-width:0;flex:0 1 auto}
+.perbar .per{display:flex;flex-direction:column;min-width:0;flex:1}
+@media (max-width:700px){.perbar .pergroup{flex:1 1 100%}.perbar .per{text-align:center}}
+.perbar .per b{font:700 17px var(--display)}
+.avatar.sm{width:26px;height:26px;font-size:10px;flex:none}
+table.tsheet{border-collapse:separate;border-spacing:4px;min-width:100%}
+table.tsheet th{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:2px;white-space:nowrap}
+table.tsheet th.today{color:var(--primary)}
+table.tsheet th.nm{text-align:left;color:var(--ink);font-size:14px;display:flex;align-items:center;gap:8px;min-width:150px;position:sticky;left:0;background:var(--surface);padding-right:8px}
+table.tsheet td{padding:0}
+table.tsheet td.tot,table.tsheet th.tot{text-align:right;padding-left:8px;white-space:nowrap}
+.tcell{width:100%;min-width:44px;height:40px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.tcell:hover{border-color:var(--primary)}
+.tcell.none{color:var(--muted);font-weight:400;background:var(--bg)}
+.tcell.today{box-shadow:inset 0 0 0 2px var(--primary)}
+.tcell.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);font-weight:800}
+.tcell.live{background:var(--primary-soft);color:var(--primary)}
+.hoursform{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg)}
+.paybox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px 18px;margin:0 0 14px}
+.paybox .big{font:750 32px/1.15 var(--display);font-variant-numeric:tabular-nums}
+table.ptable{width:100%}
+table.ptable th{font-size:12px;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+table.ptable td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.ptable .num{text-align:right;white-space:nowrap}
+tr.prow{cursor:pointer} tr.prow:hover td{background:var(--bg)} tr.prow.open td{border-bottom:0}
+tr.pdetail td{background:var(--bg);padding:12px}
+.pdbox{display:flex;flex-direction:column;gap:10px}
+.pdgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.pdgrid{grid-template-columns:1fr}.hide-sm{display:none}.paybox .big{font-size:26px}}
 .bcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
 .bcal .dow{font-size:12px;font-weight:800;color:var(--muted);text-align:center;padding:2px 0}
 .bday{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:66px;padding:6px 7px;text-align:left;font:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -857,7 +887,7 @@ function draw(){
     return;
   }
   if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
-  if (!S.isOwner && ["requests","rewards","insights","books","payroll","invoices","platform"].includes(S.tab)) S.tab="home";
+  if (!S.isOwner && ["requests","rewards","insights","books","payroll","timesheet","invoices","platform"].includes(S.tab)) S.tab="home";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
   if (S.tab==="rewards" && !hasRewards()) S.tab="home";
   if (S.tab==="platform" && !S.isPlatformAdmin) S.tab="home";
@@ -868,6 +898,7 @@ function draw(){
   else if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="projects") v.append(viewProjects());
   else if (S.tab==="payroll") v.append(viewPayroll());
+  else if (S.tab==="timesheet") v.append(viewTimesheet());
   else if (S.tab==="invoices") v.append(viewInvoices());
   else if (S.tab==="requests") v.append(viewRequests());
   else if (S.tab==="rewards") v.append(viewRewards());
@@ -1040,7 +1071,7 @@ function navGroups(){
   return [
     {id:"home",label:"Home",icon:"home",tabs:[["home","Today"]]},
     {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests","Booking requests"+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null]},
-    {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["payroll","Payroll"]]},
+    {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["timesheet","Timesheet"],["payroll","Payroll"]]},
     {id:"money",label:"Money",icon:"money",tabs:[["invoices","Invoices"],["books","Books"],["insights","Insights"]]},
     {id:"more",label:"More",icon:"more",tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"]]},
     S.adminView ? {id:"console",label:"All clients",icon:"back",badge:nAdmin,tabs:[["platform","All clients"]]} : null
@@ -3409,125 +3440,255 @@ function calcPay(e,start,end){
   const erTax=r2(ssEr+medEr+futa+suta);
   return {...out,paid:wages,net:r2(wages-ssEe-medEe-fit-other+reimb),ssEe,medEe,fit,ssEr,medEr,futa,suta,erTax,cost:r2(wages+reimb+erTax)};
 }
-function prPreset(id){
-  const t=new Date(), ws=weekStart(t);
-  if (id==="this"){ S.pr.start=ymd(ws); S.pr.end=ymd(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()+6)); }
-  if (id==="last"){ const s=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-7); S.pr.start=ymd(s); S.pr.end=ymd(new Date(s.getFullYear(),s.getMonth(),s.getDate()+6)); }
-  if (id==="two"){ const s=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()-14); S.pr.start=ymd(s); S.pr.end=ymd(new Date(s.getFullYear(),s.getMonth(),s.getDate()+13)); }
-  if (id==="month"){ S.pr.start=ymd(new Date(t.getFullYear(),t.getMonth(),1)); S.pr.end=ymd(new Date(t.getFullYear(),t.getMonth()+1,0)); }
-  S.pr.edits={}; render();
+/* ---- pay periods: set once (weekly or every 2 weeks, starting on a chosen day) ---- */
+const DOW_SHORT=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+function paySched(){ const p=(S.business&&S.business.paySchedule)||{}; return {every:p.every===2?2:1, startDow:p.startDow==null?1:Number(p.startDow), anchor:p.anchor||null}; }
+function periodStartOf(d){
+  const ps=paySched(), x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  x.setDate(x.getDate()-((x.getDay()-ps.startDow+7)%7));
+  if (ps.every===2 && ps.anchor){ const diff=Math.round((x-parseYmd(ps.anchor))/864e5); if ((((diff%14)+14)%14)>=7) x.setDate(x.getDate()-7); }
+  return x;
 }
+function periodOf(d){ const s=periodStartOf(d), e=new Date(s); e.setDate(e.getDate()+7*paySched().every-1); return {start:ymd(s),end:ymd(e)}; }
+function prInit(){ if (S.pr) return; const d=new Date(); d.setDate(d.getDate()-7*paySched().every); S.pr={...periodOf(d),edits:{},open:{}}; }   // last finished period
+function prShift(n){ const d=parseYmd(S.pr.start); d.setDate(d.getDate()+n*7*paySched().every); S.pr={...periodOf(d),edits:{},open:{}}; render(); }
+function prCurrent(){ S.pr={...periodOf(new Date()),edits:{},open:{}}; render(); }
+const periodLabel=(a,b)=>parseYmd(a).toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+parseYmd(b).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+function periodBar(extra){
+  const ps=paySched(), cur=periodOf(new Date());
+  return el("div",{class:"toolbar perbar"},el("div",{class:"pergroup"},
+    el("button",{type:"button",class:"btn small ghost","aria-label":"Previous pay period",onclick:()=>prShift(-1)},"←"),
+    el("div",{class:"per"},el("b",{},periodLabel(S.pr.start,S.pr.end)),
+      el("span",{class:"kv"},(S.pr.start===cur.start?"This pay period":S.pr.end<cur.start?"Past pay period":"Upcoming")+" · "+(ps.every===2?"every 2 weeks":"weekly")+", starts "+DOW_SHORT[ps.startDow]+" · ",
+        el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change"))),
+    el("button",{type:"button",class:"btn small ghost","aria-label":"Next pay period",onclick:()=>prShift(1)},"→")),
+    S.pr.start!==cur.start?el("button",{type:"button",class:"btn small",onclick:prCurrent},"This period"):null,
+    el("span",{class:"grow"}), ...(extra||[]));
+}
+function openPaySched(){
+  const ps=paySched(), f=$("#empForm"); f.replaceChildren();
+  f.append(el("h2",{},"Pay schedule"),
+    el("label",{class:"f"},"You pay your crew",el("select",{name:"every"},el("option",{value:"1",selected:ps.every===1},"Every week"),el("option",{value:"2",selected:ps.every===2},"Every 2 weeks"))),
+    el("label",{class:"f"},"Pay period starts on",el("select",{name:"dow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:ps.startDow===d},DOW_SHORT[d])))),
+    el("p",{class:"kv full",style:"margin:0"},"Payroll and the timesheet open on your pay period automatically. For every 2 weeks, the current period starts this week."),
+    el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),el("button",{type:"submit",class:"btn primary"},"Save")));
+  f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
+    const startDow=Number(d.dow), every=d.every==="2"?2:1, t=new Date(); t.setDate(t.getDate()-((t.getDay()-startDow+7)%7));
+    const paySchedule={every,startDow,anchor:ymd(t)};
+    write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({paySchedule}); S.business.paySchedule=paySchedule; S.pr=null; prInit(); render(); },"Pay schedule saved"); };
+  $("#empDlg").showModal();
+}
+
+/* ---- Timesheet: everyone's hours for the pay period; tap a day to add or fix hours ---- */
+// 5.33 hours → "5:20" in a cell, "5h 20m" in totals
+const hm=h=>{ const m=Math.round(h*60); return Math.floor(m/60)+":"+pad(m%60); };
+const hmLong=h=>{ const m=Math.round(h*60), H=Math.floor(m/60), M=m%60; return (H?H+"h":"")+(H&&M?" ":"")+(M||!H?M+"m":""); };
+function periodDays(){ const out=[], d=parseYmd(S.pr.start), e=parseYmd(S.pr.end); while(d<=e){ out.push(new Date(d)); d.setDate(d.getDate()+1); } return out; }
+function dayShifts(empId,key){ return S.shifts.filter(x=>x.empId===empId && x.start && ymd(new Date(x.start))===key).sort((a,b)=>a.start-b.start); }
+const forgot=sh=>!sh.end && Date.now()-sh.start>SHIFT_FORGOT_H*36e5;
+function viewTimesheet(){
+  prInit();
+  const frag=document.createDocumentFragment(), days=periodDays(), t=today();
+  const people=S.employees.filter(e=>e.active!==false && !e.companyId);
+  frag.append(periodBar([el("button",{type:"button",class:"btn primary",onclick:()=>goTab("payroll")},"Go to payroll →")]));
+  if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew under Crew & locations first."))); return frag; }
+  let missing=0;
+  const tbl=el("table",{class:"tsheet"});
+  tbl.append(el("thead",{},el("tr",{},el("th",{class:"nm"},"Crew"),...days.map(d=>el("th",{class:ymd(d)===t?"today":""},d.toLocaleDateString("en-US",{weekday:"short"}),el("br"),el("span",{class:"kv"},String(d.getDate())))),el("th",{class:"tot"},"Total"))));
+  const tb=el("tbody");
+  people.forEach(e=>{
+    let total=0; const weeks={};
+    const tr=el("tr",{},el("th",{class:"nm"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),e.name));
+    days.forEach(d=>{
+      const key=ymd(d), list=dayShifts(e.id,key), h=list.reduce((n,x)=>n+(forgot(x)?0:shiftHours(x)),0), bad=list.some(forgot), live=list.some(x=>!x.end&&!forgot(x));
+      if (bad) missing++;
+      total+=h; const wk=ymd(weekStart(d)); weeks[wk]=(weeks[wk]||0)+h;
+      tr.append(el("td",{},el("button",{type:"button",class:"tcell"+(bad?" bad":"")+(live?" live":"")+(list.length?"":" none")+(key===t?" today":""),
+        title:bad?"Missing clock-out: tap to fix":"Tap to add or change hours",onclick:()=>openDayHours(e,key)},
+        bad?"!":live?"On":list.length?hm(h):"+")));
+    });
+    const ot=Object.values(weeks).reduce((n,h)=>n+Math.max(0,h-40),0);
+    tr.append(el("td",{class:"tot"},el("b",{},hmLong(total)),ot?el("div",{class:"kv",style:"font-size:11px"},hmLong(ot)+" overtime"):null));
+    tb.append(tr);
+  });
+  tbl.append(tb);
+  if (missing) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},missing+" day"+(missing===1?"":"s")+" with a missing clock-out (marked !). Tap to put in the right times so the hours count.")));
+  frag.append(el("div",{class:"panel",style:"overflow-x:auto;padding:10px"},tbl));
+  frag.append(el("p",{class:"kv",style:"margin-top:10px"},"Hours fill in automatically when your crew taps Start shift and End shift. Tap any day to add hours someone worked without the app, or to fix times."));
+  return frag;
+}
+function openDayHours(e,key){
+  const body=$("#shiftDlgBody");
+  const draw=()=>{
+    body.replaceChildren();
+    const list=dayShifts(e.id,key);
+    body.append(el("div",{class:"row",style:"margin-bottom:4px"},el("h2",{class:"grow",style:"margin:0;font:600 22px var(--display)"},e.name),
+      el("button",{class:"btn small",type:"button",onclick:()=>$("#shiftDlg").close()},"Done")));
+    body.append(el("p",{class:"kv",style:"margin:0 0 12px"},niceDate(key)));
+    if (!list.length) body.append(el("div",{class:"empty",style:"margin-bottom:10px"},"No hours this day yet."));
+    list.forEach(sh=>{
+      const row=el("div",{class:"srow"},
+        el("div",{class:"sinfo"},el("b",{},hhmm(sh.start)+" – "+(sh.end?hhmm(sh.end):forgot(sh)?"no clock-out":"on shift now")+(sh.end?" · "+hmLong(shiftHours(sh)):"")),
+          el("span",{class:"kv"},(sh.manual?"Added by hand":"Clocked in the app")+(sh.note?" · "+sh.note:sh.edited&&sh.edited.note?" · "+sh.edited.note:""))),
+        el("div",{class:"row",style:"gap:6px"},
+          el("button",{class:"btn small",type:"button",onclick:()=>{ row.replaceWith(timesForm(sh)); }},forgot(sh)?"Fix times":"Change"),
+          el("button",{class:"btn small ghost",type:"button",onclick:()=>{ if(confirm("Remove these hours?")) write(()=>Store.del("shifts",sh.id),"Hours removed").then(()=>setTimeout(draw,50)); }},"Remove")));
+      body.append(row);
+    });
+    body.append(el("h3",{style:"margin:16px 0 6px;font-size:16px"},"Add hours"));
+    body.append(timesForm(null));
+  };
+  // One small form for adding or changing hours: start and end, or just a number of hours.
+  const timesForm=sh=>{
+    const t=v=>{ const d=new Date(v); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+    let mode=sh?"times":"times";
+    const f=el("form",{class:"hoursform"});
+    const paint=()=>{
+      f.replaceChildren();
+      if (!sh) f.append(el("div",{class:"seg",style:"grid-column:1/-1"},
+        el("button",{type:"button","aria-pressed":String(mode==="times"),onclick:()=>{mode="times";paint();}},"Start & end time"),
+        el("button",{type:"button","aria-pressed":String(mode==="hours"),onclick:()=>{mode="hours";paint();}},"Just hours")));
+      if (mode==="times") f.append(
+        el("label",{class:"f"},"Start",el("input",{type:"time",name:"s",required:true,value:sh?t(sh.start):"08:00"})),
+        el("label",{class:"f"},"End",el("input",{type:"time",name:"e",required:true,value:sh&&sh.end?t(sh.end):"16:00"})));
+      else f.append(el("label",{class:"f"},"Hours worked",el("input",{type:"number",name:"h",min:"0.25",max:"24",step:"0.25",inputmode:"decimal",required:true,placeholder:"6.5"})));
+      f.append(el("label",{class:"f",style:"grid-column:1/-1"},"Note (optional)",el("input",{name:"n",maxlength:"120",placeholder:sh?"Forgot to clock out":"Worked without the app"})),
+        el("div",{style:"grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"},
+          sh?el("button",{type:"button",class:"btn",onclick:draw},"Cancel"):null,
+          el("button",{class:"btn primary"},sh?"Save times":"Add hours")));
+    };
+    paint();
+    f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f));
+      const at=hm=>{ const [h,m]=hm.split(":").map(Number); const x=parseYmd(key); x.setHours(h,m,0,0); return x.getTime(); };
+      let s, en;
+      if (mode==="hours"){ const h=Number(d.h); if(!(h>0&&h<=24)) return toast("Enter the hours worked."); s=at("08:00"); en=s+Math.round(h*36e5); }
+      else { s=at(d.s); en=at(d.e); if (en<=s) en+=864e5; }   // ended after midnight
+      const note=(d.n||"").trim();
+      if (sh) write(()=>Store.update("shifts",sh.id,{start:s,end:en,edited:{by:S.myEmail||"owner",at:Date.now(),note,wasStart:sh.edited?sh.edited.wasStart:sh.start,wasEnd:sh.edited?sh.edited.wasEnd:(sh.end||null)}}),"Hours saved").then(()=>setTimeout(draw,50));
+      else write(()=>Store.set("shifts",newId(),{businessId:S.businessId,empId:e.id,userId:e.userId||null,name:e.name,start:s,end:en,points:[],events:[],manual:true,note,createdAt:Date.now(),addedBy:S.myEmail||"owner"}),"Hours added").then(()=>setTimeout(draw,50));
+    };
+    return f;
+  };
+  draw(); if (!$("#shiftDlg").open) $("#shiftDlg").showModal();
+}
+
+/* ---- Payroll: one row per person; details only when you open a row ---- */
 function prNum(label,val,onset,attrs){
   return el("label",{class:"f"},label,el("input",{type:"number",min:"0",step:"any",inputmode:"decimal",value:val==null?"":String(val),...(attrs||{}),
     onchange:ev=>{ onset(ev.target.value); render(); }}));
 }
 function viewPayroll(){
-  if (!S.pr){ S.pr={edits:{}}; prPreset("last"); }
+  prInit();
   const frag=document.createDocumentFragment();
-  const {start,end}=S.pr;
+  const {start,end}=S.pr; S.pr.open=S.pr.open||{};
   const people=S.employees.filter(e=>e.active!==false && !e.companyId);
   const rows=people.map(e=>calcPay(e,start,end));
   const sum=k=>r2(rows.reduce((n,x)=>n+(x[k]||0),0));
   const recorded=S.expenses.find(x=>x.payrollRun && x.payrollRun.start===start && x.payrollRun.end===end);
+  frag.append(periodBar([el("button",{class:"btn",onclick:()=>exportPayrollCsv(rows)},"Export CSV")]));
+  if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew under Crew & locations, then set how each person is paid."))); return frag; }
 
-  frag.append(el("div",{class:"toolbar"},
-    el("label",{class:"f"},"From",el("input",{type:"date",value:start,onchange:e=>{ if(e.target.value){S.pr.start=e.target.value;S.pr.edits={};render();} }})),
-    el("label",{class:"f"},"To",el("input",{type:"date",value:end,onchange:e=>{ if(e.target.value){S.pr.end=e.target.value;S.pr.edits={};render();} }})),
-    el("div",{class:"chips",style:"align-self:end"},[["this","This week"],["last","Last week"],["two","Last 2 weeks"],["month","This month"]].map(([id,l])=>
-      el("button",{class:"chip",onclick:()=>prPreset(id)},l))),
+  // What needs fixing before you pay
+  const noRate=rows.filter(x=>!x.r), open=rows.filter(x=>x.ck.open);
+  if (noRate.length) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},el("b",{},noRate.length+(noRate.length===1?" person doesn't":" people don't"))," have a pay rate yet: "+noRate.map(x=>x.e.name.split(" ")[0]).join(", ")+"."),
+    el("button",{class:"btn small",onclick:()=>openPayRate(noRate[0].e)},"Set pay")));
+  if (open.length) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},"Missing clock-outs for "+open.map(x=>x.e.name.split(" ")[0]).join(", ")+". Those hours don't count until the times are fixed."),
+    el("button",{class:"btn small",onclick:()=>goTab("timesheet")},"Fix in Timesheet")));
+
+  // The total, and paying it
+  frag.append(el("div",{class:"paybox"},
+    el("div",{},el("div",{class:"kv"},"To pay your crew"),el("div",{class:"big"},money(sum("net"))),
+      el("div",{class:"kv"},"Gross "+money(sum("paid"))+(sum("erTax")?" · employer taxes about "+money(sum("erTax")):"")+" · total cost "+money(sum("cost")))),
     el("span",{class:"grow"}),
-    el("button",{class:"btn",style:"align-self:end",onclick:()=>exportPayrollCsv(rows)},"Export CSV")));
-
-  frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Gross pay"),el("div",{class:"v"},money(sum("paid")))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Take-home pay"),el("div",{class:"v"},money(sum("net")))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Employer taxes (est.)"),el("div",{class:"v"},money(sum("erTax")))),
-    el("div",{class:"stat net"},el("div",{class:"l"},"Total labor cost"),el("div",{class:"v"},money(sum("cost"))))));
-
-  frag.append(el("div",{class:"banner "+(recorded?"info":"warn")},
-    el("span",{class:"grow"}, recorded
-      ? ["This period is in the books as ",el("b",{},money(recorded.amount)),". Pay totals count toward each person's year."]
-      : "Hours come from each person's clocked shifts (or time on jobs if they didn't clock in). Jobs and revenue come from finished jobs. Change any number, then record the payroll so it lands in the books."),
     recorded
-      ? el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Remove this payroll from the books?")) write(()=>Store.del("expenses",recorded.id),"Payroll removed from the books"); }},"Undo")
-      : el("button",{class:"btn small primary",disabled:!rows.some(x=>x.cost>0),onclick:()=>recordPayroll(rows)},"Record payroll in the books")));
+      ? el("div",{class:"row",style:"gap:8px"},el("span",{class:"pill ok",style:"font-size:13px;padding:6px 12px"},"✓ Paid · in the Books"),
+          el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Mark this period as not paid and remove it from the Books?")) write(()=>Store.del("expenses",recorded.id),"Removed from the Books"); }},"Undo"))
+      : el("button",{class:"btn primary",disabled:!rows.some(x=>x.cost>0),onclick:()=>recordPayroll(rows)},"Mark as paid")));
 
-  if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew on the Team tab, then set how each person is paid."))); return frag; }
-
-  const grid=el("div",{class:"team"});
+  // One row per person
+  const tbl=el("table",{class:"ptable"});
+  tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{class:"hide-sm"},"Work"),el("th",{class:"num"},"Gross"),el("th",{class:"num"},"Take-home"),el("th",{}))));
+  const tb=el("tbody");
   rows.forEach(x=>{
-    const {e,r,t,w,ck,cls}=x; const ed=S.pr.edits[e.id];
-    const card=el("article",{class:"person"});
-    card.append(el("div",{class:"head"},el("div",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
-      el("div",{class:"grow"},el("h3",{},e.name),el("span",{class:"kv"},payRuleText(r))),
-      el("button",{class:"btn small ghost",onclick:()=>openPayRate(e)},r?"Edit pay":"Set pay")));
-    card.append(el("div",{class:"row",style:"gap:6px"},
-      el("span",{class:"pill "+(cls==="1099"?"warn":"active")},cls==="1099"?"1099":"W-2"),
-      cls==="1099"?el("span",{class:"pill "+(r&&r.w9?"ok":"bad")},r&&r.w9?"W-9 on file":"Collect W-9"):null,
-      cls==="1099"&&x.needs1099?el("span",{class:"pill warn"},"1099-NEC needed"):null,
-      el("span",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" \u00b7 "+w.hours+" h on jobs \u00b7 "+ck.hours+" h clocked")));
-    const gap=ck.shifts&&w.hours?ck.hours-w.hours:0;
-    if (ck.open) card.append(el("div",{class:"banner warn",style:"margin:0;padding:8px 12px"},el("span",{class:"grow"},ck.open+" shift"+(ck.open===1?"":"s")+" without a clock-out. Fix the times so the hours count."),el("button",{class:"btn small",onclick:()=>openShiftLog(e)},"Shift log")));
-    else if (Math.abs(gap)>=2) card.append(el("div",{class:"kv",style:"font-size:13px"},"Clocked hours are "+hrs(Math.abs(gap))+(gap>0?" more":" less")+" than time on jobs (travel, setup, breaks). ",el("a",{href:"#",onclick:ev=>{ev.preventDefault();openShiftLog(e);}},"Check the shift log")));
-    if (t.id==="hourly") card.append(el("div",{class:"row",style:"gap:6px"},el("span",{class:"kv"},"Pay hours from"),
-      el("div",{class:"seg"},[["shifts","Clocked shifts"],["jobs","Time on jobs"]].map(([id,l])=>
-        el("button",{type:"button","aria-pressed":String(x.src===id),onclick:()=>{ ed.src=id; ed.qty=null; render(); }},l)))));
-    if (r){
-      const inputs=el("div",{class:"expform"});
-      if (t.unit) inputs.append(prNum(t.unit,ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>{ed.qty=v;}));
-      inputs.append(prNum("Tips $",ed.tips,v=>{ed.tips=v;}), prNum("Bonus $",ed.bonus,v=>{ed.bonus=v;}), prNum("Miles driven",ed.miles,v=>{ed.miles=v;}));
-      if (cls==="w2") inputs.append(prNum("Federal income tax $",ed.fit,v=>{ed.fit=v;},{title:"From the employee's W-4 and IRS Publication 15-T, or your accountant"}));
-      inputs.append(prNum("Advances / deductions $",ed.deduct,v=>{ed.deduct=v;}));
-      card.append(inputs);
-      const L=(a,b,cls2)=>el("div",{class:cls2||""},el("span",{},a),el("b",{},b));
-      const stub=el("div",{class:"stub"});
-      stub.append(L("Earnings",money(x.wages-x.tips-x.bonus)));
-      if (x.otHours) stub.append(L("Includes overtime ("+x.otHours+" h at 1.5×)","+"+money(x.otHours*(Number(r.rate)||0)*0.5)));
-      if (x.tips) stub.append(L("Tips",money(x.tips)));
-      if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
-      if (cls==="w2"){
-        stub.append(L("Social Security","−"+money(x.ssEe)),L("Medicare","−"+money(x.medEe)),L("Federal income tax","−"+money(x.fit)));
-      }
-      if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
-      if (x.reimb) stub.append(L("Mileage ("+x.miles+" mi, not taxed)","+"+money(x.reimb)));
-      stub.append(L(cls==="w2"?"Take-home pay":"Pay this period",money(x.net),"t"));
-      if (cls==="w2") stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"You also owe about ",el("b",{},money(x.erTax))," in employer taxes."));
-      else stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"No taxes withheld. Paid this year: ",el("b",{},money(x.ytd+x.paid))));
-      card.append(stub);
-    } else {
-      card.append(el("div",{class:"empty"},"Set how "+e.name.split(" ")[0]+" is paid to see their pay."));
-    }
-    grid.append(card);
+    const {e,r,t,w,ck,cls}=x, isOpen=!!S.pr.open[e.id], toggle=()=>{ S.pr.open[e.id]=!isOpen; render(); };
+    const work = !r ? "" : t.id==="hourly" ? hrs(x.qty)+(x.otHours?" ("+hrs(x.otHours)+" OT)":"") : t.id==="perjob" ? x.qty+" job"+(x.qty===1?"":"s") : t.id==="percent" ? money(x.qty)+" of jobs" : t.id==="day" ? x.qty+" day"+(x.qty===1?"":"s") : t.id==="salary" ? "Salary" : x.qty+" units";
+    tb.append(el("tr",{class:"prow"+(isOpen?" open":""),onclick:toggle},
+      el("td",{},el("div",{class:"row",style:"gap:8px;flex-wrap:nowrap"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),
+        el("div",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},r?payRuleText(r):"No pay rate yet")))),
+      el("td",{class:"hide-sm"},work),
+      el("td",{class:"num"},r?money(x.paid):"—"),
+      el("td",{class:"num"},r?el("b",{},money(x.net)):el("button",{class:"btn small",onclick:ev=>{ev.stopPropagation();openPayRate(e);}},"Set pay")),
+      el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
+    if (isOpen) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"5"},payDetail(x))));
   });
-  frag.append(grid);
+  tbl.append(tb);
+  frag.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
+  frag.append(el("p",{class:"kv",style:"margin-top:8px"},"Tap a person to see their pay stub, or to add tips, a bonus, mileage or a deduction. Dayzift doesn't send money: pay your crew the way you normally do, then tap Mark as paid."));
 
   const subs=S.employees.filter(e=>e.active!==false && e.companyId);
-  if (subs.length) frag.append(el("p",{class:"kv",style:"margin-top:14px"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
-
-  // Year-end 1099s for this calendar year
+  if (subs.length) frag.append(el("p",{class:"kv"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
+  frag.append(yearEndPanel(start));
+  return frag;
+}
+function payDetail(x){
+  const {e,r,t,w,ck,cls}=x; const ed=S.pr.edits[e.id] ||= {};
+  const box=el("div",{class:"pdbox"});
+  box.append(el("div",{class:"row",style:"gap:6px"},
+    el("span",{class:"pill "+(cls==="1099"?"warn":"active")},cls==="1099"?"1099":"W-2"),
+    cls==="1099"?el("span",{class:"pill "+(r&&r.w9?"ok":"bad")},r&&r.w9?"W-9 on file":"Collect W-9"):null,
+    cls==="1099"&&x.needs1099?el("span",{class:"pill warn"},"1099-NEC needed"):null,
+    el("span",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" done · "+ck.hours+" h clocked · "+w.hours+" h on jobs"),
+    el("span",{class:"grow"}),
+    el("button",{class:"btn small ghost",onclick:()=>openPayRate(e)},"Edit pay rate"),
+    el("button",{class:"btn small ghost",onclick:()=>goTab("timesheet")},"Timesheet")));
+  if (!r){ box.append(el("div",{class:"empty"},"Set how "+e.name.split(" ")[0]+" is paid to see their pay.")); return box; }
+  if (t.id==="hourly" && ck.shifts && w.hours) box.append(el("div",{class:"row",style:"gap:6px"},el("span",{class:"kv"},"Pay hours from"),
+    el("div",{class:"seg"},[["shifts","Clocked hours"],["jobs","Time on jobs"]].map(([id,l])=>
+      el("button",{type:"button","aria-pressed":String(x.src===id),onclick:ev=>{ ev.stopPropagation(); ed.src=id; ed.qty=null; render(); }},l)))));
+  const inputs=el("div",{class:"expform"});
+  if (t.unit) inputs.append(prNum(t.unit,ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>{ed.qty=v;}));
+  inputs.append(prNum("Tips $",ed.tips,v=>{ed.tips=v;}), prNum("Bonus $",ed.bonus,v=>{ed.bonus=v;}), prNum("Miles driven",ed.miles,v=>{ed.miles=v;}));
+  if (cls==="w2") inputs.append(prNum("Federal income tax $",ed.fit,v=>{ed.fit=v;},{title:"From the employee's W-4 and IRS Publication 15-T, or your accountant"}));
+  inputs.append(prNum("Advances / deductions $",ed.deduct,v=>{ed.deduct=v;}));
+  const L=(a,b,cls2)=>el("div",{class:cls2||""},el("span",{},a),el("b",{},b));
+  const stub=el("div",{class:"stub"});
+  stub.append(L("Earnings",money(x.wages-x.tips-x.bonus)));
+  if (x.otHours) stub.append(L("Includes overtime ("+x.otHours+" h at 1.5×)","+"+money(x.otHours*(Number(r.rate)||0)*0.5)));
+  if (x.tips) stub.append(L("Tips",money(x.tips)));
+  if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
+  if (cls==="w2") stub.append(L("Social Security","−"+money(x.ssEe)),L("Medicare","−"+money(x.medEe)),L("Federal income tax","−"+money(x.fit)));
+  if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
+  if (x.reimb) stub.append(L("Mileage ("+x.miles+" mi, not taxed)","+"+money(x.reimb)));
+  stub.append(L(cls==="w2"?"Take-home pay":"Pay this period",money(x.net),"t"));
+  if (cls==="w2") stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"You also owe about ",el("b",{},money(x.erTax))," in employer taxes."));
+  else stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"No taxes withheld. Paid this year: ",el("b",{},money(x.ytd+x.paid))));
+  box.append(el("div",{class:"pdgrid"},inputs,stub));
+  box.addEventListener("click",ev=>ev.stopPropagation());
+  return box;
+}
+// Once a year: 1099 totals and the tax rates used. Folded away the rest of the time.
+function yearEndPanel(start){
   const yr=start.slice(0,4);
+  const d=el("details",{class:"panel",style:"margin-top:18px"},el("summary",{style:"cursor:pointer;font-weight:800"},"Year-end & taxes ("+yr+")"));
   const cons=S.employees.filter(e=>(payRateFor(e.id)||{}).cls==="1099");
   const yearEnd=yr+"-12-32";   // sorts after every date in the year, so all recorded runs count
-  const p=el("div",{class:"panel",style:"margin-top:20px"},el("h2",{},"1099s for "+yr));
-  p.append(el("div",{class:"sub"},"Contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" need a 1099-NEC by January 31. Totals come from recorded payroll."));
+  d.append(el("h3",{style:"margin:14px 0 4px;font-size:16px"},"1099s"),
+    el("div",{class:"sub"},"Contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" need a 1099-NEC by January 31. Totals come from payroll you marked as paid."));
   const co=S.companies.map(c=>({name:c.name,w9:c.w9,paid:S.expenses.filter(x=>x.companyId===c.id&&(x.date||"").startsWith(yr)).reduce((n,x)=>n+(Number(x.amount)||0),0)}));
   const list=[...cons.map(e=>({name:e.name,w9:(payRateFor(e.id)||{}).w9,paid:ytdBefore(e.id,yearEnd)})),...co];
-  if (!list.length) p.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
-  list.sort((a,b)=>b.paid-a.paid).forEach(c=>p.append(el("div",{class:"srow"},
+  if (!list.length) d.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
+  list.sort((a,b)=>b.paid-a.paid).forEach(c=>d.append(el("div",{class:"srow"},
     el("div",{class:"sinfo"},el("b",{},c.name),el("span",{class:"kv"},"Paid "+money(c.paid)+" so far")),
     el("div",{class:"row",style:"gap:6px"},
       el("span",{class:"pill "+(c.w9?"ok":"bad")},c.w9?"W-9 on file":"Collect W-9"),
       el("span",{class:"pill "+(c.paid>=TAX.necThreshold?"warn":"")},c.paid>=TAX.necThreshold?"1099-NEC needed":"Under $"+TAX.necThreshold.toLocaleString())))));
-  frag.append(p);
-
-  const rates=el("details",{class:"panel"},el("summary",{style:"cursor:pointer;font-weight:800"},"Tax rates used"));
-  rates.append(el("div",{class:"expform",style:"margin-top:12px"},
-    prNum("State unemployment (SUTA) %",sutaRate(),v=>saveBizNum("sutaRate",v)),
-    prNum("SUTA wage base $",sutaBase(),v=>saveBizNum("sutaBase",v)),
-    prNum("Mileage rate $ per mile",mileageRate(),v=>saveBizNum("mileageRate",v))));
-  rates.append(el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages. These are estimates to pay from, not tax advice."));
-  frag.append(rates);
-  return frag;
+  d.append(el("h3",{style:"margin:18px 0 4px;font-size:16px"},"Tax rates used"),
+    el("div",{class:"expform",style:"margin-top:8px"},
+      prNum("State unemployment (SUTA) %",sutaRate(),v=>saveBizNum("sutaRate",v)),
+      prNum("SUTA wage base $",sutaBase(),v=>saveBizNum("sutaBase",v)),
+      prNum("Mileage rate $ per mile",mileageRate(),v=>saveBizNum("mileageRate",v))),
+    el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages. These are estimates to pay from, not tax advice."));
+  return d;
 }
 function saveBizNum(field,v){
   const n=Number(v); if(!(n>=0)) return toast("Enter a number.");
@@ -3535,10 +3696,10 @@ function saveBizNum(field,v){
 }
 function recordPayroll(rows){
   const {start,end}=S.pr; const total=r2(rows.reduce((n,x)=>n+x.cost,0));
-  if (!confirm("Record "+money(total)+" of payroll for "+niceDate(start)+" to "+niceDate(end)+" in the books?\n\nDayzift doesn't send any money. Pay your crew the way you normally do.")) return;
+  if (!confirm("Mark "+periodLabel(start,end)+" as paid?\n\nThis records "+money(total)+" of payroll in your Books. Dayzift doesn't send any money; pay your crew the way you normally do.")) return;
   const people=rows.filter(x=>x.cost>0).map(x=>({empId:x.e.id,name:x.e.name,cls:x.cls,paid:x.paid,net:x.net,erTax:x.erTax}));
   write(()=>Store.set("expenses",newId(),{date:end,amount:total,category:"Payroll",vendor:"Crew payroll "+niceDate(start)+" – "+niceDate(end),
-    payrollRun:{start,end,people},createdAt:Date.now(),businessId:S.businessId}),"Payroll recorded in the books");
+    payrollRun:{start,end,people},createdAt:Date.now(),businessId:S.businessId}),"Marked as paid and recorded in the Books");
 }
 function exportPayrollCsv(rows){
   const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
@@ -4731,7 +4892,7 @@ function startDemo(type){
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
-  if (!["home","board","projects","team","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
+  if (!["home","board","projects","team","timesheet","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
   document.title=biz.name+" · Dayzift demo";
