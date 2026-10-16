@@ -76,7 +76,18 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/employees/$(request.resource.data.lastCrewJoin)).data.get('businessId', '') == b
             && getAfter(/databases/$(database)/documents/employees/$(request.resource.data.lastCrewJoin)).data.get('active', true) != false);
 
-      allow delete: if isPlatformAdmin();
+      // A client business can never be deleted, not even by the platform admin. Archive it instead
+      // (status "archived"): it keeps every record and can be restored. Only an unapproved sign-up
+      // (status "pending", no data yet) can be rejected and removed.
+      allow delete: if isPlatformAdmin() && resource.data.get('status', '') == 'pending';
+    }
+
+    // ---------- booking calendar (public) ----------
+    // The days a business takes bookings, read by its public website. Holds only the calendar.
+    match /publicCalendars/{b} {
+      allow read: if true;
+      allow write: if isOwner(b)
+        && request.resource.data.keys().hasOnly(['closedWeekdays', 'holidays', 'closedDates', 'updatedAt']);
     }
 
     // ---------- team members ----------
@@ -240,8 +251,9 @@ service cloud.firestore {
 
     // ---------- anything else: platform admin only ----------
     // (Cloud Functions use the admin SDK and are not limited by these rules.)
+    // No blanket delete: deleting records goes through the rules above (and a business never).
     match /{document=**} {
-      allow read, write: if isPlatformAdmin();
+      allow read, create, update: if isPlatformAdmin();
     }
   }
 }

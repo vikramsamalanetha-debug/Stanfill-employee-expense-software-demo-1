@@ -66,6 +66,23 @@ a{color:var(--primary)}
   .toast{bottom:calc(92px + env(safe-area-inset-bottom))!important}
   #mainApp{padding-bottom:88px}
 }
+/* Desktop: a sidebar with every page listed (no second row of buttons) */
+.side-group{margin:0 0 6px}
+.side-label{display:flex;align-items:center;gap:10px;padding:10px 12px 4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.side-label svg{width:16px;height:16px}
+.side-item{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:8px 12px;border-radius:10px;font:inherit;font-weight:650;color:var(--ink);cursor:pointer}
+.side-item.sub{padding-left:38px;font-weight:600;color:var(--ink)}
+.side-item:hover{background:var(--surface-2)}
+.side-item[aria-current="page"]{background:var(--primary-soft);color:var(--primary)}
+.side-item svg{width:18px;height:18px;flex:none}
+.side-item .dot{margin-left:auto;background:var(--danger);color:#fff;border-radius:999px;font-size:11px;line-height:18px;min-width:18px;height:18px;padding:0 5px;font-weight:800;text-align:center}
+@media (min-width:1000px){
+  #mainApp:not([hidden]){display:grid;grid-template-columns:224px minmax(0,1fr);column-gap:32px;align-items:start}
+  #mainApp>header,#mainApp>#banners,#mainApp>footer{grid-column:1/-1}
+  #mainApp>#groupNav{grid-column:1;grid-row:3/span 2;position:sticky;top:16px;display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:10px;margin:0;width:auto;max-height:calc(100vh - 32px);overflow:auto}
+  #mainApp>#subNav{display:none}
+  #mainApp>#view{grid-column:2;grid-row:3/span 2;min-width:0}
+}
 /* Home */
 .hello{margin:0 0 14px;font:750 24px/1.2 var(--display)}
 .home-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}
@@ -85,6 +102,30 @@ a{color:var(--primary)}
 .sched .what{min-width:0}
 .sched .what b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sched .what span{color:var(--muted);font-size:13px}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.week button{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:10px 8px;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0}
+.week button:hover{border-color:var(--primary)}
+.week .d{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.week .n{font:750 22px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.week .m{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week .today{border-color:var(--primary);background:var(--primary-soft)}
+.week .closed .n{color:var(--muted)}
+@media (max-width:700px){.week{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.money3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.money3 div{background:var(--bg);border-radius:var(--radius);padding:10px 12px;min-width:0}
+.money3 span{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+.money3 b{font:750 20px/1.3 var(--display);font-variant-numeric:tabular-nums}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;align-items:baseline}
+.feed li:first-child{border-top:0}
+.feed .t{color:var(--muted);font-size:12px;white-space:nowrap;margin-left:auto}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+/* Platform console */
+.client{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:start}
+.client .stats{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.client .stats b{color:var(--ink)}
+.client details summary{cursor:pointer;list-style:none}
+.client details summary::-webkit-details-marker{display:none}
 .shift-big{width:100%;justify-content:center;font-size:18px;padding:16px;margin:0 0 18px}
 
 /* buttons & fields */
@@ -680,7 +721,7 @@ function niceDate(s){ if(!s) return "No date"; const [y,m,d]=s.split("-").map(Nu
   const t=today(); if(s===t) return "Today"; const tm=new Date(); tm.setDate(tm.getDate()+1); if(s===ymd(tm)) return "Tomorrow";
   return dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}); }
 function niceTime(s){ if(!s) return ""; const [h,m]=s.split(":").map(Number); const d=new Date(); d.setHours(h,m); return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
-function ago(ms){ const s=Math.round((Date.now()-ms)/1000); if(s<60) return "just now"; const m=Math.round(s/60); if(m<60) return m+" min ago"; const h=Math.round(m/60); if(h<24) return h+" hr ago"; return Math.round(h/24)+" days ago"; }
+function ago(ms){ const s=Math.round((Date.now()-ms)/1000); if(s<60) return "just now"; const m=Math.round(s/60); if(m<60) return m+" min ago"; const h=Math.round(m/60); if(h<24) return h+" hr ago"; const d=Math.round(h/24); return d===1?"yesterday":d+" days ago"; }
 function initials(name){ return (name||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
 function colorFor(emp){ const i = Math.abs([...(emp.id||"x")].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7)) % COLORS.length; return emp.color || COLORS[i]; }
 function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng);
@@ -779,7 +820,7 @@ async function write(fn, okMsg){
 /* ---------- state ---------- */
 const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], tab:"home", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
-  businessId:null, business:null, isPlatformAdmin:false, allBusinesses:[], allUsers:[], usersLoaded:false };
+  businessId:null, business:null, isPlatformAdmin:false, console:false, pa:null, paLoading:false, clientQ:"", allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
 const empById = id => S.employees.find(e=>e.id===id);
 const locFor = id => S.locations.find(l=>l.id===id);
@@ -788,7 +829,16 @@ const locFor = id => S.locations.find(l=>l.id===id);
 let renderQueued=false;
 function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); }); }
 function draw(){
-  const tag=$("#appTagline"); if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
+  const tag=$("#appTagline");
+  if (S.console){   // platform admin: every client business, not one business
+    if (tag) tag.textContent = "Every client business, sign-up and booking in one place.";
+    if (!["clients","approvals","activity","addbiz"].includes(S.tab)) S.tab="clients";
+    drawNav(); drawWho(); drawBanners();
+    const v=$("#view"); v.replaceChildren();
+    v.append(S.tab==="approvals"?viewConsoleApprovals():S.tab==="activity"?viewConsoleActivity():S.tab==="addbiz"?viewConsoleAdd():viewConsoleClients());
+    return;
+  }
+  if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
   if (!S.isOwner && ["requests","rewards","insights","books","payroll","invoices","platform"].includes(S.tab)) S.tab="home";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
   if (S.tab==="rewards" && !hasRewards()) S.tab="home";
@@ -834,7 +884,7 @@ function drawBanners(){
         ? ["Platform admin · viewing ",el("b",{},S.business.name)," · view only. Nothing you click here changes their business."]
         : ["Platform admin · ",el("b",{},"editing is on")," for ",el("b",{},S.business.name),". Changes go live in their business right away."]),
       el("button",{class:"btn small "+(S.viewOnly?"":"lemon"),onclick:adminToggleEditing},S.viewOnly?"Turn on editing":"Back to view only"),
-      el("button",{class:"btn small",onclick:adminBackHome},"Back to my business")));
+      el("button",{class:"btn small",onclick:adminBackHome},"\u2190 All clients")));
   }
   if (S.demo){
     const asCrew = !S.isOwner;
@@ -943,12 +993,24 @@ const NAV_ICONS={
   money:'<rect x="2.5" y="6" width="19" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.8"/><path d="M6 9.5v.01M18 15.5v.01"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   shift:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="M15 18l-6-6 6-6"/>',
   account:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/>'};
 const navIcon=k=>{ const t=document.createElement("template");
   t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+NAV_ICONS[k]+'</svg>';
   return t.content.firstChild; };
 const pendingBookings=()=>S.bookings.filter(b=>(b.status||"pending")==="pending");
 function navGroups(){
+  if (S.console){
+    const nAdmin=S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length;
+    return [
+      {id:"clients",label:"Clients",icon:"team",tabs:[["clients","Clients"]]},
+      {id:"approvals",label:"Approvals",icon:"check",badge:nAdmin,tabs:[["approvals","Approvals"+(nAdmin?" ("+nAdmin+")":"")]]},
+      {id:"activity",label:"Activity",icon:"pulse",tabs:[["activity","Activity"]]},
+      {id:"addbiz",label:"Add client",icon:"plus",tabs:[["addbiz","Add client"]]}];
+  }
   if (!S.isOwner) return [
     {id:"home",label:"Today",icon:"home",tabs:[["home","Today"]]},
     {id:"jobs",label:"My jobs",icon:"jobs",tabs:[["board","My jobs"]]},
@@ -961,11 +1023,15 @@ function navGroups(){
     {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests","Booking requests"+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null]},
     {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["payroll","Payroll"]]},
     {id:"money",label:"Money",icon:"money",tabs:[["invoices","Invoices"],["books","Books"],["insights","Insights"]]},
-    {id:"more",label:"More",icon:"more",badge:nAdmin,tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"],S.isPlatformAdmin?["platform","Platform Admin"+(nAdmin?" ("+nAdmin+")":"")]:null]}
-  ].map(g=>({...g,tabs:g.tabs.filter(Boolean)}));
+    {id:"more",label:"More",icon:"more",tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"]]},
+    S.adminView ? {id:"console",label:"All clients",icon:"back",badge:nAdmin,tabs:[["platform","All clients"]]} : null
+  ].filter(Boolean).map(g=>({...g,tabs:g.tabs.filter(Boolean)}));
 }
 // Each section remembers the page you were last on, so tapping "Money" goes back to Invoices or Books.
 const lastInGroup={};
+const desktopMQ = window.matchMedia ? window.matchMedia("(min-width:1000px)") : null;
+const isDesktop = () => !!(desktopMQ && desktopMQ.matches);
+if (desktopMQ && desktopMQ.addEventListener) desktopMQ.addEventListener("change",()=>render());
 function goTab(tab){
   if (tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
   S.tab=tab; render(); window.scrollTo(0,0);
@@ -975,6 +1041,18 @@ function drawNav(){
   const cur=groups.find(g=>g.tabs.some(t=>t[0]===S.tab))||groups[0];
   lastInGroup[cur.id]=S.tab;
   const gn=$("#groupNav"), sn=$("#subNav"); if (!gn||!sn) return;
+  if (isDesktop()){   // sidebar: every page listed under its section
+    gn.className="side";
+    gn.replaceChildren(...groups.map(g=>{
+      if (g.tabs.length===1) return el("div",{class:"side-group"},el("button",{type:"button",class:"side-item","aria-current":S.tab===g.tabs[0][0]?"page":"false",onclick:()=>goTab(g.tabs[0][0])},
+        navIcon(g.icon),el("span",{},g.label),g.badge?el("span",{class:"dot"},String(g.badge)):null));
+      return el("div",{class:"side-group"},el("div",{class:"side-label"},navIcon(g.icon),g.label),
+        ...g.tabs.map(([id,label])=>el("button",{type:"button",class:"side-item sub","aria-current":S.tab===id?"page":"false",onclick:()=>goTab(id)},label)));
+    }));
+    sn.replaceChildren();
+    return;
+  }
+  gn.className="groups";
   gn.replaceChildren(...groups.map(g=>el("button",{type:"button","aria-current":g===cur?"page":"false",
     onclick:()=>{ const keep=lastInGroup[g.id]; goTab(g.tabs.some(t=>t[0]===keep)?keep:g.tabs[0][0]); }},
     navIcon(g.icon), el("span",{},g.label), g.badge?el("span",{class:"dot","aria-label":g.badge+" waiting"},String(g.badge)):null)));
@@ -1035,8 +1113,43 @@ function viewHomeOwner(){
       el("button",{type:"button",class:"btn small primary",onclick:()=>goTab("requests")},"Answer")))));
   cols.append(req);
   frag.append(cols);
+  frag.append(homeWeekAndMoney());
   return frag;
 }
+// The next 7 days at a glance, money this month and what happened lately.
+function homeWeekAndMoney(){
+  const t=today(), cal=bookingCal(), wrap=el("div",{class:"home-cols",style:"margin-top:16px"});
+  const days=[...Array(7)].map((_,i)=>{ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+i); return d; });
+  const wk=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Next 7 days"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>{S.range="week";goTab("board");}},"Job board")));
+  wk.append(el("div",{class:"week"},...days.map(d=>{
+    const key=ymd(d), js=S.jobs.filter(j=>j.date===key), amt=js.reduce((n,j)=>n+(Number(j.price)||0),0), why=closedReason(d,cal);
+    return el("button",{type:"button",class:(key===t?"today":"")+(why?" closed":""),title:why||"",onclick:()=>{S.range="week";goTab("board");}},
+      el("div",{class:"d"},d.toLocaleDateString("en-US",{weekday:"short"})+" "+d.getDate()),
+      el("div",{class:"n"},String(js.length)),
+      el("div",{class:"m"},why?why:(js.length?money(amt).replace(/\.00$/,""):"No jobs")));
+  })));
+  wrap.append(wk);
+  const mo=t.slice(0,7), done=S.jobs.filter(j=>j.status==="done"&&(j.date||"").startsWith(mo));
+  const earned=done.reduce((n,j)=>n+(Number(j.price)||0),0), paid=done.filter(j=>j.paid).reduce((n,j)=>n+(Number(j.price)||0),0);
+  const spent=S.expenses.filter(x=>(x.date||"").startsWith(mo)).reduce((n,x)=>n+(Number(x.amount)||0),0);
+  const mp=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},new Date().toLocaleDateString("en-US",{month:"long"})+" so far"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>goTab("books")},"Books")));
+  mp.append(el("div",{class:"money3"},
+    el("div",{},el("span",{},"Jobs done"),el("b",{},money(earned).replace(/\.00$/,""))),
+    el("div",{},el("span",{},"Paid"),el("b",{},money(paid).replace(/\.00$/,""))),
+    el("div",{},el("span",{},"Expenses"),el("b",{},money(spent).replace(/\.00$/,"")))));
+  const ev=[];
+  S.bookings.forEach(b=>{ const at=tsMs(b.createdAt); if(at) ev.push([at,"Booking request from "+(b.name||"a customer")]); });
+  S.jobs.forEach(j=>{ if(j.completedAt) ev.push([j.completedAt,"Done: "+(j.service||"Job")+" \u00b7 "+(j.client||"")]); });
+  S.invoices.forEach(i=>{ if(i.sentAt) ev.push([tsMs(i.sentAt),"Invoice "+(i.number||"")+" sent"]); });
+  const recent=ev.filter(x=>x[0]).sort((a,b)=>b[0]-a[0]).slice(0,5);
+  mp.append(el("h3",{style:"margin:16px 0 4px;font-size:15px"},"Latest"));
+  mp.append(recent.length?el("ul",{class:"feed"},...recent.map(([at,txt])=>el("li",{},el("span",{},txt),el("span",{class:"t"},ago(at))))):el("div",{class:"empty"},"Nothing yet."));
+  wrap.append(mp);
+  return wrap;
+}
+const tsMs = v => v && v.toMillis ? v.toMillis() : typeof v==="number" ? v : (v && v.seconds ? v.seconds*1000 : 0);
 function viewHomeCrew(){
   const frag=document.createDocumentFragment(), t=today(), m=me();
   frag.append(el("h2",{class:"hello"},greeting()+(m?", "+m.name.split(" ")[0]:"")));
@@ -1058,6 +1171,62 @@ function viewHomeCrew(){
   const next=mine.filter(j=>j.date>t).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,3);
   if (next.length){ p.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
     p.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,false); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
+  frag.append(p);
+  return frag;
+}
+
+/* ---- Booking calendar: which days customers can request on the website ---- */
+function usHolidays(y){
+  const nth=(m,dow,n)=>{ const d=new Date(y,m,1); return new Date(y,m,1+((dow-d.getDay()+7)%7)+7*(n-1)); };
+  const last=(m,dow)=>{ const d=new Date(y,m+1,0); return new Date(y,m,d.getDate()-((d.getDay()-dow+7)%7)); };
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  return [["newyear","New Year's Day",new Date(y,0,1)],["easter","Easter Sunday",new Date(y,mo-1,da)],["memorial","Memorial Day",last(4,1)],
+    ["july4","Independence Day",new Date(y,6,4)],["labor","Labor Day",nth(8,1,1)],["thanksgiving","Thanksgiving",nth(10,4,4)],
+    ["xmaseve","Christmas Eve",new Date(y,11,24)],["xmas","Christmas Day",new Date(y,11,25)]].map(([id,name,date])=>({id,name,date}));
+}
+const HOLIDAY_IDS=usHolidays(2026).map(h=>h.id);
+const DOW_NAMES=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
+// Default: open every day, closed on the major holidays.
+function bookingCal(){ const c=(S.business&&S.business.calendar)||{};
+  return { closedWeekdays:Array.isArray(c.closedWeekdays)?c.closedWeekdays:[], holidays:Array.isArray(c.holidays)?c.holidays:HOLIDAY_IDS.slice(), closedDates:Array.isArray(c.closedDates)?c.closedDates:[] }; }
+function closedReason(d,cal){
+  if (cal.closedWeekdays.includes(d.getDay())) return "Closed "+DOW_NAMES[d.getDay()];
+  const key=ymd(d), h=usHolidays(d.getFullYear()).find(x=>cal.holidays.includes(x.id)&&ymd(x.date)===key);
+  if (h) return h.name;
+  if (cal.closedDates.includes(key)) return "Day off";
+  return "";
+}
+function saveBookingCal(cal, msg){
+  write(async()=>{
+    const db=firebase.firestore();
+    await db.doc("businesses/"+S.businessId).update({calendar:cal});
+    S.business.calendar=cal; render();
+    // the public copy the business's website reads (no other business details in it)
+    await db.doc("publicCalendars/"+S.businessId).set({...cal,updatedAt:Date.now()});
+  }, msg||"Booking calendar saved");
+}
+function settingsCalendar(){
+  const cal=bookingCal(), frag=document.createDocumentFragment(), t=today();
+  const tog=(on,label,fn)=>el("button",{type:"button",class:"chip","aria-pressed":String(on),onclick:fn},label);
+  frag.append(setPanel("Days you're open","Highlighted days are open for bookings on your website. Tap a day to close it. You still confirm every request.",
+    el("div",{class:"toggles"},...[1,2,3,4,5,6,0].map(dw=>tog(!cal.closedWeekdays.includes(dw),DOW_NAMES[dw],()=>{
+      const set=new Set(cal.closedWeekdays); set.has(dw)?set.delete(dw):set.add(dw);
+      saveBookingCal({...cal,closedWeekdays:[...set].sort()}); })))));
+  const y=new Date().getFullYear(), next=h=>{ const now=new Date(); now.setHours(0,0,0,0); return h.date>=now?h.date:usHolidays(y+1).find(x=>x.id===h.id).date; };
+  frag.append(setPanel("Holidays you're closed","Highlighted holidays are closed, so customers can't pick them. Tap one to take bookings that day.",
+    el("div",{class:"toggles"},...usHolidays(y).map(h=>tog(cal.holidays.includes(h.id),h.name+" \u00b7 "+next(h).toLocaleDateString("en-US",{month:"short",day:"numeric"})+(cal.holidays.includes(h.id)?" \u00b7 closed":" \u00b7 open"),()=>{
+      const set=new Set(cal.holidays); set.has(h.id)?set.delete(h.id):set.add(h.id);
+      saveBookingCal({...cal,holidays:[...set]}); })))));
+  const upcoming=cal.closedDates.filter(d=>d>=t).sort();
+  const inp=el("input",{type:"date",min:t,"aria-label":"Day off"});
+  const p=setPanel("Other days off","Vacations, training days, fully booked days: customers can't pick these.",
+    el("div",{class:"row"},inp,el("button",{type:"button",class:"btn small primary",onclick:()=>{
+      if(!inp.value) return toast("Pick a date first.");
+      if(cal.closedDates.includes(inp.value)) return toast("That day is already off.");
+      saveBookingCal({...cal,closedDates:[...cal.closedDates.filter(d=>d>=t),inp.value].sort()},"Day off added"); }},"Add day off")));
+  if (!upcoming.length) p.append(el("div",{class:"empty"},"No days off coming up."));
+  upcoming.forEach(d=>p.append(setRow(niceDate(d),"",el("button",{class:"btn small ghost",onclick:()=>
+    saveBookingCal({...cal,closedDates:cal.closedDates.filter(x=>x!==d&&x>=t)},"Day off removed")},"Remove"))));
   frag.append(p);
   return frag;
 }
@@ -1175,12 +1344,12 @@ function settingsBusiness(){
 function viewSettings(){
   const frag=document.createDocumentFragment();
   const secs=S.isOwner&&S.business
-    ?[["business","Business"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
+    ?[["business","Business"],["calendar","Booking calendar"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
     ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
-  const body={business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
   frag.append(body());
   return frag;
 }
@@ -1362,24 +1531,136 @@ async function assignUser(biz,u,role){
   $("#assignDlg").close();
 }
 
-function viewPlatformAdmin(){
+/* ---- Platform console: the platform admin's home (all clients), not any one business ---- */
+function enterConsole(){
+  unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
+  COLLS.forEach(c=>{ S[c]=[]; });
+  Object.assign(S,{console:true,adminView:false,viewOnly:false,business:null,businessId:null,homeBusiness:null,isOwner:false});
+  if (!["clients","approvals","activity","addbiz"].includes(S.tab)) S.tab="clients";
+  Store.mode="db"; Store.db=firebase.firestore();
+  const h=$("#bizNameHeader"); if (h) h.firstChild.textContent="Dayzift Platform";
+  document.title="Dayzift Platform";
+  booted=true; showApp(); render();
+  loadPlatformActivity();
+  enablePush();      // the admin's phone still gets sign-up and approval alerts
+}
+// What each client has been doing (read once, refreshed on demand).
+async function loadPlatformActivity(force){
+  if (S.paLoading || (S.pa && !force && Date.now()-S.pa.at<120000)) return;
+  S.paLoading=true; render();
+  const db=firebase.firestore(), since=Date.now()-30*864e5, by={}, recent=[];
+  const B=id=>by[id]||(by[id]={jobs30:0,done30:0,rev30:0,pending:0,req30:0,crew:0,openInv:0,owed:0,last:0});
+  try {
+    const [jobs,bks,emps,invs]=await Promise.all(["jobs","bookings","employees","invoices"].map(c=>db.collection(c).limit(5000).get()));
+    jobs.docs.forEach(d=>{ const j=d.data(); if(!j.businessId) return; const b=B(j.businessId), c=tsMs(j.createdAt), dn=tsMs(j.completedAt);
+      if(c>since) b.jobs30++; if(j.status==="done"&&dn>since){ b.done30++; b.rev30+=Number(j.price)||0; }
+      b.last=Math.max(b.last,c,dn);
+      if(dn) recent.push({at:dn,biz:j.businessId,text:"Job done: "+(j.service||"Job")+" \u00b7 "+(j.client||"")});
+      else if(c) recent.push({at:c,biz:j.businessId,text:"Job added: "+(j.service||"Job")+" \u00b7 "+(j.client||"")}); });
+    bks.docs.forEach(d=>{ const k=d.data(); if(!k.businessId) return; const b=B(k.businessId), c=tsMs(k.createdAt);
+      if((k.status||"pending")==="pending") b.pending++; if(c>since) b.req30++; b.last=Math.max(b.last,c);
+      if(c) recent.push({at:c,biz:k.businessId,text:"Booking request: "+(k.service||"")+" \u00b7 "+(k.name||"customer")}); });
+    emps.docs.forEach(d=>{ const e=d.data(); if(e.businessId && e.active!==false) B(e.businessId).crew++; });
+    invs.docs.forEach(d=>{ const i=d.data(); if(!i.businessId) return; const b=B(i.businessId);
+      if(i.open){ b.openInv++; b.owed+=Number(i.balance)||0; }
+      const st=tsMs(i.sentAt); if(st){ b.last=Math.max(b.last,st); recent.push({at:st,biz:i.businessId,text:"Invoice sent: "+(i.number||"")+" \u00b7 "+money(i.total||0)}); } });
+    S.pa={at:Date.now(),by,recent:recent.sort((a,b)=>b.at-a.at).slice(0,60)};
+  } catch(e){ console.warn(e); S.pa={at:Date.now(),by:{},recent:[],err:String((e&&e.message)||e)}; }
+  S.paLoading=false; render();
+}
+const bizName = id => (S.allBusinesses.find(b=>b.id===id)||{}).name || id;
+function viewConsoleClients(){
+  ensureUsersLoaded();
+  const frag=document.createDocumentFragment(), by=(S.pa&&S.pa.by)||{};
+  const live=S.allBusinesses.filter(b=>b.status!=="archived"&&b.status!=="pending");
+  const nPend=S.allBusinesses.filter(b=>b.status==="pending").length;
+  const tot=k=>live.reduce((n,b)=>n+((by[b.id]||{})[k]||0),0);
+  frag.append(el("div",{class:"home-stats"},
+    stat(live.length,"Active clients",nPend?nPend+" waiting for approval":"None waiting for approval",nPend?"approvals":"clients",nPend>0),
+    stat(tot("req30"),"Booking requests","Last 30 days \u00b7 "+tot("pending")+" unanswered","activity"),
+    stat(tot("done30"),"Jobs done","Last 30 days","activity"),
+    stat(money(tot("rev30")).replace(/\.00$/,""),"Work done","Last 30 days, all clients","activity")));
+  const q=el("input",{type:"search",placeholder:"Search clients",value:S.clientQ,"aria-label":"Search clients",style:"max-width:260px",
+    oninput:ev=>{ S.clientQ=ev.target.value; const pos=ev.target.selectionStart; render(); requestAnimationFrame(()=>{ const n=document.querySelector('#view input[type=search]'); if(n){ n.focus(); n.setSelectionRange(pos,pos); } }); }});
+  const panel=el("div",{class:"panel"},el("div",{class:"row",style:"margin-bottom:6px"},el("h2",{style:"margin:0"},"Clients"),el("span",{class:"grow"}),q,
+    el("button",{type:"button",class:"btn small",onclick:()=>loadPlatformActivity(true)},S.paLoading?"Refreshing\u2026":"Refresh")));
+  if (S.pa && S.pa.err) panel.append(el("div",{class:"banner warn"},"Couldn't load activity: "+S.pa.err));
+  const qq=S.clientQ.trim().toLowerCase();
+  const list=S.allBusinesses.filter(b=>b.status!=="archived"&&b.status!=="pending")
+    .filter(b=>!qq||[b.name,b.city,b.category,...(b.ownerEmails||[])].join(" ").toLowerCase().includes(qq))
+    .sort((a,b)=>((by[b.id]||{}).last||0)-((by[a.id]||{}).last||0)||(a.name||"").localeCompare(b.name||""));
+  if (!list.length) panel.append(el("div",{class:"empty"},qq?"No client matches that search.":"No clients yet. Add one under Add client."));
+  list.forEach(b=>panel.append(clientRow(b,by[b.id]||{})));
+  frag.append(panel);
+  const arch=S.allBusinesses.filter(b=>b.status==="archived");
+  if (arch.length){
+    const d=el("details",{class:"panel"},el("summary",{style:"cursor:pointer;font-weight:800"},"Archived clients ("+arch.length+")"));
+    d.append(el("p",{class:"kv"},"Archived clients can't sign in, but every job, invoice, booking and customer is kept. Restore brings them back exactly as they were."));
+    arch.forEach(b=>d.append(el("article",{class:"card client"},el("div",{},el("h3",{style:"margin:0"},b.name),el("div",{class:"kv"},(b.category||"\u2014")+" \u00b7 archived "+(b.archivedAt?ago(b.archivedAt):""))),
+      el("div",{class:"acts"},el("button",{class:"btn small",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active",archivedAt:firebase.firestore.FieldValue.delete()}),"Restored")},"Restore")))));
+    frag.append(d);
+  }
+  return frag;
+}
+function clientRow(b,a){
+  const owners=(b.ownerEmails||[]).filter(Boolean).join(", ")||((b.pendingOwnerEmails||[])[0]?"invited: "+b.pendingOwnerEmails[0]:"no owner linked");
+  const susp=b.status==="suspended";
+  const more=el("details",{},el("summary",{class:"btn small ghost"},"More \u25BE"),
+    el("div",{class:"acts",style:"margin-top:8px"},
+      el("button",{class:"btn small",onclick:()=>openAssignDlg(b)},"Assign user"),
+      el("button",{class:"btn small",onclick:()=>{ const n=prompt("New name for this business:",b.name); if(n&&n.trim()) write(()=>firebase.firestore().doc("businesses/"+b.id).update({name:n.trim()}),"Renamed"); }},"Rename"),
+      susp ? el("button",{class:"btn small",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Reactivated")},"Reactivate")
+           : el("button",{class:"btn small",onclick:()=>{ if(confirm("Suspend "+b.name+"? They can't sign in until you reactivate them. Nothing is deleted.")) write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"suspended"}),"Suspended"); }},"Suspend"),
+      el("button",{class:"btn small ghost",onclick:()=>archiveBusiness(b)},"Archive")));
+  return el("article",{class:"card client"},
+    el("div",{},el("div",{class:"row"},el("h3",{style:"margin:0"},b.name),el("span",{class:"paid "+(susp?"no":"yes")},b.status||"active")),
+      el("div",{class:"kv"},[b.category,b.city].filter(Boolean).join(" \u00b7 ")+" \u00b7 "+owners)),
+    el("div",{class:"acts"},el("button",{class:"btn small primary",onclick:()=>adminOpenBusiness(b)},"Open"),more),
+    el("div",{class:"stats"},
+      el("span",{},"Last activity ",el("b",{},a.last?ago(a.last):"none yet")),
+      el("span",{},el("b",{},String(a.req30||0))," requests (30d)"+(a.pending?" \u00b7 ":""),a.pending?el("b",{style:"color:var(--danger)"},a.pending+" unanswered"):""),
+      el("span",{},el("b",{},String(a.done30||0))," jobs done \u00b7 ",el("b",{},money(a.rev30||0).replace(/\.00$/,""))),
+      el("span",{},el("b",{},String(a.crew||0))," crew"),
+      el("span",{},el("b",{},money(a.owed||0).replace(/\.00$/,""))," unpaid")));
+}
+// No delete button for a client, ever: archiving hides them and blocks sign-in, and keeps every record.
+function archiveBusiness(b){
+  const typed=prompt("Archive "+b.name+"?\n\nThey won't be able to sign in. Nothing is deleted: all their jobs, invoices, bookings and customers are kept, and you can restore them any time.\n\nType the business name to confirm:");
+  if (typed==null) return;
+  if (normName(typed)!==normName(b.name)) return toast("The name didn't match, so nothing changed.");
+  write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"archived",archivedAt:Date.now()}),b.name+" archived. Restore it any time under Archived clients.");
+}
+function viewConsoleActivity(){
+  const frag=document.createDocumentFragment(), pa=S.pa;
+  const p=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Latest across all clients"),el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn small",onclick:()=>loadPlatformActivity(true)},S.paLoading?"Refreshing\u2026":"Refresh")));
+  const signups=S.allUsers.filter(u=>u.role==="owner"&&u.createdAt).map(u=>({at:tsMs(u.createdAt),biz:null,text:"New owner sign-up: "+(u.name||u.email||"")+(u.plannedBusinessName?" \u00b7 "+u.plannedBusinessName:"")}));
+  const items=[...((pa&&pa.recent)||[]),...signups].sort((a,b)=>b.at-a.at).slice(0,60);
+  if (!pa) p.append(el("div",{class:"empty"},"Loading\u2026"));
+  else if (!items.length) p.append(el("div",{class:"empty"},"No activity yet."));
+  else p.append(el("ul",{class:"feed"},...items.map(x=>el("li",{},x.biz?el("b",{style:"white-space:nowrap"},bizName(x.biz)):null,el("span",{},x.text),el("span",{class:"t"},ago(x.at))))));
+  frag.append(p);
+  return frag;
+}
+function viewConsoleApprovals(){ return viewPlatformAdmin("approvals"); }
+function viewConsoleAdd(){ return viewPlatformAdmin("add"); }
+function viewPlatformAdmin(part){
   ensureUsersLoaded();
   const frag=document.createDocumentFragment();
-
+  if (part==="add") return frag.appendChild(platformAddForm()) && frag;
+  if (part==="approvals") return platformApprovals(frag);
+  return viewConsoleClients();
+}
+function platformAddForm(){
   const stats = {
     businesses: S.allBusinesses.length,
     active: S.allBusinesses.filter(b=>b.status!=="pending").length,
     pending: S.allBusinesses.filter(b=>b.status==="pending").length,
     users: S.allUsers.length
   };
-  frag.append(el("div",{class:"kpis"},
-    el("div",{class:"kpi"},el("div",{class:"l"},"Total businesses"),el("div",{class:"v"},String(stats.businesses))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Active"),el("div",{class:"v"},String(stats.active))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Pending approval"),el("div",{class:"v"},String(stats.pending))),
-    el("div",{class:"kpi"},el("div",{class:"l"},"Registered users"),el("div",{class:"v"},String(stats.users)))));
-
-  const f=el("form",{class:"panel"});
-  f.append(el("h2",{},"Pre-register a business"),
+  void stats;
+  const f=el("form",{class:"panel",style:"max-width:820px"});
+  f.append(el("h2",{},"Add a client business"),
     el("p",{class:"kv",style:"margin:-6px 0 12px;"},"Creates the business right away with the correct name. The owner gets full access automatically the moment they register or sign in using the email or phone you enter below."),
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,autocomplete:"off"})),
@@ -1408,8 +1689,9 @@ function viewPlatformAdmin(){
     write(()=>db.doc("businesses/"+id).set(data),"Business pre-registered");
     f.reset();
   };
-  frag.append(f);
-
+  return f;
+}
+function platformApprovals(frag){
   const pending = S.allBusinesses.filter(b=>b.status==="pending");
   if (pending.length){
     const p=el("div",{class:"panel"},el("h2",{},"Pending approval"),el("p",{class:"kv",style:"margin:-6px 0 12px;"},pending.length+" business(es) waiting for review"));
@@ -1423,7 +1705,7 @@ function viewPlatformAdmin(){
       if (similar) card.append(el("div",{class:"notes",style:"color:var(--danger);background:var(--danger-soft);"},"⚠ Very similar to an existing active business: \""+similar.name+"\". This may be a duplicate."));
       card.append(el("div",{class:"acts"},
         el("button",{class:"btn small primary",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Approved")},"Approve"),
-        el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Reject and delete \""+b.name+"\"?")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Rejected"); }},"Reject")));
+        el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Reject \""+b.name+"\"? This removes the sign-up request only (it has no jobs or data yet).")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Rejected"); }},"Reject")));
       p.append(card);
     });
     frag.append(p);
@@ -1442,33 +1724,9 @@ function viewPlatformAdmin(){
     lp.append(card);
   });
   frag.append(lp);
-
-  const clients=el("div",{class:"panel"},el("h2",{},"All businesses (client list)"));
-  const sorted = S.allBusinesses.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  if (!sorted.length) clients.append(el("div",{class:"empty"},"No businesses registered yet."));
-  sorted.forEach(b=>{
-    const owners = b.ownerEmails && b.ownerEmails.length ? b.ownerEmails.filter(Boolean).join(", ") : (b.pendingOwnerEmails&&b.pendingOwnerEmails[0] ? "(pending: "+b.pendingOwnerEmails[0]+")" : "none linked");
-    const card=el("article",{class:"card"});
-    card.append(el("div",{class:"row"},
-      el("h3",{style:"margin:0;"},b.name),
-      el("span",{class:"paid "+(b.status==="pending"?"no":b.status==="suspended"?"no":"yes")}, b.status||"active")));
-    card.append(el("div",{class:"kv"},(b.category||"—")+" · "+(b.city||"—")));
-    card.append(el("div",{class:"kv"},"Owners: ",owners));
-    card.append(el("div",{class:"acts"},
-      el("button",{class:"btn small primary",onclick:()=>adminOpenBusiness(b)},"Open board"),
-      el("button",{class:"btn small",onclick:()=>openAssignDlg(b)},"Assign user"),
-      el("button",{class:"btn small ghost",onclick:()=>{ const n=prompt("New name for this business:",b.name); if(n&&n.trim()) write(()=>firebase.firestore().doc("businesses/"+b.id).update({name:n.trim()}),"Renamed"); }},"Rename"),
-      b.status==="suspended"
-        ? el("button",{class:"btn small",onclick:()=>write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"active"}),"Reactivated")},"Reactivate")
-        : el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Suspend "+b.name+"? They'll lose access until reactivated.")) write(()=>firebase.firestore().doc("businesses/"+b.id).update({status:"suspended"}),"Suspended"); }},"Suspend"),
-      el("button",{class:"btn small danger ghost",onclick:()=>{ if(confirm("Permanently delete "+b.name+"? This cannot be undone.")) write(()=>firebase.firestore().doc("businesses/"+b.id).delete(),"Deleted"); }},"Delete")));
-    clients.append(card);
-  });
-  frag.append(clients);
-
+  if (!pending.length) frag.prepend(el("div",{class:"panel"},el("h2",{},"Pending approval"),el("div",{class:"empty"},"No businesses waiting for approval.")));
   return frag;
 }
-
 /* ---- board ---- */
 function jobVisible(j){
   if (!S.isOwner){ const m=me(); if (!m || !jobCrew(j).includes(m.id)) return false; }   // crew see only jobs they're on
@@ -3715,7 +3973,7 @@ function showBizOnboard(category, bizName, email, phone){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.remove("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
 function showPendingApproval(biz){
   hideVerify(); $("#gate").classList.add("hidden"); $("#bizOnboard").classList.add("hidden"); $("#mainApp").hidden=true;
-  $("#pendingApprovalMsg").textContent = biz.status==="suspended"
+  $("#pendingApprovalMsg").textContent = (biz.status==="suspended"||biz.status==="archived")
     ? "\""+(biz.name||"Your business")+"\" has been suspended. Contact support if you believe this is a mistake."
     : "\""+(biz.name||"Your business")+"\" is waiting for approval. You'll get full access as soon as it's reviewed.";
   $("#pendingAgainBtn").classList.add("hidden"); $("#pendingOwnerBtn").classList.add("hidden");
@@ -3865,6 +4123,7 @@ function enterBusiness(biz, opts){
   if (!opts.adminView){ S.homeBusiness=biz; }
   S.adminView = !!opts.adminView;
   S.viewOnly = !!opts.adminView;       // a client's business always opens read-only
+  S.console=false;
   S.business=biz; S.businessId=biz.id;
   applyBusinessLists(biz);
   const realOwner = (biz.ownerUids && biz.ownerUids.includes(S.myUserId)) || biz.ownerUid===S.myUserId;
@@ -3889,8 +4148,8 @@ function adminOpenBusiness(b){
   toast("Viewing "+(b.name||"this business")+" (view only)");
 }
 function adminBackHome(){
-  S.tab="platform";
-  if (S.homeBusiness) enterBusiness(S.homeBusiness); else { S.adminView=false; S.viewOnly=false; render(); }
+  S.tab="clients";
+  enterConsole();
 }
 function adminToggleEditing(){
   if (S.viewOnly){
@@ -4347,7 +4606,7 @@ function startDemo(type){
   const biz=seed.business;
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
-  S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false;
+  S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
   if (!["home","board","projects","team","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
@@ -4424,13 +4683,14 @@ async function routeUser(user){
         render();
       }, e=>console.warn("crewAccounts",e));
     }
+    if (S.isPlatformAdmin){ enterConsole(); return; }   // the platform admin manages every client from one place
     let myPhone = "", acct = {};
     try { const acctDoc = await firebase.firestore().doc("crewAccounts/"+user.uid).get(); if (acctDoc.exists){ acct = acctDoc.data()||{}; myPhone = acct.phone||""; } } catch(e){}
     let biz;
     try { biz = await resolveBusiness(user.uid, user.email, myPhone, user.emailVerified); }
     catch(e){ console.warn(e); showGate(); gateMsg("Couldn’t load your business. Check your connection and sign in again."); return; }
     if (biz){
-      if ((biz.status==="pending"||biz.status==="suspended") && !S.isPlatformAdmin) showPendingApproval(biz);
+      if ((biz.status==="pending"||biz.status==="suspended"||biz.status==="archived") && !S.isPlatformAdmin) showPendingApproval(biz);
       else enterBusiness(biz);
     }
     else if (acct.role==="crew" && !user.emailVerified) showVerify(user);

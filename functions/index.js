@@ -161,7 +161,7 @@ async function mailInvoice(p, key, to, reminder) {
 
 // Same rule as the app: only businesses waiting for approval or suspended are blocked.
 // Businesses created before approvals existed have no status, and they are active.
-const bizOpen = (b) => !!b && b.status !== "pending" && b.status !== "suspended";
+const bizOpen = (b) => !!b && b.status !== "pending" && b.status !== "suspended" && b.status !== "archived";
 
 exports.sendInvoiceEmail = onDocumentCreated({ document: "mail/{id}", secrets: [SMTP_PASS] }, async (event) => {
   const ref = event.data && event.data.ref, m = event.data && event.data.data();
