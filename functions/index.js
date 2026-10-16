@@ -29,6 +29,19 @@ const APP_URL = "https://dayzift.com/app";
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const when = (ms) => new Date(ms || Date.now()).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) + " CT";
 
+// One email per person: if a single address is bad, the mail server refuses the whole message,
+// so sending separately means everyone else still gets theirs. Bad addresses are logged by name.
+async function sendEach(tr, msg, list, label) {
+  const to = [...new Set(list.map((e) => String(e || "").trim().toLowerCase()).filter(Boolean))];
+  let ok = 0;
+  for (const addr of to) {
+    try { await tr.sendMail({ ...msg, to: addr }); ok++; }
+    catch (e) { logger.error(`${label} not delivered to ${addr}: ${(e && (e.response || e.message)) || e}`); }
+  }
+  if (to.length && !ok) throw new Error(`${label}: no address accepted (${to.join(", ")})`);
+  return ok;
+}
+
 async function sendEmail(subject, heading, rows, note) {
   const table = rows.filter(([, v]) => v).map(([k, v]) =>
     `<tr><td style="padding:6px 14px 6px 0;color:#56706B;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#16302C"><b>${esc(v)}</b></td></tr>`).join("");
@@ -44,7 +57,7 @@ async function sendEmail(subject, heading, rows, note) {
   const text = `${heading}\n${note}\n\n` + rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\nOpen Platform Admin: ${APP_URL}`;
   const port = Number(SMTP_PORT.value()) || 465;
   const transport = nodemailer.createTransport({ host: SMTP_HOST.value(), port, secure: port === 465, auth: { user: SMTP_USER.value(), pass: SMTP_PASS.value() } });
-  await transport.sendMail({ from: `Dayzift <${SMTP_USER.value()}>`, to: adminList().join(", "), subject, text, html });
+  await sendEach(transport, { from: `Dayzift <${SMTP_USER.value()}>`, subject, text, html }, adminList(), "Admin alert");
 }
 
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
@@ -268,7 +281,7 @@ async function emailOwners(bookingId, bk, biz, key, reminderNo) {
     "Dayzift booking alert");
   const text = `${lead}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n")
     + `\n\nApprove: ${link("confirm")}\nDecline: ${link("decline")}\nOpen in Dayzift: ${REQUESTS_URL}\n\nDayzift · A product of LIT America`;
-  await transport().sendMail({ from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, to: to.join(", "), replyTo: cust || undefined, subject, html, text });
+  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, replyTo: cust || undefined, subject, html, text }, to, "Owner email");
   return true;
 }
 
