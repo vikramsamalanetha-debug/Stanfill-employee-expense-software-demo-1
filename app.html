@@ -1683,11 +1683,12 @@ function maybeShowAdminPending(force){
   if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
 }
 // Sign-ups that never finished: accounts made as an owner with no business yet. Good people to call.
-function unfinishedSignups(){
+// Owners who signed up but never submitted a business. Ones the admin marked as handled drop off (and out of the badge).
+function unfinishedSignups(withHandled){
   const owners=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerUids||[]),b.ownerUid].filter(Boolean)));
   const emails=new Set(S.allBusinesses.flatMap(b=>[...(b.ownerEmails||[]),...(b.pendingOwnerEmails||[])]).map(x=>(x||"").toLowerCase()));
   const since=Date.now()-45*864e5;
-  return S.allUsers.filter(u=>u.role==="owner" && (u.createdAt||0)>since && !owners.has(u.id) && !emails.has((u.email||"").toLowerCase()))
+  return S.allUsers.filter(u=>u.role==="owner" && (u.createdAt||0)>since && !owners.has(u.id) && !emails.has((u.email||"").toLowerCase()) && (withHandled||!u.adminHandled))
     .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
 }
 function ensureUsersLoaded(){
@@ -1923,16 +1924,42 @@ function platformApprovals(frag){
     frag.append(p);
   }
 
-  const leads=unfinishedSignups();
-  const lp=el("div",{class:"panel"},el("h2",{},"Signed up, no business yet"),
-    el("p",{class:"kv",style:"margin:-6px 0 12px;"},leads.length
-      ? leads.length+" owner account(s) from the last 45 days that haven't submitted a business. A quick call usually gets them going."
-      : "Everyone who signed up as an owner in the last 45 days has submitted a business."));
+  const open=unfinishedSignups(), handled=unfinishedSignups(true).filter(u=>u.adminHandled);
+  const leads=S.showHandled?handled:open;
+  const mark=(u,how)=>write(async()=>{
+    const v=how?{how,at:Date.now(),by:S.myEmail||"admin"}:null;
+    await firebase.firestore().doc("crewAccounts/"+u.id).update({adminHandled:v});
+    u.adminHandled=v; render();
+  }, how?"Marked handled: "+(u.plannedBusinessName||u.email||"sign-up"):"Moved back to the list");
+  const lp=el("div",{class:"panel"},
+    el("div",{class:"row",style:"align-items:center"},el("h2",{class:"grow",style:"margin:0"},"Signed up, no business yet"),
+      el("div",{class:"chips"},
+        el("button",{type:"button",class:"chip","aria-pressed":String(!S.showHandled),onclick:()=>{S.showHandled=false;render();}},"To do ("+open.length+")"),
+        el("button",{type:"button",class:"chip","aria-pressed":String(!!S.showHandled),onclick:()=>{S.showHandled=true;render();}},"Handled ("+handled.length+")"))),
+    el("p",{class:"kv",style:"margin:6px 0 12px;"},S.showHandled
+      ? (handled.length?"Sign-ups you've already dealt with. Undo puts one back on the to-do list.":"Nothing marked as handled yet.")
+      : open.length
+      ? open.length+" owner account(s) from the last 45 days that haven't submitted a business. A quick call usually gets them going. When you've dealt with one, mark it handled."
+      : "All caught up. Everyone who signed up as an owner in the last 45 days has a business, or you've handled them."));
+  const HOW={contacted:"Contacted",test:"Test account",notinterested:"Not interested",done:"Handled"};
   leads.forEach(u=>{
     const card=el("article",{class:"card",style:"max-width:640px;"});
     card.append(el("div",{class:"row"},el("h3",{style:"margin:0"},u.plannedBusinessName||"(no business name)"),
       u.plannedCategory?el("span",{class:"pill"},u.plannedCategory):null, el("span",{class:"grow"}), el("span",{class:"kv"},u.createdAt?ago(u.createdAt):"")));
     card.append(el("div",{class:"kv"},(u.name||"")+" \u00b7 ",u.email?el("a",{href:"mailto:"+u.email},u.email):"",u.phone?[" \u00b7 ",el("a",{href:"tel:"+String(u.phone).replace(/[^\d+]/g,"")},u.phone)]:null));
+    if (u.adminHandled){
+      const h=u.adminHandled;
+      card.append(el("div",{class:"acts",style:"align-items:center"},
+        el("span",{class:"pill done"},"\u2713 "+(HOW[h.how]||"Handled")),
+        el("span",{class:"kv grow"},(h.at?ago(h.at):"")),
+        el("button",{class:"btn small ghost",onclick:()=>mark(u,null)},"Undo")));
+    } else {
+      card.append(el("div",{class:"acts",style:"align-items:center"},
+        el("span",{class:"kv"},"Mark handled:"),
+        el("button",{class:"btn small primary",onclick:()=>mark(u,"contacted")},"\u2713 Contacted"),
+        el("button",{class:"btn small",onclick:()=>mark(u,"test")},"Test account"),
+        el("button",{class:"btn small",onclick:()=>mark(u,"notinterested")},"Not interested")));
+    }
     lp.append(card);
   });
   frag.append(lp);
