@@ -243,6 +243,13 @@ textarea{resize:vertical;min-height:70px}
 
 /* board */
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.periodbar{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;padding:16px 18px}
+.periodbar .ptop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.periodbar .plabel{font-size:20px}
+.periodbar .pnav{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.periodbar .pnav select,.periodbar .pnav input{width:auto;min-width:0}
+.periodbar .parrow{min-width:40px;font-size:16px}
+.periodbar .pexport{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
 .chip[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
@@ -2571,15 +2578,70 @@ async function uploadReceipt(file, businessId){
   return {url, name:file.name||"receipt"};
 }
 
+/* ---- Books period: a month, a quarter, a year, or any From–To range ---- */
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function booksPeriod(){
+  if (!S.bk){ const [y,m]=S.month.split("-").map(Number); S.bk={mode:"month",y,m}; }
+  const b=S.bk, pad=n=>String(n).padStart(2,"0"), last=(y,m)=>new Date(y,m,0).getDate();
+  if (b.mode==="range"){ const f=new Date(b.from+"T12:00"), t=new Date(b.to+"T12:00"), o={month:"short",day:"numeric"};
+    const label=f.toLocaleDateString("en-US",f.getFullYear()===t.getFullYear()?o:{...o,year:"numeric"})+" \u2013 "+t.toLocaleDateString("en-US",{...o,year:"numeric"});
+    return {from:b.from,to:b.to,label,file:b.from+"_to_"+b.to}; }
+  if (b.mode==="year") return {from:b.y+"-01-01",to:b.y+"-12-31",label:"All of "+b.y,file:String(b.y)};
+  if (b.mode==="quarter"){ const q=Math.ceil(b.m/3), m1=(q-1)*3+1; return {from:b.y+"-"+pad(m1)+"-01",to:b.y+"-"+pad(m1+2)+"-"+last(b.y,m1+2),label:"Q"+q+" "+b.y+" ("+MONTHS[m1-1].slice(0,3)+"–"+MONTHS[m1+1].slice(0,3)+")",file:b.y+"-Q"+q}; }
+  return {from:b.y+"-"+pad(b.m)+"-01",to:b.y+"-"+pad(b.m)+"-"+last(b.y,b.m),label:MONTHS[b.m-1]+" "+b.y,file:b.y+"-"+pad(b.m)};
+}
+const inPeriod=(d,P)=>!!d && d.slice(0,10)>=P.from && d.slice(0,10)<=P.to;
+function setBooks(bk){ S.bk=bk; if (bk.mode==="month") S.month=bk.y+"-"+String(bk.m).padStart(2,"0"); render(); }
+// ← / → move by a month, a quarter or a year (whatever is showing).
+function shiftBooks(n){
+  const b=S.bk; if (b.mode==="range") return;
+  if (b.mode==="year") return setBooks({...b,y:b.y+n});
+  const step=b.mode==="quarter"?3:1, d=new Date(b.y,b.m-1+n*step,1);
+  setBooks({...b,y:d.getFullYear(),m:d.getMonth()+1});
+}
+function booksPeriodBar(){
+  const b=S.bk, P=booksPeriod(), now=new Date(), ty=now.getFullYear(), tm=now.getMonth()+1;
+  const years=[]; const firstY=Math.min(ty-5, ...[...S.jobs.map(j=>j.date),...allExpenses().map(x=>x.date)].filter(Boolean).map(d=>Number(d.slice(0,4))).filter(Boolean));
+  for (let y=ty+1;y>=firstY;y--) years.push(y);
+  const chip=(label,on,fn)=>el("button",{type:"button",class:"chip","aria-pressed":String(on),onclick:fn},label);
+  const lm=new Date(ty,tm-2,1);
+  const bar=el("div",{class:"periodbar panel"});
+  const nav=el("div",{class:"pnav"});
+  if (b.mode!=="range"){
+    const ySel=el("select",{"aria-label":"Year",onchange:e=>setBooks({...b,y:Number(e.target.value)})},...years.map(y=>el("option",{value:String(y),selected:y===b.y},String(y))));
+    const mSel=el("select",{"aria-label":"Month",onchange:e=>{ const v=e.target.value; if (v==="year") setBooks({mode:"year",y:b.y,m:b.m}); else if (v[0]==="q") setBooks({mode:"quarter",y:b.y,m:(Number(v[1])-1)*3+1}); else setBooks({mode:"month",y:b.y,m:Number(v)}); }},
+      el("option",{value:"year",selected:b.mode==="year"},"Whole year"),
+      ...[1,2,3,4].map(q=>el("option",{value:"q"+q,selected:b.mode==="quarter"&&Math.ceil(b.m/3)===q},"Quarter "+q)),
+      ...MONTHS.map((n,i)=>el("option",{value:String(i+1),selected:b.mode==="month"&&b.m===i+1},n)));
+    nav.append(el("button",{type:"button",class:"btn small ghost parrow","aria-label":"Previous",onclick:()=>shiftBooks(-1)},"←"),
+      mSel, ySel,
+      el("button",{type:"button",class:"btn small ghost parrow","aria-label":"Next",onclick:()=>shiftBooks(1)},"→"));
+  } else {
+    const from=el("input",{type:"date",value:b.from,max:b.to,"aria-label":"From"}), to=el("input",{type:"date",value:b.to,min:b.from,"aria-label":"To"});
+    const apply=()=>{ if(!from.value||!to.value) return toast("Pick both dates."); if(to.value<from.value) return toast("The To date is before the From date."); setBooks({...b,from:from.value,to:to.value}); };
+    from.onchange=apply; to.onchange=apply;
+    nav.append(el("label",{class:"f"},"From",from),el("label",{class:"f"},"To",to));
+  }
+  bar.append(el("div",{class:"ptop"},el("div",{},el("div",{class:"kv"},"Showing"),el("b",{class:"plabel"},P.label)),nav),
+    el("div",{class:"chips"},
+      chip("This month",b.mode==="month"&&b.y===ty&&b.m===tm,()=>setBooks({mode:"month",y:ty,m:tm})),
+      chip("Last month",b.mode==="month"&&b.y===lm.getFullYear()&&b.m===lm.getMonth()+1,()=>setBooks({mode:"month",y:lm.getFullYear(),m:lm.getMonth()+1})),
+      chip("This quarter",b.mode==="quarter"&&b.y===ty&&Math.ceil(b.m/3)===Math.ceil(tm/3),()=>setBooks({mode:"quarter",y:ty,m:tm})),
+      chip("This year",b.mode==="year"&&b.y===ty,()=>setBooks({mode:"year",y:ty,m:tm})),
+      chip("Last year",b.mode==="year"&&b.y===ty-1,()=>setBooks({mode:"year",y:ty-1,m:12})),
+      chip("Pick dates",b.mode==="range",()=>setBooks({mode:"range",from:P.from,to:P.to,y:b.y,m:b.m}))));
+  return bar;
+}
+
 function monthRows(){
-  const mo=S.month;
-  const income=S.jobs.filter(j=>j.status==="done" && (j.date||"").startsWith(mo)).map(j=>{ const inv=invoiceFor(j.id); return {
+  const P=booksPeriod();
+  const income=S.jobs.filter(j=>j.status==="done" && inPeriod(j.date,P)).map(j=>{ const inv=invoiceFor(j.id); return {
     kind:"income", id:j.id, date:j.date, cat:j.service||SERVICES[0], desc:j.client+(inv&&inv.number?" · "+inv.number:"")+(j.paid?"":" (unpaid)"), amount:Number(j.price)||0, paid:!!j.paid, inv}; });
   // Billed materials and fees on invoices are income on top of the job prices. Deposits and sales tax are not.
-  S.invoices.filter(i=>i.status==="sent"&&(i.issueDate||"").startsWith(mo)).forEach(i=>{ const t=invTotals(i); if (Math.abs(t.extras)<0.005) return;
+  S.invoices.filter(i=>i.status==="sent"&&inPeriod(i.issueDate,P)).forEach(i=>{ const t=invTotals(i); if (Math.abs(t.extras)<0.005) return;
     income.push({kind:"income",id:i.id,date:i.issueDate,cat:"Invoice extras",desc:(i.number||"")+" · "+((i.client||{}).name||"")+" · billed materials and fees"+(t.balance>0.004?" (unpaid)":""),amount:t.extras,paid:t.balance<=0.004,invRow:i}); });
   const pName=id=>{ const p=id&&S.projects.find(x=>x.id===id); return p?" · "+p.name:""; };
-  const exp=allExpenses().filter(x=>(x.date||"").startsWith(mo)).map(x=>({
+  const exp=allExpenses().filter(x=>inPeriod(x.date,P)).map(x=>({
     kind:"expense", id:x.id, fromJob:x.fromJob||null, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
     receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
@@ -2590,13 +2652,15 @@ function viewBooks(){
   const inc=income.reduce((a,r)=>a+r.amount,0), out=exp.reduce((a,r)=>a+r.amount,0), net=inc-out;
   const unpaid=income.filter(r=>!r.paid).reduce((a,r)=>a+r.amount,0);
 
-  frag.append(el("div",{class:"toolbar"},
-    el("label",{class:"f"},"Month",el("input",{type:"month",value:S.month,onchange:e=>{ if(e.target.value){S.month=e.target.value;render();} }})),
-    el("span",{class:"grow"}),
-    el("button",{class:"btn",onclick:exportCsv},"Export month as CSV")));
+  const P=booksPeriod();
+  const bar=booksPeriodBar();
+  bar.append(el("div",{class:"pexport"},
+    el("button",{type:"button",class:"btn small primary",onclick:expenseReportPdf},"Expense report (PDF)"),
+    el("button",{type:"button",class:"btn small",onclick:exportCsv},"Download CSV")));
+  frag.append(bar);
 
-  const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&(i.issueDate||"").startsWith(S.month)).reduce((n,i)=>n+invTotals(i).tax,0));
-  if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},"Sales tax on this month's invoices: ",el("b",{},money(salesTax)),". It isn't counted as income. Set it aside for the state.")));
+  const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&inPeriod(i.issueDate,P)).reduce((n,i)=>n+invTotals(i).tax,0));
+  if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},"Sales tax on invoices in this period: ",el("b",{},money(salesTax)),". It isn't counted as income. Set it aside for the state.")));
   frag.append(el("div",{class:"sum"},
     el("div",{class:"stat"},el("div",{class:"l"},"Money in (jobs and invoices)"),el("div",{class:"v"},money(inc))),
     el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
@@ -2660,14 +2724,14 @@ function viewBooks(){
   const byCat={}; exp.forEach(r=>byCat[r.cat]=(byCat[r.cat]||0)+r.amount);
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const max=cats.length?cats[0][1]:1;
   const catPanel=el("div",{class:"panel"},el("h2",{},"Where the money went"));
-  if (!cats.length) catPanel.append(el("div",{class:"empty"},"No expenses logged for this month yet."));
+  if (!cats.length) catPanel.append(el("div",{class:"empty"},"No expenses in this period."));
   cats.forEach(([c,v])=>catPanel.append(el("div",{class:"bar"},el("span",{},c),
     el("div",{class:"track"},el("div",{class:"fill",style:"width:"+Math.max(3,v/max*100).toFixed(1)+"%"})),el("b",{},money(v)))));
   left.append(catPanel);
 
   const rows=[...income,...exp].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
   const tp=el("div",{class:"panel"},el("h2",{},"Transactions"));
-  if (!rows.length) tp.append(el("div",{class:"empty"},"No money in or out this month. Finished jobs show up here automatically."));
+  if (!rows.length) tp.append(el("div",{class:"empty"},"No money in or out in this period. Finished jobs show up here automatically."));
   else {
     const tbody=el("tbody");
     rows.forEach(r=>tbody.append(el("tr",{class:r.kind==="income"?"inc":""},
@@ -2686,6 +2750,55 @@ function viewBooks(){
   frag.append(el("div",{class:"books"},left,tp));
   return frag;
 }
+const fileSlug=()=>String((S.business&&S.business.name)||"books").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+// A printable expense report for the period: totals, expenses by category, then every expense and income line.
+function expenseReportPdf(){
+  if (!window.jspdf){ toast("Couldn't make the PDF. Check your connection and try again."); return; }
+  const P=booksPeriod(), {income,exp}=monthRows();
+  const inc=income.reduce((a,r)=>a+r.amount,0), out=exp.reduce((a,r)=>a+r.amount,0);
+  const { jsPDF }=window.jspdf, pdf=new jsPDF({unit:"pt",format:"letter"});
+  const W=612, L=48, R=W-48, B=742; let y=56;
+  const ensure=h=>{ if (y+h>B){ pdf.addPage(); y=56; } };
+  const clean=t=>String(t).replace(/\u2212/g,"-");   // the PDF font has no "−" sign
+  const text=(t,x,o)=>pdf.text(clean(t),x,y,o||{});
+  const head=t=>{ ensure(40); y+=10; pdf.setFont("helvetica","bold"); pdf.setFontSize(13); text(t,L); y+=8; pdf.setDrawColor(220); pdf.line(L,y,R,y); y+=16; pdf.setFontSize(10); pdf.setFont("helvetica","normal"); };
+  pdf.setFont("helvetica","bold"); pdf.setFontSize(18); text((S.business&&S.business.name)||"Books",L); y+=20;
+  pdf.setFontSize(12); pdf.setFont("helvetica","normal"); text("Expense report \u00b7 "+P.label,L); y+=14;
+  pdf.setFontSize(9); pdf.setTextColor(120); text(P.from+" to "+P.to+"  \u00b7  made "+new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}),L); pdf.setTextColor(0); y+=22;
+  // totals
+  pdf.setFontSize(10);
+  [["Money out (expenses)",out],["Money in (jobs and invoices)",inc],["Profit",inc-out]].forEach(([k,v])=>{ text(k,L); pdf.setFont("helvetica","bold"); text(money(v),R,{align:"right"}); pdf.setFont("helvetica","normal"); y+=16; });
+  // by category
+  head("Expenses by category");
+  const byCat={}; exp.forEach(r=>byCat[r.cat]=(byCat[r.cat]||0)+r.amount);
+  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  if (!cats.length){ text("No expenses in this period.",L); y+=16; }
+  cats.forEach(([c,v])=>{ ensure(16); text(c,L); text(exp.filter(r=>r.cat===c).length+" item"+(exp.filter(r=>r.cat===c).length===1?"":"s"),R-110,{align:"right"}); text(money(v),R,{align:"right"}); y+=16; });
+  // detail tables
+  const table=(title,rows,sign)=>{
+    head(title);
+    if (!rows.length){ text("None.",L); y+=16; return; }
+    pdf.setFont("helvetica","bold"); pdf.setFontSize(9); text("Date",L); text("Category",L+70); text("Details",L+180); text("Amount",R,{align:"right"}); y+=14; pdf.setFont("helvetica","normal");
+    rows.sort((a,b)=>(a.date||"").localeCompare(b.date||"")).forEach(r=>{
+      const det=pdf.splitTextToSize((r.desc||"\u2014")+(r.receiptUrl?"  (receipt on file)":""),R-90-(L+180));
+      const catL=pdf.splitTextToSize(r.cat||"",100);
+      const h=Math.max(det.length,catL.length)*11+5; ensure(h);
+      text(r.date||"",L); pdf.text(catL.map(clean),L+70,y); pdf.text(det.map(clean),L+180,y); text((sign<0?"":"+")+money(r.amount),R,{align:"right"}); y+=h;
+    });
+    ensure(18); pdf.line(L,y-6,R,y-6); y+=6; pdf.setFont("helvetica","bold"); text("Total",L); text(money(rows.reduce((a,r)=>a+r.amount,0)),R,{align:"right"}); pdf.setFont("helvetica","normal"); y+=16; pdf.setFontSize(10);
+  };
+  table("Every expense",exp.slice(),-1);
+  table("Money in",income.slice(),1);
+  const pages=pdf.getNumberOfPages();
+  for (let i=1;i<=pages;i++){ pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(140); pdf.text("Dayzift \u00b7 A product of LIT America (www.litamerica.net)",L,770); pdf.text("Page "+i+" of "+pages,R,770,{align:"right"}); }
+  try {
+    const url=URL.createObjectURL(pdf.output("blob"));
+    const a=document.createElement("a"); a.href=url; a.download=fileSlug()+"-expense-report-"+P.file+".pdf";
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast("Expense report downloaded");
+  } catch(e){ toast("The download didn’t start."); }
+}
 async function exportCsv(){
   const {income,exp}=monthRows();
   const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
@@ -2694,7 +2807,7 @@ async function exportCsv(){
   try {
     const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download="stanfill-books-"+S.month+".csv";
+    const a=document.createElement("a"); a.href=url; a.download=fileSlug()+"-books-"+booksPeriod().file+".csv";
     document.body.append(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   } catch(e){ toast("The download didn’t start."); }
