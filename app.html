@@ -120,6 +120,10 @@ a{color:var(--primary)}
 .feed li:first-child{border-top:0}
 .feed .t{color:var(--muted);font-size:12px;white-space:nowrap;margin-left:auto}
 .toggles{display:flex;flex-wrap:wrap;gap:8px}
+.statbtn{cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .15s,box-shadow .15s}
+.statbtn:hover{border-color:var(--primary)}
+.statbtn.on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
+.statbtn .go{font-size:12px;font-weight:700;color:var(--primary);margin-top:4px}
 .perbar{align-items:center;gap:8px}
 .perbar .pergroup{display:flex;align-items:center;gap:6px;min-width:0;flex:0 1 auto}
 .perbar .per{display:flex;flex-direction:column;min-width:0;flex:1}
@@ -397,7 +401,14 @@ dialog h2{grid-column:1/-1;margin:0;font:600 22px var(--display)}
 dialog .full{grid-column:1/-1}
 dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14px;z-index:50;max-width:calc(100vw - 30px)}
+.toast{position:fixed;inset:auto;left:50%;top:calc(18px + env(safe-area-inset-top,0px));bottom:auto;transform:translateX(-50%);margin:0;display:flex;align-items:center;gap:12px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-left:6px solid var(--ok);padding:14px 18px;border-radius:14px;font-weight:700;font-size:15px;line-height:1.35;
+  box-shadow:0 14px 40px rgba(0,0,0,.18);z-index:1000;width:max-content;max-width:min(520px,calc(100vw - 32px));cursor:pointer;animation:toastIn .18s ease-out}
+.toast.hidden{display:none}
+.toast .ti{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:16px;background:#E3F2E8;color:var(--ok)}
+.toast.bad{border-left-color:var(--danger)} .toast.bad .ti{background:var(--danger-soft);color:var(--danger)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
 
 /* insights */
 .seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px;gap:2px}
@@ -675,7 +686,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
     </div>
   </form>
 </dialog>
-<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite" popover="manual"></div>
 
 <script>
 (function(){
@@ -774,7 +785,17 @@ function initials(name){ return (name||"?").trim().split(/\s+/).slice(0,2).map(w
 function colorFor(emp){ const i = Math.abs([...(emp.id||"x")].reduce((a,c)=>a*31+c.charCodeAt(0)|0,7)) % COLORS.length; return emp.color || COLORS[i]; }
 function distM(a,b){ const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat), dLng=toR(b.lng-a.lng);
   const h=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-let toastT; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.add("hidden"),3200); }
+// Every action confirms itself with a pop-up: a green check when it worked, red when it didn't or needs something.
+const TOAST_BAD=/^(that didn|couldn|could not|enter |pick |choose |you can view|the name didn|no connection|something went wrong|that doesn|the last day|that day is already|type |set how)/i;
+let toastT; function toast(msg,kind){
+  const t=$("#toast"); const bad = kind ? kind==="error" : TOAST_BAD.test(String(msg||""));
+  t.className="toast "+(bad?"bad":"ok");
+  t.replaceChildren(el("span",{class:"ti","aria-hidden":"true"},bad?"!":"\u2713"),el("span",{class:"tm"},String(msg||"")));
+  try { if (t.showPopover){ if (t.matches(":popover-open")) t.hidePopover(); t.showPopover(); } } catch(e){}
+  clearTimeout(toastT); toastT=setTimeout(hideToast, bad?6000:3800);
+}
+function hideToast(){ const t=$("#toast"); t.classList.add("hidden"); try { if (t.hidePopover && t.matches(":popover-open")) t.hidePopover(); } catch(e){} }
+$("#toast").addEventListener("click",hideToast);   // tap to dismiss
 
 /* ---------- store (shared db, or local fallback) ---------- */
 const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices"];
@@ -2957,6 +2978,7 @@ function viewInvoices(){
     if (q && !((i.number||"")+" "+((i.client||{}).name||"")).toLowerCase().includes(q)) return false;
     if (f==="all") return true;
     if (f==="open") return ["sent","viewed","partial","overdue","retainage"].includes(s.id);
+    if (f==="paid30") return (i.payments||[]).some(p=>p.date&&parseYmd(p.date).getTime()>=Date.now()-30*864e5);
     return s.id===f;
   }).sort((a,b)=>(b.i.issueDate||"").localeCompare(a.i.issueDate||"")||(b.i.seq||0)-(a.i.seq||0));
   const openRows=rows.filter(r=>["sent","viewed","partial","overdue","retainage"].includes(r.s.id));
@@ -2968,21 +2990,26 @@ function viewInvoices(){
   const readyAmt=r2(ready.reduce((n,j)=>n+(Number(j.price)||0),0));
 
   frag.append(el("div",{class:"toolbar"},
-    el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
+    el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["paid30","Paid (30 days)"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
       el("button",{class:"chip","aria-pressed":String(f===id),onclick:()=>{S.invFilter=id;render();}},l))),
     el("span",{class:"grow"}),
     el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:"max-width:220px",
       oninput:ev=>{ S.invSearch=ev.target.value; clearTimeout(S.invSearchT); S.invSearchT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=document.querySelector('input[aria-label="Search invoices"]'); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }}),
     el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice")));
+  // Each total opens its list: the invoices behind it, or the jobs waiting to be billed.
+  const jump=(filter,target)=>{ if(filter){ S.invFilter=filter; S.invSearch=""; } if(target==="ready") S.invReadyAll=true; render();
+    setTimeout(()=>{ const n=document.getElementById(target==="ready"?"invReady":"invList"); if(n) n.scrollIntoView({behavior:"smooth",block:"start"}); },60); };
+  const card=(label,val,filter,target,extra)=>el("button",{type:"button",class:"stat statbtn"+(extra||"")+((filter&&f===filter)?" on":""),onclick:()=>jump(filter,target)},
+    el("div",{class:"l"},label),el("div",{class:"v"},money(val)),el("div",{class:"go"},"View \u2192"));
   frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Outstanding"),el("div",{class:"v"},money(outstanding))),
-    el("div",{class:"stat"+(overdue?" neg net":"")},el("div",{class:"l"},"Overdue"),el("div",{class:"v"},money(overdue))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Paid in the last 30 days"),el("div",{class:"v"},money(paid30))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Finished, not billed yet"),el("div",{class:"v"},money(readyAmt)))));
+    card("Outstanding",outstanding,"open"),
+    card("Overdue",overdue,"overdue",null,overdue?" neg net":""),
+    card("Paid in the last 30 days",paid30,"paid30"),
+    card("Finished, not billed yet",readyAmt,null,"ready")));
 
   if (ready.length){
     const groups={}; ready.forEach(j=>{ const k=normName(j.client)||j.id; (groups[k] ||= []).push(j); });
-    const p=el("div",{class:"panel"},el("h2",{},"Ready to bill"),el("div",{class:"sub"},"Finished jobs that aren't paid or on an invoice yet. Billable materials logged on them come along."));
+    const p=el("div",{class:"panel",id:"invReady"},el("h2",{},"Ready to bill"),el("div",{class:"sub"},"Finished jobs that aren't paid or on an invoice yet. Billable materials logged on them come along."));
     Object.values(groups).sort((a,b)=>b.length-a.length||(a[0].client||"").localeCompare(b[0].client||"")).slice(0,S.invReadyAll?99:6).forEach(js=>{
       const amt=r2(js.reduce((n,j)=>n+(Number(j.price)||0)+costLines(j).reduce((m,l)=>m+invLineAmt(l),0),0));
       p.append(el("div",{class:"srow"},
@@ -2993,8 +3020,9 @@ function viewInvoices(){
     frag.append(p);
   }
 
-  const tp=el("div",{class:"panel"},el("h2",{},"Invoices"));
-  if (!show.length) tp.append(el("div",{class:"empty"},S.invoices.length?"No invoices match.":"No invoices yet. Create one from finished jobs above, or with New invoice."));
+  const fName={open:"Outstanding",overdue:"Overdue",paid30:"Paid in the last 30 days",draft:"Drafts",paid:"Paid",all:"All invoices"}[f]||"Invoices";
+  const tp=el("div",{class:"panel",id:"invList"},el("h2",{},fName+(show.length?" ("+show.length+")":"")));
+  if (!show.length) tp.append(el("div",{class:"empty"},f==="paid30"?"No payments recorded in the last 30 days.":f==="overdue"?"Nothing overdue. Nice.":S.invoices.length?"No invoices match.":"No invoices yet. Create one from finished jobs above, or with New invoice."));
   else {
     const tb=el("tbody");
     show.forEach(({i,t,s})=>tb.append(el("tr",{class:"click",tabindex:"0",onclick:()=>openInvoice(i),onkeydown:ev=>{ if(ev.key==="Enter") openInvoice(i); }},
