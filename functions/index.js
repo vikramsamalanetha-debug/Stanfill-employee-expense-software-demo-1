@@ -124,31 +124,57 @@ function invoiceEmail(p, key, reminder) {
   const b = p.biz || {}, url = INVOICE_BASE + key, due = Number(p.dueNowBal) || 0;
   const first = firstName(p.client && p.client.name);
   const ask = [b.phone ? "call " + nicePhone(b.phone) : "", okEmail(b.email) ? "email " + b.email : ""].filter(Boolean).join(" or ");
+  const ac = /^#[0-9a-f]{6}$/i.test(p.color || "") ? p.color : "#1E3A5F";
+  const paid = p.status === "paid";
+  const pays = (p.payments || []).slice().sort((x, y) => String(x.date).localeCompare(String(y.date)));
+  const last = pays[pays.length - 1];
+  const amountPaid = Math.round(((Number(p.total) || 0) - (Number(p.credit) || 0)) * 100) / 100;
   const dueText = p.terms === "Due on receipt" ? "due on receipt" : "due " + niceDate(p.dueDate);
-  const subject = reminder
-    ? `Reminder: invoice ${p.number} from ${b.name} is past due`
+  const subject = paid
+    ? `Receipt for ${p.number} from ${b.name}: ${money(amountPaid)} paid`
+    : reminder ? `Reminder: invoice ${p.number} from ${b.name} is past due`
     : `Invoice ${p.number} from ${b.name}: ${money(due)} ${dueText}`;
-  const intro = reminder
-    ? `Just a friendly reminder that invoice ${p.number} for ${money(due)} was ${dueText}. If you've already paid, thank you, and please ignore this note.`
+  const intro = paid
+    ? `Thank you! We received your payment${last ? " on " + niceDate(last.date) : ""}. Invoice ${p.number} is paid in full, and your receipt is below.`
+    : reminder ? `Just a friendly reminder that invoice ${p.number} for ${money(due)} was ${dueText}. If you've already paid, thank you, and please ignore this note.`
     : `Thank you for your business. Here's invoice ${p.number} for ${money(due)}, ${dueText}.`;
-  const pay = p.payLink && /^https:\/\//i.test(p.payLink)
-    ? `<a href="${esc(p.payLink)}" style="display:inline-block;background:#D9480F;color:#fff;padding:11px 20px;border-radius:999px;font-weight:800;text-decoration:none;margin:0 8px 8px 0">Pay online</a>` : "";
-  const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;color:#1D1B18">
-    <div style="padding:18px 0 8px;font-size:22px;font-weight:800">${esc(b.name)}</div>
-    <div style="border:1px solid #E3E0D9;border-radius:12px;padding:22px">
-      <p style="margin:0 0 14px">Hi ${esc(first)},</p>
-      <p style="margin:0 0 16px">${esc(intro)}</p>
-      <table style="border-collapse:collapse;font-size:15px;margin:0 0 18px">
-        <tr><td style="padding:4px 18px 4px 0;color:#6A655D">Invoice</td><td><b>${esc(p.number)}</b></td></tr>
-        <tr><td style="padding:4px 18px 4px 0;color:#6A655D">Amount due</td><td><b>${esc(money(due))}</b></td></tr>
-        <tr><td style="padding:4px 18px 4px 0;color:#6A655D">Due</td><td><b>${esc(p.terms === "Due on receipt" ? "On receipt" : niceDate(p.dueDate))}</b></td></tr>
-      </table>
-      ${pay}<a href="${esc(url)}" style="display:inline-block;background:#F2C230;color:#2A2305;padding:11px 20px;border-radius:999px;font-weight:800;text-decoration:none;margin:0 0 8px">View invoice</a>
-      ${p.payNote ? `<p style="margin:16px 0 0;color:#1D1B18"><b>How to pay:</b> ${esc(p.payNote)}</p>` : ""}
-      ${ask ? `<p style="margin:18px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(ask)}.</p>` : ""}
+  const row = (k, v, strong) => `<tr><td style="padding:9px 0;border-bottom:1px solid #E4E7EC;color:#5E6878;font-size:14px">${esc(k)}</td><td style="padding:9px 0;border-bottom:1px solid #E4E7EC;text-align:right;font-size:14px;${strong ? "font-weight:800;color:#16202E" : "color:#16202E"}">${esc(v)}</td></tr>`;
+  const rows = paid
+    ? [["Invoice", p.number], ["Invoice date", niceDate(p.issueDate)], ["Paid on", last ? niceDate(last.date) : ""], ["Paid by", pays.length > 1 ? pays.map((x) => x.method).filter(Boolean).join(", ") : (last && last.method) || ""]]
+    : [["Invoice", p.number], ["Invoice date", niceDate(p.issueDate)], ["Due", p.terms === "Due on receipt" ? "On receipt" : niceDate(p.dueDate)], ...(Number(p.paid) ? [["Already paid", money(p.paid)]] : [])];
+  const lines = (p.lines || []).slice(0, 12).map((l) => `<tr><td style="padding:7px 0;font-size:14px;color:#16202E">${esc(l.desc)}${(Number(l.qty) || 1) !== 1 ? ` <span style="color:#5E6878">× ${esc(l.qty)}</span>` : ""}</td><td style="padding:7px 0;text-align:right;font-size:14px;color:#16202E">${esc(money(l.amount))}</td></tr>`).join("");
+  const btnS = (bg, fg, border) => `display:inline-block;background:${bg};color:${fg};padding:12px 22px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;margin:0 8px 8px 0;border:1px solid ${border || bg}`;
+  const pay = !paid && p.payLink && /^https:\/\//i.test(p.payLink) ? `<a href="${esc(p.payLink)}" style="${btnS(ac, "#fff")}">Pay online</a>` : "";
+  const view = `<a href="${esc(url)}" style="${pay ? btnS("#fff", "#16202E", "#D0D5DD") : btnS(ac, "#fff")}">${paid ? "View receipt" : "View invoice"}</a>`;
+  const html = `<div style="background:#EEF1F5;padding:24px 12px;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#16202E">
+  <div style="max-width:580px;margin:0 auto;background:#fff;border:1px solid #E4E7EC;border-radius:10px;overflow:hidden">
+    <div style="height:6px;background:${ac}"></div>
+    <div style="padding:26px 28px 6px">
+      <table role="presentation" style="width:100%;border-collapse:collapse"><tr>
+        <td style="vertical-align:top"><div style="font-size:18px;font-weight:800">${esc(b.name)}</div>
+          <div style="font-size:12px;color:#5E6878;margin-top:2px">${esc([b.phone ? nicePhone(b.phone) : "", b.email].filter(Boolean).join(" · "))}</div></td>
+        <td style="vertical-align:top;text-align:right"><div style="font-size:20px;font-weight:800;letter-spacing:.12em;color:${ac}">${paid ? "RECEIPT" : "INVOICE"}</div>
+          <div style="font-size:12px;color:#5E6878">${esc(p.number)}</div></td></tr></table>
     </div>
-    <p style="margin:16px 0 0;font-size:12px;color:#8A8278;text-align:center">Sent with Dayzift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></div>`;
-  const text = `Hi ${first},\n\n${intro}\n\nView invoice: ${url}\n` + (p.payLink ? `Pay online: ${p.payLink}\n` : "") + (p.payNote ? `How to pay: ${p.payNote}\n` : "")
+    <div style="padding:14px 28px 26px">
+      <div style="background:${paid ? "#E7F5EC" : "#F5F7FA"};border-radius:8px;padding:16px 18px;margin:0 0 18px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${paid ? "#1E7A43" : "#5E6878"}">${paid ? "Paid in full" : reminder ? "Past due" : "Amount due"}</div>
+        <div style="font-size:30px;font-weight:800;margin-top:2px;color:${paid ? "#1E7A43" : "#16202E"}">${esc(money(paid ? amountPaid : due))}</div>
+        ${paid ? "" : `<div style="font-size:13px;color:#5E6878">${esc(p.terms === "Due on receipt" ? "Due on receipt" : "Due " + niceDate(p.dueDate))}</div>`}
+      </div>
+      <p style="margin:0 0 12px;font-size:15px">Hi ${esc(first)},</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.55">${esc(intro)}</p>
+      ${pay}${view}
+      <table role="presentation" style="width:100%;border-collapse:collapse;margin:16px 0 0">${rows.filter(([, v]) => v).map(([k, v]) => row(k, v)).join("")}</table>
+      ${lines ? `<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5E6878;margin:20px 0 4px">Summary</div>
+      <table role="presentation" style="width:100%;border-collapse:collapse">${lines}${(p.lines || []).length > 12 ? `<tr><td colspan="2" style="padding:6px 0;color:#5E6878;font-size:13px">…and ${(p.lines || []).length - 12} more on the ${paid ? "receipt" : "invoice"}</td></tr>` : ""}
+        <tr><td style="padding:10px 0 0;border-top:2px solid #16202E;font-weight:800">Total</td><td style="padding:10px 0 0;border-top:2px solid #16202E;text-align:right;font-weight:800">${esc(money(p.total))}</td></tr></table>` : ""}
+      ${!paid && p.payNote ? `<div style="background:#F5F7FA;border-radius:8px;padding:12px 14px;margin:18px 0 0;font-size:14px"><b>How to pay:</b> ${esc(p.payNote)}</div>` : ""}
+      ${ask ? `<p style="margin:20px 0 0;color:#5E6878;font-size:13px">Questions? Please ${esc(ask)}.</p>` : ""}
+    </div>
+    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">Sent with Dayzift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
+  </div></div>`;
+  const text = `Hi ${first},\n\n${intro}\n\n${paid ? "View receipt" : "View invoice"}: ${url}\n` + (!paid && p.payLink ? `Pay online: ${p.payLink}\n` : "") + (!paid && p.payNote ? `How to pay: ${p.payNote}\n` : "")
     + (ask ? `\nQuestions? Please ${ask}.\n` : "") + `\n${b.name}\nSent with Dayzift · A product of LIT America`;
   return { subject, html, text };
 }
