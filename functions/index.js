@@ -274,14 +274,14 @@ async function emailOwners(bookingId, bk, biz, key, reminderNo) {
   const lead = reminderNo
     ? `This request is still waiting for an answer (reminder ${reminderNo} of 3).`
     : `You have a new booking request from your website.`;
-  const rows = bookingRows(bk, biz);
+  const rows = bookingRows(bk, biz).concat(cust && cust !== bk.phone ? [["Email", cust]] : []);
   const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}
       ${btn(link("confirm"), "Approve", "#1F7A69", "#fff")}${btn(link("decline"), "Decline", "#fff;border:1px solid #D9D4CB", "#1D1B18")}${btn(REQUESTS_URL, "Open in Dayzift", "#F2C230", "#2A2305")}
-      <p style="margin:14px 0 0;color:#6A655D;font-size:14px">${cust ? "Reply to this email to write to the customer directly." : "Call or text the customer at the contact above."}</p>`,
+      <p style="margin:14px 0 0;color:#6A655D;font-size:14px">${cust ? "Customer email: " + esc(cust) + ". " : ""}Call, text or email the customer at the contact above.</p>`,
     "Dayzift booking alert");
   const text = `${lead}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n")
     + `\n\nApprove: ${link("confirm")}\nDecline: ${link("decline")}\nOpen in Dayzift: ${REQUESTS_URL}\n\nDayzift · A product of LIT America`;
-  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, replyTo: cust || undefined, subject, html, text }, to, "Owner email");
+  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
   return true;
 }
 
@@ -311,16 +311,16 @@ async function emailCustomer(bk, biz, kind) {
     confirmed: [`Confirmed: ${svc}${day ? " on " + day : ""}`,
       `Good news! ${name} confirmed your ${svc}${day ? " for " + day : ""}. We'll see you then.`],
     declined: [`About your request for ${day || svc}`,
-      `Thanks for thinking of ${name}. Unfortunately we can't take your ${svc} request${day ? " for " + day : ""}. Reply to this email or call us and we'll gladly find another day that works.`],
+      `Thanks for thinking of ${name}. Unfortunately we can't take your ${svc} request${day ? " for " + day : ""}. Get in touch and we'll gladly find another day that works.`],
   }[kind];
-  const contact = biz.phone ? ` or call ${biz.phone}` : "";
+  const bizMail = okEmail(biz.email) ? biz.email : "";
+  const contact = [biz.phone ? "call " + biz.phone : "", bizMail ? "email " + bizMail : ""].filter(Boolean).join(" or ");
   const html = shell(name, `<p style="margin:0 0 14px">Hi ${esc(firstName(bk.name))},</p><p style="margin:0 0 16px">${esc(msgs[1])}</p>
       ${rowsHtml([["Service", bk.service], ["Date", day]].filter(([, v]) => v))}
       ${site ? btn(site, "Visit our website", "#F2C230", "#2A2305") : ""}
-      <p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Reply to this email${esc(contact)}.</p>`, `Sent with Dayzift for ${esc(name)}`);
-  const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\nQuestions? Reply to this email${contact}.\n\n${name}\nSent with Dayzift · A product of LIT America`;
-  const replyTo = okEmail(biz.email) ? biz.email : (await ownerEmailsFor(biz))[0];
-  await transport().sendMail({ from: `"${name}" <${SMTP_USER.value()}>`, to, replyTo, subject: msgs[0], html, text });
+      ${contact ? `<p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(contact)}.</p>` : ""}`, `Sent with Dayzift for ${esc(name)}`);
+  const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\n` + (contact ? `Questions? Please ${contact}.\n\n` : "") + `${name}\nSent with Dayzift · A product of LIT America`;
+  await transport().sendMail({ from: `"${name}" <${SMTP_USER.value()}>`, to, subject: msgs[0], html, text });
   return true;
 }
 
