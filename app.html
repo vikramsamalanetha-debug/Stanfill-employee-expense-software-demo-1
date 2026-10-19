@@ -1661,6 +1661,7 @@ function viewRequests(){
       el("span",{class:"paid "+(status==="confirmed"?"yes":"no")}, status)));
     if (b.size) card.append(el("div",{class:"kv"},"Size: "+b.size));
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
+    if (b.email && /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(b.email)) card.append(el("div",{class:"kv"},"Email: ", el("a",{href:"mailto:"+b.email},b.email), b.guest?" (booked as a guest)":""));
     if (b.details) card.append(el("div",{class:"notes"},b.details));
     if (b.wantsRewards && hasRewards()) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
     const trail=[];
