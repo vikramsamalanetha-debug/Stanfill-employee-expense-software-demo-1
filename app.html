@@ -5755,6 +5755,11 @@ wireGate();
 if (isNative()){ document.querySelectorAll(".web-only").forEach(x=>x.classList.add("hidden")); document.querySelectorAll(".gate-home").forEach(a=>a.removeAttribute("href")); }
 switchGateTab(/[?&]register\b/.test(location.search) ? "register" : "login");
 showGate();
+// Website "Try the live demo" links: /app?demo=cleaning (or construction, plumbing, electrical, hvac, roofing, handyman, lawn-care, pet-care).
+// The demo is a private copy in the visitor's browser; it never reads or writes real data.
+(function(){ const m=/[?&]demo=([a-z-]+)/i.exec(location.search); if (!m) return;
+  const map={cleaning:"Cleaning",construction:"Construction",contractors:"Construction",remodeling:"Construction",plumbing:"Plumbing",electrical:"Electrical",hvac:"HVAC",roofing:"Roofing",handyman:"Handyman","lawn-care":"Lawn Care",lawn:"Lawn Care","pet-care":"Pet Care"};
+  const type=map[m[1].toLowerCase()]; if (type) startDemo(type); })();
 
 $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
