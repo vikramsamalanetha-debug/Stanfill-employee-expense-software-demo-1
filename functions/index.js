@@ -1,4 +1,4 @@
-// Dayzift email: admin alerts, booking requests (owners and customers), plus invoices and overdue reminders for every business.
+// DayZift email: admin alerts, booking requests (owners and customers), plus invoices and overdue reminders for every business.
 // Admin alerts tell the platform admin by email and phone notification when
 //  1) someone creates an owner account (even if they never confirm their email), and
 //  2) a business is submitted and is waiting for approval.
@@ -13,7 +13,7 @@ const nodemailer = require("nodemailer");
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1", maxInstances: 3 });
 
-// All Dayzift email (alerts, bookings, invoices) is sent from the LIT America Yahoo account.
+// All DayZift email (alerts, bookings, invoices) is sent from the LIT America Yahoo account.
 // The password is a Yahoo *app password*, stored in Secret Manager: firebase functions:secrets:set SMTP_PASS
 // (Yahoo only lets an account send as itself, so emails always come from SMTP_USER.)
 const SMTP_PASS = defineSecret("SMTP_PASS");
@@ -46,18 +46,18 @@ async function sendEmail(subject, heading, rows, note) {
   const table = rows.filter(([, v]) => v).map(([k, v]) =>
     `<tr><td style="padding:6px 14px 6px 0;color:#56706B;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:#16302C"><b>${esc(v)}</b></td></tr>`).join("");
   const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;color:#16302C">
-    <div style="background:#1F7A69;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-size:20px;font-weight:800">Dayzift</div>
+    <div style="background:#1F7A69;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;font-size:20px;font-weight:800">DayZift</div>
     <div style="border:1px solid #E2E8E4;border-top:0;border-radius:0 0 12px 12px;padding:20px">
       <h2 style="margin:0 0 6px;font-size:20px">${esc(heading)}</h2>
       <p style="margin:0 0 14px;color:#56706B">${esc(note)}</p>
       <table style="border-collapse:collapse;font-size:15px">${table}</table>
       <p style="margin:20px 0 0"><a href="${APP_URL}" style="background:#F2C230;color:#2A2305;padding:10px 18px;border-radius:999px;font-weight:800;text-decoration:none">Open Platform Admin</a></p>
-      <p style="margin:22px 0 0;font-size:12px;color:#8A9B97">Dayzift · A product of <a href="https://www.litamerica.net" style="color:#8A9B97">LIT America</a></p>
+      <p style="margin:22px 0 0;font-size:12px;color:#8A9B97">DayZift · A product of <a href="https://www.litamerica.net" style="color:#8A9B97">LIT America</a></p>
     </div></div>`;
   const text = `${heading}\n${note}\n\n` + rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\nOpen Platform Admin: ${APP_URL}`;
   const port = Number(SMTP_PORT.value()) || 465;
   const transport = nodemailer.createTransport({ host: SMTP_HOST.value(), port, secure: port === 465, auth: { user: SMTP_USER.value(), pass: SMTP_PASS.value() } });
-  await sendEach(transport, { from: `Dayzift <${SMTP_USER.value()}>`, subject, text, html }, adminList(), "Admin alert");
+  await sendEach(transport, { from: `DayZift <${SMTP_USER.value()}>`, subject, text, html }, adminList(), "Admin alert");
 }
 
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
@@ -92,7 +92,7 @@ exports.notifyNewSignup = onDocumentCreated({ document: "crewAccounts/{uid}", se
   const a = event.data && event.data.data(); if (!a || a.role !== "owner") return;   // crew sign-ups don't need an alert
   const biz = a.plannedBusinessName || "a new business";
   await alertAdmin(
-    `New Dayzift sign-up: ${biz}`, "New sign-up",
+    `New DayZift sign-up: ${biz}`, "New sign-up",
     [["Business", a.plannedBusinessName], ["Type", a.plannedCategory], ["Name", a.name], ["Email", a.email], ["Phone", a.phone], ["Signed up", when(a.createdAt)]],
     "They still need to confirm their email and submit the business. If they don't, it'll show under \"Signed up, no business yet\" in Platform Admin.",
     "New sign-up: " + biz, [a.name, a.plannedCategory, a.phone || a.email].filter(Boolean).join(" · "));
@@ -103,7 +103,7 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
   const b = event.data && event.data.data(); if (!b || b.status !== "pending") return;   // businesses you pre-register start active
   const place = [b.city, b.state].filter(Boolean).join(", ");
   await alertAdmin(
-    `Approve on Dayzift: ${b.name || "new business"}`, "A business is waiting for your approval",
+    `Approve on DayZift: ${b.name || "new business"}`, "A business is waiting for your approval",
     [["Business", b.name], ["Type", b.category], ["Location", place], ["Phone", b.phone], ["Business email", b.email], ["Owner email", (b.ownerEmails || [])[0]], ["About", b.description], ["Submitted", when(b.createdAt)]],
     "Their 30-day trial has already started. Approving them in Platform Admin switches on invoice emails, invoice links and website bookings.",
     "Approve: " + (b.name || "new business"), [b.category, place].filter(Boolean).join(" · ") || "Waiting for your approval");
@@ -111,8 +111,8 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
 
 // ---------- Invoices ----------
 // The app drops a request in "mail" when an owner taps "Send email"; this sends the invoice link
-// to the client from "<Business> via Dayzift", with replies going to the business.
-// Dayzift never takes payments: "Pay online" is the business's own payment link.
+// to the client from "<Business> via DayZift", with replies going to the business.
+// DayZift never takes payments: "Pay online" is the business's own payment link.
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const INVOICE_BASE = "https://dayzift.com/invoice.html?k=";
 const money = (n) => "$" + (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -177,19 +177,19 @@ function invoiceEmail(p, key, reminder) {
       ${!paid && p.payNote ? `<div style="background:#F5F7FA;border-radius:8px;padding:12px 14px;margin:18px 0 0;font-size:14px"><b>How to pay:</b> ${esc(p.payNote)}</div>` : ""}
       ${ask ? `<p style="margin:20px 0 0;color:#5E6878;font-size:13px">Questions? Please ${esc(ask)}.</p>` : ""}
     </div>
-    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">Sent with Dayzift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
+    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">Sent with DayZift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
   </div></div>`;
   const text = `Hi ${first},\n\n${intro}\n\n${paid ? "View receipt" : "View invoice"}: ${url}\n` + (!paid && p.payLink ? `Pay online: ${p.payLink}\n` : "") + (!paid && p.payNote ? `How to pay: ${p.payNote}\n` : "")
-    + (ask ? `\nQuestions? Please ${ask}.\n` : "") + `\n${b.name}\nSent with Dayzift · A product of LIT America`;
+    + (ask ? `\nQuestions? Please ${ask}.\n` : "") + `\n${b.name}\nSent with DayZift · A product of LIT America`;
   return { subject, html, text };
 }
 
 async function mailInvoice(p, key, to, reminder) {
   const b = p.biz || {};
-  const name = String(b.name || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
+  const name = String(b.name || "DayZift").replace(/["<>\r\n]/g, "").slice(0, 80);
   const msg = invoiceEmail(p, key, reminder);
   // No Reply-To: Yahoo refuses mail that asks for replies to go to another address. The business's contact is in the email instead.
-  await transport().sendMail({ from: `"${name} via Dayzift" <${SMTP_USER.value()}>`, to, ...msg });
+  await transport().sendMail({ from: `"${name} via DayZift" <${SMTP_USER.value()}>`, to, ...msg });
 }
 
 // Same rule as the app: only businesses waiting for approval or suspended are blocked.
@@ -256,7 +256,7 @@ const PROJECT = process.env.GCLOUD_PROJECT || "stanfill-clean-pros";
 const ACTION_URL = `https://us-central1-${PROJECT}.cloudfunctions.net/bookingAction`;
 const REQUESTS_URL = "https://dayzift.com/app";
 
-const bizLabel = (b) => String((b && b.name) || "Dayzift").replace(/["<>\r\n]/g, "").slice(0, 80);
+const bizLabel = (b) => String((b && b.name) || "DayZift").replace(/["<>\r\n]/g, "").slice(0, 80);
 const reqDay = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? String(iso).slice(0, 10)
   : d.toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "long", month: "long", day: "numeric", year: "numeric" }); };
 // Time of day the customer asked for (website booking form).
@@ -320,12 +320,12 @@ async function emailOwners(bookingId, bk, biz, key, reminderNo) {
   // "Account email" is who actually sent the request (their sign-in); the rest is what they typed.
   const rows = bookingRows(bk, biz).concat(cust && cust !== bk.phone ? [["Account email", cust]] : []);
   const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}
-      ${btn(link("confirm"), "Approve", "#1F7A69", "#fff")}${btn(link("decline"), "Decline", "#fff;border:1px solid #D9D4CB", "#1D1B18")}${btn(REQUESTS_URL, "Open in Dayzift", "#F2C230", "#2A2305")}
+      ${btn(link("confirm"), "Approve", "#1F7A69", "#fff")}${btn(link("decline"), "Decline", "#fff;border:1px solid #D9D4CB", "#1D1B18")}${btn(REQUESTS_URL, "Open in DayZift", "#F2C230", "#2A2305")}
       <p style="margin:14px 0 0;color:#6A655D;font-size:14px">${cust ? "Customer email: " + esc(cust) + ". " : ""}Call, text or email the customer at the contact above.</p>`,
-    "Dayzift booking alert");
+    "DayZift booking alert");
   const text = `${lead}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n")
-    + `\n\nApprove: ${link("confirm")}\nDecline: ${link("decline")}\nOpen in Dayzift: ${REQUESTS_URL}\n\nDayzift · A product of LIT America`;
-  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
+    + `\n\nApprove: ${link("confirm")}\nDecline: ${link("decline")}\nOpen in DayZift: ${REQUESTS_URL}\n\nDayZift · A product of LIT America`;
+  await sendEach(transport(), { from: `"DayZift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
   return true;
 }
 
@@ -374,8 +374,8 @@ async function emailCustomer(bk, biz, kind) {
   const html = shell(name, `<p style="margin:0 0 14px">Hi ${esc(firstName(bk.name))},</p><p style="margin:0 0 16px">${esc(msgs[1])}</p>
       ${rowsHtml((/^change_/.test(kind) ? [["Service", bk.service], ["Booked date", fromW], ["New date", toW]] : [["Service", bk.service], ["Date", reqDay(bk.requestedDate)], ["Time", WIN[bk.timeWindow] || ""]]).filter(([, v]) => v))}
       ${site ? btn(site, "Visit our website", "#F2C230", "#2A2305") : ""}
-      ${contact ? `<p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(contact)}.</p>` : ""}`, `Sent with Dayzift for ${esc(name)}`);
-  const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\n` + (contact ? `Questions? Please ${contact}.\n\n` : "") + `${name}\nSent with Dayzift · A product of LIT America`;
+      ${contact ? `<p style="margin:12px 0 0;color:#6A655D;font-size:14px">Questions? Please ${esc(contact)}.</p>` : ""}`, `Sent with DayZift for ${esc(name)}`);
+  const text = `Hi ${firstName(bk.name)},\n\n${msgs[1]}\n\n` + (contact ? `Questions? Please ${contact}.\n\n` : "") + `${name}\nSent with DayZift · A product of LIT America`;
   await transport().sendMail({ from: `"${name}" <${SMTP_USER.value()}>`, to, subject: msgs[0], html, text });
   return true;
 }
@@ -442,10 +442,10 @@ async function emailOwnersAbout(id, bk, biz, kind, key) {
     .concat([["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)], ["Account email", cust]]).filter(([, v]) => v);
   const buttons = kind === "change"
     ? btn(link("moveok"), "Approve new date", "#1F7A69", "#fff") + btn(link("moveno"), "Keep original date", "#fff;border:1px solid #D9D4CB", "#1D1B18") : "";
-  const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}${buttons}${btn(REQUESTS_URL, "Open in Dayzift", "#F2C230", "#2A2305")}`, "Dayzift booking alert");
+  const html = shell(bizLabel(biz), `<p style="margin:0 0 16px">${esc(lead)}</p>${rowsHtml(rows)}${buttons}${btn(REQUESTS_URL, "Open in DayZift", "#F2C230", "#2A2305")}`, "DayZift booking alert");
   const text = `${lead}\n\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n")
-    + (kind === "change" ? `\n\nApprove new date: ${link("moveok")}\nKeep original date: ${link("moveno")}` : "") + `\nOpen in Dayzift: ${REQUESTS_URL}\n\nDayzift · A product of LIT America`;
-  await sendEach(transport(), { from: `"Dayzift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
+    + (kind === "change" ? `\n\nApprove new date: ${link("moveok")}\nKeep original date: ${link("moveno")}` : "") + `\nOpen in DayZift: ${REQUESTS_URL}\n\nDayZift · A product of LIT America`;
+  await sendEach(transport(), { from: `"DayZift for ${bizLabel(biz)}" <${SMTP_USER.value()}>`, subject, html, text }, to, "Owner email");
   return true;
 }
 
@@ -543,11 +543,11 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
   const page = (title, body, form) => res.status(200).set("Content-Type", "text/html; charset=utf-8").send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head>
 <body style="font-family:Segoe UI,Arial,sans-serif;background:#F7F5F0;color:#1D1B18;margin:0;padding:40px 16px"><div style="max-width:480px;margin:auto;background:#fff;border:1px solid #E3E0D9;border-radius:14px;padding:26px">
 <h1 style="font-size:22px;margin:0 0 10px">${esc(title)}</h1><p style="margin:0 0 18px;color:#4A463F">${body}</p>${form || ""}
-<p style="margin:22px 0 0"><a href="${REQUESTS_URL}" style="color:#1F7A69;font-weight:700">Open Dayzift</a></p></div>
-<p style="text-align:center;font-size:12px;color:#8A8278;margin-top:16px">Dayzift · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></body></html>`);
+<p style="margin:22px 0 0"><a href="${REQUESTS_URL}" style="color:#1F7A69;font-weight:700">Open DayZift</a></p></div>
+<p style="text-align:center;font-size:12px;color:#8A8278;margin-top:16px">DayZift · A product of <a href="https://www.litamerica.net" style="color:#8A8278">LIT America</a></p></body></html>`);
   const src = req.method === "POST" ? (req.body || {}) : (req.query || {});
   const id = String(src.id || "").slice(0, 128), k = String(src.k || "").slice(0, 80), a = ["confirm", "decline", "moveok", "moveno"].includes(src.a) ? src.a : "";
-  if (!id || !k || !a || !/^[\w-]+$/.test(id)) return page("Link not valid", "This link is incomplete. Open Dayzift to answer the request.");
+  if (!id || !k || !a || !/^[\w-]+$/.test(id)) return page("Link not valid", "This link is incomplete. Open DayZift to answer the request.");
   const db = admin.firestore();
   const [keySnap, bkSnap] = await Promise.all([db.doc("bookingKeys/" + id).get(), db.doc("bookings/" + id).get()]);
   const bk = bkSnap.data(), stored = keySnap.exists && keySnap.get("key");
@@ -557,7 +557,7 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
     const ch = bk.change || {};
     if (bk.status === "cancelled") return page("Booking cancelled", "The customer has cancelled this booking.");
     if (ch.type !== "reschedule" || ch.status !== "pending") return page("Already answered", "This date change was already answered.");
-    if (!keyOk) return page("Link expired", "This link has expired. Open Dayzift to answer the request.");
+    if (!keyOk) return page("Link expired", "This link has expired. Open DayZift to answer the request.");
     const what2 = `${esc(bk.service || "Booking")} for ${esc(bk.name || "customer")}: ${esc(reqDay(ch.from))} \u2192 <b>${esc(reqDay(ch.to))}</b>`;
     if (req.method !== "POST") {
       return page(a === "moveok" ? "Approve the new date?" : "Keep the original date?", what2 + ".",
@@ -571,7 +571,7 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
       : ". The customer is being emailed that the original date stands."));
   }
   if ((bk.status || "pending") !== "pending") return page("Already answered", `This request was already <b>${esc(bk.status)}</b>.`);
-  if (!keyOk) return page("Link expired", "This link has expired. Open Dayzift to answer the request.");
+  if (!keyOk) return page("Link expired", "This link has expired. Open DayZift to answer the request.");
   const what = `${esc(bk.service || "Request")} for ${esc(bk.name || "customer")}${bk.requestedDate ? " on " + esc(reqDay(bk.requestedDate)) : ""}`;
   if (req.method !== "POST") {
     return page(a === "confirm" ? "Approve this request?" : "Decline this request?", what + ".",
@@ -581,12 +581,12 @@ exports.bookingAction = onRequest({ invoker: "public", cors: false }, async (req
   }
   await bkSnap.ref.update({ status: a === "confirm" ? "confirmed" : "declined", respondedVia: "email", respondedAt: admin.firestore.FieldValue.serverTimestamp() });
   return page(a === "confirm" ? "Approved ✓" : "Declined", what + (a === "confirm"
-    ? ". The customer is being emailed now. Add the job to your board in Dayzift whenever you're ready."
+    ? ". The customer is being emailed now. Add the job to your board in DayZift whenever you're ready."
     : ". The customer is being emailed now."));
 });
 
 // ---------- Booking calendar (public copy for the business's website) ----------
-// The owner sets the calendar in Dayzift (Settings → Booking calendar). These keep publicCalendars/{bizId}
+// The owner sets the calendar in DayZift (Settings → Booking calendar). These keep publicCalendars/{bizId}
 // in step with it, and add "fullDates": days that already have as many jobs as the owner's daily limit.
 // Only these functions write publicCalendars; the website only reads it.
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
@@ -687,7 +687,7 @@ exports.passwordReset = onRequest({ invoker: "public", cors: false, secrets: [SM
   try {
     let biz = null;
     if (bizId) { try { biz = (await db.doc("businesses/" + bizId).get()).data() || null; } catch (e) { /* ignore */ } }
-    const name = biz && biz.name ? String(biz.name).replace(/["<>\r\n]/g, "").slice(0, 80) : "Dayzift";
+    const name = biz && biz.name ? String(biz.name).replace(/["<>\r\n]/g, "").slice(0, 80) : "DayZift";
     const back = biz && biz.website && /^https:\/\//i.test(biz.website) ? biz.website : bizId === "stanfill-elite-clean-pros" ? "https://stanfillelitecleanpros.com" : "https://dayzift.com/app";
     let link;
     try { link = await admin.auth().generatePasswordResetLink(email, { url: back }); }
@@ -703,9 +703,9 @@ exports.passwordReset = onRequest({ invoker: "public", cors: false, secrets: [SM
       <a href="${esc(link)}" style="display:inline-block;background:#1F7A69;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none">Choose a new password</a>
       <p style="margin:20px 0 0;font-size:13px;color:#5E6878;line-height:1.5">Didn't ask for this? You can ignore this email; your password stays the same.</p>
     </div>
-    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">${name === "Dayzift" ? "Dayzift" : "Sent with Dayzift for " + esc(name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
+    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">${name === "DayZift" ? "DayZift" : "Sent with DayZift for " + esc(name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
   </div></div>`;
-    const text = `Hi ${first},\n\nWe got a request to reset the password for ${email}. Open this link to choose a new one (it works for one hour):\n${link}\n\nDidn't ask for this? Ignore this email; your password stays the same.\n\n${name}\nSent with Dayzift · A product of LIT America`;
+    const text = `Hi ${first},\n\nWe got a request to reset the password for ${email}. Open this link to choose a new one (it works for one hour):\n${link}\n\nDidn't ask for this? Ignore this email; your password stays the same.\n\n${name}\nSent with DayZift · A product of LIT America`;
     await transport().sendMail({ from: `"${name}" <${SMTP_USER.value()}>`, to: email, subject: `Reset your ${name} password`, html, text });
     await log({ sent: true });
     return res.json({ ok: true });
