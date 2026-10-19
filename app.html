@@ -143,6 +143,23 @@ table.tsheet td.tot,table.tsheet th.tot{text-align:right;padding-left:8px;white-
 .tcell.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);font-weight:800}
 .tcell.live{background:var(--primary-soft);color:var(--primary)}
 .hoursform{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg)}
+.estnote{background:var(--lemon-soft);border-radius:var(--radius);padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.5}
+.prsteps{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 14px;padding:0}
+.prsteps li button{width:100%;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:10px 12px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
+.prsteps li.cur button{border-color:var(--primary);color:var(--ink);box-shadow:0 0 0 2px var(--primary-soft)}
+.prsteps .n{width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-size:12px;flex:none}
+.prsteps li.done .n{background:var(--ok);color:#fff}
+.prsteps li.cur .n{background:var(--primary);color:#fff}
+@media (max-width:700px){ .prsteps{grid-template-columns:1fr 1fr} }
+.issue{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-radius:var(--radius-sm);padding:8px 10px;font-size:14px}
+.issue.bad{background:var(--danger-soft)} .issue.ok{background:#E3F2E8} .issue.info{background:var(--sky-soft)}
+.confirmbox{display:grid;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.confirmbox>div{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.confirmbox>div span{color:var(--muted)} .confirmbox .t{border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
+.confirmbox .neg{color:var(--danger)}
+.ptable tr.muted td{opacity:.55}
+.ptable tr.tot td{border-top:2px solid var(--ink)}
+.panel.voided{opacity:.7}
 .paybox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px 18px;margin:0 0 14px}
 .paybox .big{font:750 32px/1.15 var(--display);font-variant-numeric:tabular-nums}
 table.ptable{width:100%}
@@ -878,7 +895,7 @@ function hideToast(){ const t=$("#toast"); t.classList.add("hidden"); try { if (
 $("#toast").addEventListener("click",hideToast);   // tap to dismiss
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices","payrollRuns"];
 // Firestore sentinels (server time, delete field) have no meaning in the on-device store.
 function localClean(data){
   const out={}; const FV=firebase.firestore.FieldValue;
@@ -967,7 +984,7 @@ async function write(fn, okMsg){
 }
 
 /* ---------- state ---------- */
-const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], tab:"home", demo:false, who:"all", range:"week", gran:"week", seeding:false,
+const S = { employees:[], jobs:[], locations:[], expenses:[], bookings:[], customers:[], pointsLedger:[], projects:[], companies:[], payRates:[], shifts:[], invoices:[], publicInvoices:[], payrollRuns:[], tab:"home", demo:false, who:"all", range:"week", gran:"week", seeding:false,
   month: today().slice(0,7), myUserId:null, myEmail:null, isOwner:false, dutyErr:null, watching:false, downloads:null,
   businessId:null, business:null, isPlatformAdmin:false, console:false, pa:null, paLoading:false, clientQ:"", allBusinesses:[], allUsers:[], usersLoaded:false };
 const me = () => S.myUserId ? S.employees.find(e=>e.userId===S.myUserId) : null;
@@ -3840,32 +3857,105 @@ function payRuleText(r){
   return (r.cls==="1099"?"1099 contractor":"W-2 employee")+" · "+amt;
 }
 // What the board says each person did in the period.
-// Clocked hours from the shift log, with overtime past 40 h in any week.
+/* Overtime (federal FLSA rule): hours over 40 in a WORKWEEK, a fixed 7-day stretch that starts on the business's
+   workweek day. A pay period can start on a different day, or cover two workweeks, so overtime is worked out on
+   the whole workweek (including days just outside the pay period) and only the hours that fall inside the
+   period are paid in it. The last hours worked in a week are the overtime hours. */
+function workweekDow(){ const p=(S.business&&S.business.payroll)||{}; return p.weekStartDow!=null?Number(p.weekStartDow):paySched().startDow; }
+function wwStartOf(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()-workweekDow()+7)%7)); return x; }
+function splitOvertime(items,start,end){
+  // items: [{day:"YYYY-MM-DD", at:sortKey, h:hours}] covering whole workweeks
+  const weeks={};
+  items.forEach(it=>{ const k=ymd(wwStartOf(parseYmd(it.day))); (weeks[k] ||= []).push(it); });
+  let reg=0, ot=0; const wk=[];
+  Object.keys(weeks).sort().forEach(k=>{
+    let cum=0, wReg=0, wOt=0, all=0;
+    weeks[k].sort((a,b)=>a.at-b.at).forEach(it=>{
+      const r=Math.max(0,Math.min(it.h,40-cum)), o=it.h-r; cum+=it.h; all+=it.h;
+      if (it.day>=start && it.day<=end){ reg+=r; ot+=o; wReg+=r; wOt+=o; }
+    });
+    const ws=parseYmd(k), we=new Date(ws); we.setDate(we.getDate()+6);
+    if (wReg+wOt>0) wk.push({start:k,end:ymd(we),total:all,inPeriod:wReg+wOt,ot:wOt,partial:k<start||ymd(we)>end});
+  });
+  const q=n=>Math.round(n*100)/100;
+  return {reg:q(reg),ot:q(ot),hours:q(reg+ot),weeks:wk};
+}
+function wwRange(start,end){ const a=wwStartOf(parseYmd(start)), b=wwStartOf(parseYmd(end)); b.setDate(b.getDate()+6); return [ymd(a),ymd(b)]; }
 function clockedIn(empId,start,end){
-  const weeks={}; let hours=0; const list=shiftsFor(empId,start,end).filter(x=>x.end);
-  list.forEach(x=>{ const h=shiftHours(x); hours+=h; const wk=ymd(weekStart(new Date(x.start))); weeks[wk]=(weeks[wk]||0)+h; });
-  const ot=Object.values(weeks).reduce((n,h)=>n+Math.max(0,h-40),0);
-  return {shifts:list.length, hours:Math.round(hours*4)/4, ot:Math.round(ot*4)/4, open:shiftsFor(empId,start,end).filter(x=>!x.end).length};
+  const [a,b]=wwRange(start,end), run=prRun();
+  const inPeriod=shiftsFor(empId,start,end);
+  const done=shiftsFor(empId,a,b).filter(x=>x.end);
+  const sp=splitOvertime(done.map(x=>({day:ymd(new Date(x.start)),at:x.start,h:shiftHours(x)})),start,end);
+  const missing=inPeriod.filter(x=>!x.end);
+  return {shifts:inPeriod.filter(x=>x.end).length, hours:sp.hours, ot:sp.ot, weeks:sp.weeks,
+    open:missing.length, missing, unreviewed:missing.filter(x=>!(run.reviews||{})[x.id])};
 }
 function workIn(empId,start,end){
-  const jobs=S.jobs.filter(j=>j.status==="done" && j.date && j.date>=start && j.date<=end && jobCrew(j).includes(empId));
-  const weeks={}; let hours=0, revenue=0;
-  jobs.forEach(j=>{
-    const h=(j.startedAt&&j.completedAt&&j.completedAt>j.startedAt)?(j.completedAt-j.startedAt)/36e5:0;
-    hours+=h; const wk=ymd(weekStart(parseYmd(j.date))); weeks[wk]=(weeks[wk]||0)+h;
-    revenue+=(Number(j.price)||0)/Math.max(1,jobCrew(j).length);
-  });
-  const ot=Object.values(weeks).reduce((n,h)=>n+Math.max(0,h-40),0);
-  return {jobs:jobs.length, hours:Math.round(hours*4)/4, ot:Math.round(ot*4)/4, revenue:r2(revenue), days:new Set(jobs.map(j=>j.date)).size};
+  const [a,b]=wwRange(start,end);
+  const all=S.jobs.filter(j=>j.status==="done" && j.date && j.date>=a && j.date<=b && jobCrew(j).includes(empId));
+  const jobs=all.filter(j=>j.date>=start && j.date<=end);
+  const h=j=>(j.startedAt&&j.completedAt&&j.completedAt>j.startedAt)?(j.completedAt-j.startedAt)/36e5:0;
+  const sp=splitOvertime(all.map(j=>({day:j.date,at:j.startedAt||parseYmd(j.date).getTime(),h:h(j)})),start,end);
+  const revenue=jobs.reduce((n,j)=>n+(Number(j.price)||0)/Math.max(1,jobCrew(j).length),0);
+  return {jobs:jobs.length, hours:sp.hours, ot:sp.ot, weeks:sp.weeks, revenue:r2(revenue), days:new Set(jobs.map(j=>j.date)).size};
 }
-// Gross already paid this calendar year, from payroll runs recorded before this period.
+// Gross already paid this calendar year, from payroll payments recorded before this period.
 function ytdBefore(empId,start){
   const yr=start.slice(0,4);
   return r2(S.expenses.filter(x=>x.payrollRun && (x.payrollRun.end||"").startsWith(yr) && x.payrollRun.end<start)
     .reduce((n,x)=>n+(Number(((x.payrollRun.people||[]).find(p=>p.empId===empId)||{}).paid)||0),0));
 }
+
+/* ---- Federal income tax withholding ----
+   IRS Publication 15-T (2026), Worksheet 1A: percentage method tables for automated payroll systems,
+   for Forms W-4 from 2020 or later. Rows are [at least, tentative amount, percent]; the amount over is the
+   "at least" figure. Married jointly and Single rows are as printed by the IRS. The top two Head of household
+   rows were derived from the 2026 brackets the same way the printed rows are built. */
+const FIT2026={
+  std:{mfj:[[0,0,0],[19300,0,10],[44100,2480,12],[120100,11600,22],[230700,35932,24],[422850,82048,32],[531750,116896,35],[788000,206583.5,37]],
+       single:[[0,0,0],[7500,0,10],[19900,1240,12],[57900,5800,22],[113200,17966,24],[209275,41024,32],[263725,58448,35],[648100,192979.25,37]],
+       hoh:[[0,0,0],[15550,0,10],[33250,1770,12],[83000,7740,22],[121250,16155,24],[217300,39207,32],[271750,56631,35],[656150,191171,37]]},
+  chk:{mfj:[[0,0,0],[16100,0,10],[28500,1240,12],[66500,5800,22],[121800,17966,24],[217875,41024,32],[272325,58448,35],[400450,103291.75,37]],
+       single:[[0,0,0],[8050,0,10],[14250,620,12],[33250,2900,22],[60900,8983,24],[108938,20512,32],[136163,29224,35],[328350,96489.63,37]],
+       hoh:[[0,0,0],[12075,0,10],[20925,885,12],[45800,3870,22],[64925,8077.5,24],[112950,19603.5,32],[140175,28315.5,35],[332375,95585.5,37]]},
+  adj:{mfj:12900,other:8600}
+};
+const W4_STATUS={single:"Single or married filing separately",mfj:"Married filing jointly",hoh:"Head of household"};
+function fitMode(){ const p=(S.business&&S.business.payroll)||{}; return p.fitMode==="provider"?"provider":"calc"; }
+// Worksheet 1A. w4 = {status, step2, dependents (Step 3 $), otherIncome (4a), deductions (4b), extra (4c)}; null = no W-4 (IRS: Single, no adjustments).
+function fitWithholding(wages,periodsPerYear,w4){
+  const w=w4||{status:"single"}, st=W4_STATUS[w.status]?w.status:"single";
+  const annual=wages*periodsPerYear+(Number(w.otherIncome)||0);
+  const adjusted=Math.max(0,annual-(Number(w.deductions)||0)-(w.step2?0:(st==="mfj"?FIT2026.adj.mfj:FIT2026.adj.other)));
+  const rows=(w.step2?FIT2026.chk:FIT2026.std)[st];
+  const row=[...rows].reverse().find(r=>adjusted>=r[0]);
+  const tentative=(row[1]+(adjusted-row[0])*row[2]/100)/periodsPerYear;
+  const afterCredits=Math.max(0,tentative-(Number(w.dependents)||0)/periodsPerYear);
+  return {amount:r2(afterCredits+(Number(w.extra)||0)),annualWage:r2(adjusted),bracket:row[2],tentative:r2(tentative)};
+}
+
+/* ---- the payroll run for a period: saved, so edits, reviews, approvals and payments are kept with who and when ---- */
+const runId=(start,end)=>S.businessId+"_"+start+"_"+end;
+function prRun(){ if (!S.pr) return {}; return S.payrollRuns.find(r=>r.id===runId(S.pr.start,S.pr.end))||{id:runId(S.pr.start,S.pr.end),edits:{},reviews:{},w4ok:{},hoursOk:{},payments:[],history:[],_new:true}; }
+const prBy=()=>S.myEmail||"owner";
+async function runSave(patch,log){
+  const r=prRun(), id=runId(S.pr.start,S.pr.end);
+  const history=[...(r.history||[]),...(log?[{at:Date.now(),by:prBy(),...log}]:[])].slice(-300);
+  if (r._new) await Store.set("payrollRuns",id,{businessId:S.businessId,start:S.pr.start,end:S.pr.end,edits:{},reviews:{},w4ok:{},hoursOk:{},payments:[],createdAt:Date.now(),...patch,history});
+  else await Store.update("payrollRuns",id,{...patch,history});
+}
+const prEd=empId=>{ const r=prRun(); return {...((r.edits||{})[empId]||{}),...((S.pr.local||{})[empId]||{})}; };
+// Change an adjustment: saved to the run; it also un-approves that person's hours and the run approval.
+function prSet(empId,field,value,label){
+  const r=prRun(), cur=prEd(empId), was=cur[field];
+  if (String(was??"")===String(value??"")) return;
+  const edits={...(r.edits||{}),[empId]:{...cur,[field]:value===""?null:value}};
+  const hoursOk={...(r.hoursOk||{})}; delete hoursOk[empId];
+  const e=empById(empId);
+  write(()=>runSave({edits,hoursOk,approval:null},{action:"adjust",empId,detail:(e?e.name.split(" ")[0]+": ":"")+label+" "+(was==null||was===""?"—":was)+" → "+(value===""||value==null?"—":value)}),null);
+}
 function calcPay(e,start,end){
-  const r=payRateFor(e.id); const w=workIn(e.id,start,end); const ed=(S.pr.edits[e.id] ||= {});
+  const r=payRateFor(e.id); const w=workIn(e.id,start,end); const ed=prEd(e.id);
   const t=PAY_TYPES.find(x=>x.id===(r&&r.payType))||PAY_TYPES[0];
   const rate=Number(r&&r.rate)||0; const cls=(r&&r.cls)||"w2";
   // Hourly pay uses clocked shift hours when there are any, unless the owner picks job hours.
@@ -3873,28 +3963,51 @@ function calcPay(e,start,end){
   const src = t.id==="hourly" ? (ed.src || (ck.shifts?"shifts":"jobs")) : null;
   const hSrc = src==="shifts" ? ck : w;
   const auto={hourly:hSrc.hours,perjob:w.jobs,percent:w.revenue,day:w.days,piece:0,salary:1}[t.id];
-  const qty = ed.qty!=null&&ed.qty!=="" ? Number(ed.qty)||0 : auto;
-  // W-2 hourly crew get time and a half past 40 hours in a week.
-  const otHours = (cls==="w2" && t.id==="hourly") ? Math.min(qty, ed.qty!=null&&ed.qty!=="" ? Math.max(0,qty-40*Math.max(1,Math.round((parseYmd(end)-parseYmd(start))/6048e5))) : hSrc.ot) : 0;
+  const has=v=>v!=null&&v!=="";
+  const qty = has(ed.qty) ? Number(ed.qty)||0 : auto;
+  // W-2 hourly crew get time and a half for hours over 40 in a workweek.
+  const autoOt = (cls==="w2" && t.id==="hourly") ? Math.min(qty,hSrc.ot) : 0;
+  const otHours = (cls==="w2" && t.id==="hourly") ? (has(ed.ot) ? Math.min(qty,Number(ed.ot)||0) : autoOt) : 0;
   let base = t.id==="percent" ? qty*rate/100 : t.id==="salary" ? rate : qty*rate;
   const otPremium = otHours*rate*0.5;
   const tips=Number(ed.tips)||0, bonus=Number(ed.bonus)||0, miles=Number(ed.miles)||0;
   const wages=r2(base+otPremium+tips+bonus), reimb=r2(miles*mileageRate());
   const ytd=ytdBefore(e.id,start), other=r2(ed.deduct);
-  const out={e,r,t,w,ck,src,cls,qty,auto,otHours,wages,reimb,ytd,other,tips,bonus,miles};
+  const out={e,r,t,w,ck,src,cls,qty,auto,otHours,autoOt,wages,reimb,ytd,other,tips,bonus,miles,ed};
   if (cls==="1099"){
     const paid=r2(wages+reimb);
-    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:ytd+paid>=TAX.necThreshold};
+    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,fitHow:"none",ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:ytd+paid>=TAX.necThreshold};
   }
   const ssBase=Math.max(0,Math.min(wages,TAX.ssBase-ytd));
   const ssEe=r2(ssBase*TAX.ssRate/100), ssEr=ssEe;
   const addl=Math.max(0,(ytd+wages)-Math.max(TAX.addlMedOver,ytd));
   const medEe=r2(wages*TAX.medRate/100+addl*TAX.addlMedRate/100), medEr=r2(wages*TAX.medRate/100);
-  const fit=r2(ed.fit);
+  // Federal income tax: entered amount wins; otherwise Dayzift's W-4 estimate, or "by provider".
+  const w4=r&&r.w4&&r.w4.status?r.w4:null, ppy=paySched().every===2?26:52;
+  let fit=0, fitHow, fitInfo=null;
+  if (has(ed.fit)){ fit=r2(ed.fit); fitHow="entered"; }
+  else if (fitMode()==="provider"){ fit=0; fitHow="provider"; }
+  else { fitInfo=fitWithholding(wages,ppy,w4); fit=fitInfo.amount; fitHow=w4?"w4":"default"; }
   const futa=r2(Math.max(0,Math.min(wages,TAX.futaBase-ytd))*TAX.futaRate/100);
   const suta=r2(Math.max(0,Math.min(wages,sutaBase()-ytd))*sutaRate()/100);
   const erTax=r2(ssEr+medEr+futa+suta);
-  return {...out,paid:wages,net:r2(wages-ssEe-medEe-fit-other+reimb),ssEe,medEe,fit,ssEr,medEr,futa,suta,erTax,cost:r2(wages+reimb+erTax)};
+  return {...out,w4,fitInfo,fitHow,ppy,paid:wages,net:r2(wages-ssEe-medEe-fit-other+reimb),ssEe,medEe,fit,ssEr,medEr,futa,suta,erTax,cost:r2(wages+reimb+erTax)};
+}
+// Everything that should be settled before someone is paid. blocking = must be fixed or reviewed.
+function payIssues(x){
+  const out=[], run=prRun();
+  if (!x.r) out.push({key:"rate",blocking:true,text:"No pay rate set",act:"rate"});
+  x.ck.missing.forEach(sh=>{
+    const rv=(run.reviews||{})[sh.id], d=new Date(sh.start);
+    out.push({key:"shift:"+sh.id,shift:sh,blocking:!rv,reviewed:rv,
+      text:"No clock-out on "+niceDate(ymd(d))+" (clocked in "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})+")"+(rv?" · left out"+(rv.note?": "+rv.note:"")+" by "+rv.by:" · these hours aren't counted"),act:"shift"});
+  });
+  if (x.cls==="w2" && x.r && fitMode()==="calc" && !x.w4){
+    const rv=(run.w4ok||{})[x.e.id];
+    out.push({key:"w4",blocking:!rv,reviewed:rv,text:rv?"No W-4 on file · withholding as Single with no adjustments (IRS default), OK'd by "+rv.by:"No W-4 on file · federal tax would be withheld as Single with no adjustments (the IRS default)",act:"w4"});
+  }
+  if (S.pr.end>=today()) out.push({key:"open",blocking:false,text:"This pay period isn't over yet, so hours may still change"});
+  return out;
 }
 /* ---- pay periods: set once (weekly or every 2 weeks, starting on a chosen day) ---- */
 const DOW_SHORT=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -3923,15 +4036,19 @@ function periodBar(extra){
 }
 function openPaySched(){
   const ps=paySched(), f=$("#empForm"); f.replaceChildren();
-  f.append(el("h2",{},"Pay schedule"),
+  f.append(el("h2",{},"Payroll settings"),
     el("label",{class:"f"},"You pay your crew",el("select",{name:"every"},el("option",{value:"1",selected:ps.every===1},"Every week"),el("option",{value:"2",selected:ps.every===2},"Every 2 weeks"))),
     el("label",{class:"f"},"Pay period starts on",el("select",{name:"dow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:ps.startDow===d},DOW_SHORT[d])))),
     el("p",{class:"kv full",style:"margin:0"},"Payroll and the timesheet open on your pay period automatically. For every 2 weeks, the current period starts this week."),
+    el("label",{class:"f"},"Overtime workweek starts on",el("select",{name:"wwdow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:workweekDow()===d},DOW_SHORT[d])))),
+    el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"Dayzift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))),
+    el("p",{class:"kv full",style:"margin:0"},"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week."),
     el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),el("button",{type:"submit",class:"btn primary"},"Save")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
     const startDow=Number(d.dow), every=d.every==="2"?2:1, t=new Date(); t.setDate(t.getDate()-((t.getDay()-startDow+7)%7));
     const paySchedule={every,startDow,anchor:ymd(t)};
-    write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({paySchedule}); S.business.paySchedule=paySchedule; S.pr=null; prInit(); render(); },"Pay schedule saved"); };
+    const payroll={...(S.business.payroll||{}),weekStartDow:Number(d.wwdow),fitMode:d.fit==="provider"?"provider":"calc"};
+    write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({paySchedule,payroll}); S.business.paySchedule=paySchedule; S.business.payroll=payroll; S.pr=null; prInit(); render(); },"Payroll settings saved"); };
   $("#empDlg").showModal();
 }
 
@@ -4033,94 +4150,344 @@ function prNum(label,val,onset,attrs){
   return el("label",{class:"f"},label,el("input",{type:"number",min:"0",step:"any",inputmode:"decimal",value:val==null?"":String(val),...(attrs||{}),
     onchange:ev=>{ onset(ev.target.value); render(); }}));
 }
+/* ---- Payroll in four steps: 1 Review hours · 2 Calculate pay · 3 Approve & export · 4 Record payment ---- */
+const PR_STEPS=["Review hours","Estimate pay","Approve & export","Record as paid"];
+const PAY_METHODS_PR=["Direct deposit","Check","Cash","Zelle / Venmo / Cash App","Payroll provider","Other"];
+function payWorkText(x){
+  const {r,t}=x; if (!r) return "";
+  return t.id==="hourly" ? hrs(x.qty)+(x.otHours?" ("+hrs(x.otHours)+" OT)":"") : t.id==="perjob" ? x.qty+" job"+(x.qty===1?"":"s") : t.id==="percent" ? money(x.qty)+" of jobs" : t.id==="day" ? x.qty+" day"+(x.qty===1?"":"s") : t.id==="salary" ? "Salary" : x.qty+" units";
+}
+// A snapshot of what was approved, so later changes are visible and payments use the approved numbers.
+const snapOf=x=>({empId:x.e.id,name:x.e.name,cls:x.cls,payType:x.t.id,rate:Number(x.r&&x.r.rate)||0,qty:x.qty,ot:x.otHours,paid:x.paid,reimb:x.reimb,ssEe:x.ssEe,medEe:x.medEe,fit:x.fit,fitHow:x.fitHow,
+  other:x.other,net:x.net,ssEr:x.ssEr,medEr:x.medEr,futa:x.futa,suta:x.suta,erTax:x.erTax,cost:x.cost});
+const sameSnap=(a,b)=>!!a&&!!b&&["paid","net","fit","cost","qty","ot"].every(k=>Math.abs((Number(a[k])||0)-(Number(b[k])||0))<0.005);
+function payrollState(){
+  const {start,end}=S.pr, run=prRun();
+  const people=S.employees.filter(e=>e.active!==false && !e.companyId);
+  // Only people with something this period: work, pay, or a missing clock-out to sort out.
+  const rows=people.map(e=>calcPay(e,start,end)).filter(x=>x.paid>0||x.w.jobs||x.ck.shifts||x.ck.open||(x.ed&&Object.keys(x.ed).length));
+  rows.forEach(x=>{ x.issues=payIssues(x); x.blocked=x.issues.some(i=>i.blocking); x.hoursOk=(run.hoursOk||{})[x.e.id]; });
+  const pays=(run.payments||[]).filter(p=>!p.voided);
+  const paidIds=new Set(pays.flatMap(p=>p.people.map(q=>q.empId)));
+  const legacy=!pays.length && S.expenses.find(x=>x.payrollRun && x.payrollRun.start===start && x.payrollRun.end===end && !x.payrollRun.runId);
+  if (legacy) (legacy.payrollRun.people||[]).forEach(p=>paidIds.add(p.empId));
+  const ap=run.approval||null;
+  const apOk=ap && ap.people.every(s=>{ const x=rows.find(y=>y.e.id===s.empId); return x && sameSnap(snapOf(x),s); });
+  return {run,rows,pays,paidIds,legacy,ap,apOk,people};
+}
 function viewPayroll(){
   prInit();
   const frag=document.createDocumentFragment();
-  const {start,end}=S.pr; S.pr.open=S.pr.open||{};
-  const people=S.employees.filter(e=>e.active!==false && !e.companyId);
-  const rows=people.map(e=>calcPay(e,start,end));
-  const sum=k=>r2(rows.reduce((n,x)=>n+(x[k]||0),0));
-  const recorded=S.expenses.find(x=>x.payrollRun && x.payrollRun.start===start && x.payrollRun.end===end);
-  frag.append(periodBar([el("button",{class:"btn",onclick:()=>exportPayrollCsv(rows)},"Export CSV")]));
-  if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew under Crew & locations, then set how each person is paid."))); return frag; }
-
-  // What needs fixing before you pay
-  const noRate=rows.filter(x=>!x.r), open=rows.filter(x=>x.ck.open);
-  if (noRate.length) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},el("b",{},noRate.length+(noRate.length===1?" person doesn't":" people don't"))," have a pay rate yet: "+noRate.map(x=>x.e.name.split(" ")[0]).join(", ")+"."),
-    el("button",{class:"btn small",onclick:()=>openPayRate(noRate[0].e)},"Set pay")));
-  if (open.length) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},"Missing clock-outs for "+open.map(x=>x.e.name.split(" ")[0]).join(", ")+". Those hours don't count until the times are fixed."),
-    el("button",{class:"btn small",onclick:()=>goTab("timesheet")},"Fix in Timesheet")));
-
-  // The total, and paying it
-  frag.append(el("div",{class:"paybox"},
-    el("div",{},el("div",{class:"kv"},"To pay your crew"),el("div",{class:"big"},money(sum("net"))),
-      el("div",{class:"kv"},"Gross "+money(sum("paid"))+(sum("erTax")?" · employer taxes about "+money(sum("erTax")):"")+" · total cost "+money(sum("cost")))),
-    el("span",{class:"grow"}),
-    recorded
-      ? el("div",{class:"row",style:"gap:8px"},el("span",{class:"pill ok",style:"font-size:13px;padding:6px 12px"},"✓ Paid · in the Books"),
-          el("button",{class:"btn small ghost",onclick:()=>{ if(confirm("Mark this period as not paid and remove it from the Books?")) write(()=>Store.del("expenses",recorded.id),"Removed from the Books"); }},"Undo"))
-      : el("button",{class:"btn primary",disabled:!rows.some(x=>x.cost>0),onclick:()=>recordPayroll(rows)},"Mark as paid")));
-
-  // One row per person
-  const tbl=el("table",{class:"ptable"});
-  tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{class:"hide-sm"},"Work"),el("th",{class:"num"},"Gross"),el("th",{class:"num"},"Take-home"),el("th",{}))));
-  const tb=el("tbody");
-  rows.forEach(x=>{
-    const {e,r,t,w,ck,cls}=x, isOpen=!!S.pr.open[e.id], toggle=()=>{ S.pr.open[e.id]=!isOpen; render(); };
-    const work = !r ? "" : t.id==="hourly" ? hrs(x.qty)+(x.otHours?" ("+hrs(x.otHours)+" OT)":"") : t.id==="perjob" ? x.qty+" job"+(x.qty===1?"":"s") : t.id==="percent" ? money(x.qty)+" of jobs" : t.id==="day" ? x.qty+" day"+(x.qty===1?"":"s") : t.id==="salary" ? "Salary" : x.qty+" units";
-    tb.append(el("tr",{class:"prow"+(isOpen?" open":""),onclick:toggle},
-      el("td",{},el("div",{class:"row",style:"gap:8px;flex-wrap:nowrap"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),
-        el("div",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},r?payRuleText(r):"No pay rate yet")))),
-      el("td",{class:"hide-sm"},work),
-      el("td",{class:"num"},r?money(x.paid):"—"),
-      el("td",{class:"num"},r?el("b",{},money(x.net)):el("button",{class:"btn small",onclick:ev=>{ev.stopPropagation();openPayRate(e);}},"Set pay")),
-      el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
-    if (isOpen) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"5"},payDetail(x))));
-  });
-  tbl.append(tb);
-  frag.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
-  frag.append(el("p",{class:"kv",style:"margin-top:8px"},"Tap a person to see their pay stub, or to add tips, a bonus, mileage or a deduction. Dayzift doesn't send money: pay your crew the way you normally do, then tap Mark as paid."));
-
+  if (!S.employees.some(e=>e.active!==false && !e.companyId)){ frag.append(periodBar([]),el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew under Crew & locations, then set how each person is paid."))); return frag; }
+  const st=payrollState(), {rows,ap,apOk,paidIds}=st;
+  const unpaid=rows.filter(x=>!paidIds.has(x.e.id));
+  // Which step to show: the first one with work left, unless the owner picked one.
+  const done1=unpaid.length>0 && unpaid.every(x=>x.hoursOk||x.blocked) && unpaid.some(x=>x.hoursOk);
+  const auto = !unpaid.length ? 3 : apOk ? 3 : done1 ? 1 : 0;
+  const step = S.pr.step!=null ? S.pr.step : auto;
+  frag.append(el("div",{class:"row",style:"margin:0 0 8px"},el("h2",{class:"grow",style:"margin:0"},"Crew pay & estimates")));
+  frag.append(periodBar([el("button",{class:"btn small ghost",onclick:openPaySched},"Payroll settings")]));
+  const marks=[unpaid.length?(done1?"done":""):"done", ap&&apOk?"done":"", ap&&apOk?"done":"", !unpaid.length&&rows.length?"done":""];
+  frag.append(el("ol",{class:"prsteps"},...PR_STEPS.map((l,i)=>el("li",{class:(i===step?"cur ":"")+marks[i]},
+    el("button",{type:"button",onclick:()=>{ S.pr.step=i; render(); }},el("span",{class:"n"},marks[i]==="done"?"✓":String(i+1)),l)))));
+  frag.append([prStep1,prStep2,prStep3,prStep4][step](st));
   const subs=S.employees.filter(e=>e.active!==false && e.companyId);
   if (subs.length) frag.append(el("p",{class:"kv"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
-  frag.append(yearEndPanel(start));
+  frag.append(prHistory(st.run), yearEndPanel(S.pr.start));
   return frag;
 }
-function payDetail(x){
-  const {e,r,t,w,ck,cls}=x; const ed=S.pr.edits[e.id] ||= {};
+const nextBtn=(i,label,dis)=>el("button",{class:"btn primary",disabled:!!dis,onclick:()=>{ S.pr.step=i; render(); window.scrollTo(0,0); }},label);
+
+// STEP 1 — hours and job earnings, missing clock-outs, adjustments; approve each person's hours.
+function prStep1(st){
+  const box=document.createDocumentFragment(), {rows,paidIds}=st;
+  const ww=workweekDow(), ps=paySched();
+  box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek. Your workweek runs "+DOW_SHORT[ww]+" to "+DOW_SHORT[(ww+6)%7]+
+    (ww!==ps.startDow?" (your pay period starts "+DOW_SHORT[ps.startDow]+", so a workweek can cross two pay periods; overtime is counted on the whole workweek)":"")+
+    ". Some states add daily overtime; Dayzift doesn't, so adjust Overtime hours if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+  const tbl=el("table",{class:"ptable"});
+  tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{},"Hours / work"),el("th",{},"Status"),el("th",{}))));
+  const tb=el("tbody");
+  rows.forEach(x=>{
+    const e=x.e, isOpen=!!(S.pr.open||{})[e.id], toggle=()=>{ (S.pr.open ||= {})[e.id]=!isOpen; render(); };
+    const paid=paidIds.has(e.id);
+    const status = paid ? el("span",{class:"pill ok"},"Paid") : x.blocked ? el("span",{class:"pill bad"},"⚠ Needs attention") : x.hoursOk ? el("span",{class:"pill ok"},"✓ Approved") : el("span",{class:"pill warn"},"To review");
+    tb.append(el("tr",{class:"prow"+(isOpen?" open":""),onclick:toggle},
+      el("td",{},el("div",{class:"row",style:"gap:8px;flex-wrap:nowrap"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),
+        el("div",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},x.r?payRuleText(x.r):"No pay rate yet")))),
+      el("td",{},payWorkText(x)||"—"),
+      el("td",{},status),
+      el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
+    if (isOpen || x.blocked) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"4"},prHoursDetail(x,paid))));
+  });
+  tbl.append(tb);
+  box.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
+  const ready=rows.filter(x=>!paidIds.has(x.e.id) && !x.blocked && !x.hoursOk && x.r && x.cost>0);
+  const blocked=rows.filter(x=>!paidIds.has(x.e.id) && x.blocked);
+  box.append(el("div",{class:"acts",style:"margin-top:10px"},
+    blocked.length?el("span",{class:"kv grow"},blocked.length+" can't be approved yet: "+blocked.map(x=>x.e.name.split(" ")[0]).join(", ")+". Fix or review what's flagged."):el("span",{class:"grow"}),
+    ready.length?el("button",{class:"btn",onclick:()=>{ const hoursOk={...(prRun().hoursOk||{})}; ready.forEach(x=>{ hoursOk[x.e.id]={by:prBy(),at:Date.now()}; });
+      write(()=>runSave({hoursOk,approval:null},{action:"approve-hours",detail:"Hours approved: "+ready.map(x=>x.e.name.split(" ")[0]).join(", ")}),"Hours approved"); }},"Approve all ready ("+ready.length+")"):null,
+    nextBtn(1,"Next: estimate pay",!rows.some(x=>x.hoursOk && !paidIds.has(x.e.id)))));
+  return box;
+}
+function prHoursDetail(x,paid){
+  const {e,r,t,w,ck,ed}=x;
   const box=el("div",{class:"pdbox"});
-  box.append(el("div",{class:"row",style:"gap:6px"},
-    el("span",{class:"pill "+(cls==="1099"?"warn":"active")},cls==="1099"?"1099":"W-2"),
-    cls==="1099"?el("span",{class:"pill "+(r&&r.w9?"ok":"bad")},r&&r.w9?"W-9 on file":"Collect W-9"):null,
-    cls==="1099"&&x.needs1099?el("span",{class:"pill warn"},"1099-NEC needed"):null,
-    el("span",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" done · "+ck.hours+" h clocked · "+w.hours+" h on jobs"),
-    el("span",{class:"grow"}),
-    el("button",{class:"btn small ghost",onclick:()=>openPayRate(e)},"Edit pay rate"),
-    el("button",{class:"btn small ghost",onclick:()=>goTab("timesheet")},"Timesheet")));
-  if (!r){ box.append(el("div",{class:"empty"},"Set how "+e.name.split(" ")[0]+" is paid to see their pay.")); return box; }
-  if (t.id==="hourly" && ck.shifts && w.hours) box.append(el("div",{class:"row",style:"gap:6px"},el("span",{class:"kv"},"Pay hours from"),
-    el("div",{class:"seg"},[["shifts","Clocked hours"],["jobs","Time on jobs"]].map(([id,l])=>
-      el("button",{type:"button","aria-pressed":String(x.src===id),onclick:ev=>{ ev.stopPropagation(); ed.src=id; ed.qty=null; render(); }},l)))));
-  const inputs=el("div",{class:"expform"});
-  if (t.unit) inputs.append(prNum(t.unit,ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>{ed.qty=v;}));
-  inputs.append(prNum("Tips $",ed.tips,v=>{ed.tips=v;}), prNum("Bonus $",ed.bonus,v=>{ed.bonus=v;}), prNum("Miles driven",ed.miles,v=>{ed.miles=v;}));
-  if (cls==="w2") inputs.append(prNum("Federal income tax $",ed.fit,v=>{ed.fit=v;},{title:"From the employee's W-4 and IRS Publication 15-T, or your accountant"}));
-  inputs.append(prNum("Advances / deductions $",ed.deduct,v=>{ed.deduct=v;}));
-  const L=(a,b,cls2)=>el("div",{class:cls2||""},el("span",{},a),el("b",{},b));
+  box.addEventListener("click",ev=>ev.stopPropagation());
+  // what needs settling
+  x.issues.forEach(i=>{
+    const row=el("div",{class:"issue "+(i.blocking?"bad":i.reviewed?"ok":"info")},el("span",{class:"grow"},i.blocking?"⚠ ":i.reviewed?"✓ ":"ℹ ",i.text));
+    if (i.act==="rate") row.append(el("button",{class:"btn small",onclick:()=>openPayRate(e)},"Set pay"));
+    if (i.act==="shift"){
+      const key=ymd(new Date(i.shift.start));
+      row.append(el("button",{class:"btn small primary",onclick:()=>openDayHours(e,key)},"Fix the times"));
+      if (!i.reviewed) row.append(el("button",{class:"btn small",onclick:()=>{
+        const note=prompt("Leave this shift out of "+e.name.split(" ")[0]+"'s pay?\n\nThose hours won't be paid this period. Add a note for the record (for example: \"Confirmed with Jordan, will add next week\").","");
+        if (note===null) return;
+        const reviews={...(prRun().reviews||{}),[i.shift.id]:{by:prBy(),at:Date.now(),note:note.trim()}};
+        write(()=>runSave({reviews,approval:null},{action:"review-shift",empId:e.id,detail:e.name.split(" ")[0]+": shift on "+niceDate(key)+" left out"+(note.trim()?" ("+note.trim()+")":"")}),"Marked as reviewed"); }},"Leave it out (reviewed)"));
+      else row.append(el("button",{class:"btn small ghost",onclick:()=>{ const reviews={...(prRun().reviews||{})}; delete reviews[i.shift.id]; const hoursOk={...(prRun().hoursOk||{})}; delete hoursOk[e.id];
+        write(()=>runSave({reviews,hoursOk,approval:null},{action:"unreview-shift",empId:e.id,detail:e.name.split(" ")[0]+": shift on "+niceDate(key)+" back to needs attention"}),"Back to needs attention"); }},"Undo"));
+    }
+    if (i.act==="w4"){
+      row.append(el("button",{class:"btn small primary",onclick:()=>openPayRate(e)},"Enter W-4"));
+      if (!i.reviewed) row.append(el("button",{class:"btn small",onclick:()=>{ const w4ok={...(prRun().w4ok||{}),[e.id]:{by:prBy(),at:Date.now()}};
+        write(()=>runSave({w4ok,approval:null},{action:"w4-default",empId:e.id,detail:e.name.split(" ")[0]+": no W-4, IRS default withholding OK'd"}),"OK'd"); }},"Use IRS default"));
+    }
+    box.append(row);
+  });
+  if (!r) return box;
+  // hours by workweek
+  if (t.id==="hourly"){
+    const src=x.src==="shifts"?ck:w;
+    if (ck.shifts && w.hours) box.append(el("div",{class:"row",style:"gap:6px"},el("span",{class:"kv"},"Pay hours from"),
+      el("div",{class:"seg"},[["shifts","Clocked hours"],["jobs","Time on jobs"]].map(([id,l])=>
+        el("button",{type:"button","aria-pressed":String(x.src===id),onclick:()=>{ prSet(e.id,"src",id,"Hours from"); }},l)))));
+    if (src.weeks.length) box.append(el("div",{class:"kv"},...src.weeks.map((wk,i)=>[i?el("br"):null,
+      "Workweek "+niceDate(wk.start).replace(/,? \d{4}$/,"")+" – "+niceDate(wk.end).replace(/,? \d{4}$/,"")+": "+hrs(r2(wk.total))+" total"+(wk.partial?" ("+hrs(r2(wk.inPeriod))+" in this pay period)":"")+(wk.ot?" · "+hrs(r2(wk.ot))+" overtime":"")])));
+  } else box.append(el("div",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" done · "+ck.hours+" h clocked"));
+  if (!paid){
+    const inputs=el("div",{class:"expform"});
+    if (t.unit) inputs.append(prNum(t.unit+(ed.qty!=null&&ed.qty!==""?" (changed from "+x.auto+")":""),ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>prSet(e.id,"qty",v===""?null:v,t.unit)));
+    if (x.cls==="w2"&&t.id==="hourly") inputs.append(prNum("Overtime hours"+(ed.ot!=null&&ed.ot!==""?" (changed from "+x.autoOt+")":""),ed.ot!=null&&ed.ot!==""?ed.ot:x.autoOt,v=>prSet(e.id,"ot",v===""?null:v,"Overtime hours")));
+    inputs.append(prNum("Tips $",ed.tips,v=>prSet(e.id,"tips",v,"Tips")), prNum("Bonus $",ed.bonus,v=>prSet(e.id,"bonus",v,"Bonus")),
+      prNum("Miles driven",ed.miles,v=>prSet(e.id,"miles",v,"Miles")), prNum("Advances / deductions $",ed.deduct,v=>prSet(e.id,"deduct",v,"Deductions")));
+    box.append(inputs);
+    box.append(el("div",{class:"acts"},el("span",{class:"kv grow"},x.hoursOk?"Approved by "+x.hoursOk.by+" "+ago(x.hoursOk.at)+". Changing anything above un-approves it.":""),
+      el("button",{class:"btn small ghost",onclick:()=>goTab("timesheet")},"Timesheet"),
+      x.hoursOk ? el("button",{class:"btn small ghost",onclick:()=>{ const hoursOk={...(prRun().hoursOk||{})}; delete hoursOk[e.id];
+          write(()=>runSave({hoursOk,approval:null},{action:"unapprove-hours",empId:e.id,detail:e.name.split(" ")[0]+": hours un-approved"}),null); }},"Un-approve")
+        : el("button",{class:"btn small primary",disabled:x.blocked,title:x.blocked?"Fix or review what's flagged first":"",onclick:()=>{ const hoursOk={...(prRun().hoursOk||{}),[e.id]:{by:prBy(),at:Date.now()}};
+          write(()=>runSave({hoursOk,approval:null},{action:"approve-hours",empId:e.id,detail:e.name.split(" ")[0]+": "+payWorkText(x)+" approved"}),"Hours approved"); }},"Approve hours")));
+  }
+  return box;
+}
+
+// STEP 2 — gross, deductions, estimated taxes, take-home.
+function prStep2(st){
+  const box=document.createDocumentFragment(), {rows,paidIds}=st;
+  const list=rows.filter(x=>x.r);
+  const mode=fitMode();
+  box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Federal income tax: "),
+    mode==="calc"?"estimated from each employee's W-4 with the IRS 2026 percentage method (Publication 15-T, Worksheet 1A). Check it against your payroll provider or accountant before you file.":
+    "your payroll provider or accountant works it out. Type their amount for each person; until you do, take-home is shown before federal income tax."),
+    el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+  const sum=k=>r2(list.filter(x=>x.hoursOk||paidIds.has(x.e.id)).reduce((n,x)=>n+(x[k]||0),0));
+  const tbl=el("table",{class:"ptable"});
+  tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{class:"num"},"Gross"),el("th",{class:"num hide-sm"},"Est. taxes withheld"),el("th",{class:"num hide-sm"},"Deductions"),el("th",{class:"num"},"Est. take-home"),el("th",{}))));
+  const tb=el("tbody");
+  list.forEach(x=>{
+    const e=x.e, isOpen=!!(S.pr.open2||{})[e.id], toggle=()=>{ (S.pr.open2 ||= {})[e.id]=!isOpen; render(); };
+    const inRun=x.hoursOk||paidIds.has(e.id);
+    tb.append(el("tr",{class:"prow"+(isOpen?" open":"")+(inRun?"":" muted"),onclick:toggle},
+      el("td",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},inRun?(x.cls==="1099"?"1099 · no withholding":"W-2"):"Hours not approved yet")),
+      el("td",{class:"num"},money(x.paid)),
+      el("td",{class:"num hide-sm"},x.cls==="w2"?money(r2(x.ssEe+x.medEe+x.fit))+(x.fitHow==="provider"?" + fed. by provider":""):"—"),
+      el("td",{class:"num hide-sm"},x.other?money(x.other):"—"),
+      el("td",{class:"num"},el("b",{},money(x.net))),
+      el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
+    if (isOpen) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"6"},prStub(x,paidIds.has(e.id)))));
+  });
+  tbl.append(tb);
+  box.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
+  box.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"Dayzift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
+  box.append(el("div",{class:"paybox"},el("div",{},el("div",{class:"kv"},"Estimated crew pay (approved hours)"),el("div",{class:"big"},money(sum("net"))),
+    el("div",{class:"kv"},"Estimated take-home pay \u00b7 gross "+money(sum("paid"))+" \u00b7 estimated employer taxes "+money(sum("erTax"))+" \u00b7 estimated total cost "+money(sum("cost")))),
+    el("span",{class:"grow"}),el("button",{class:"btn",onclick:()=>{ S.pr.step=0; render(); }},"Back"),nextBtn(2,"Next: approve")));
+  return box;
+}
+function prStub(x,paid){
+  const {e,r,cls,ed}=x;
+  const box=el("div",{class:"pdbox"}); box.addEventListener("click",ev=>ev.stopPropagation());
+  const L=(a,b,c)=>el("div",{class:c||""},el("span",{},a),el("b",{},b));
   const stub=el("div",{class:"stub"});
   stub.append(L("Earnings",money(x.wages-x.tips-x.bonus)));
-  if (x.otHours) stub.append(L("Includes overtime ("+x.otHours+" h at 1.5×)","+"+money(x.otHours*(Number(r.rate)||0)*0.5)));
+  if (x.otHours) stub.append(L("Includes overtime ("+hrs(x.otHours)+" at 1.5×)","+"+money(x.otHours*(Number(r.rate)||0)*0.5)));
   if (x.tips) stub.append(L("Tips",money(x.tips)));
   if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
-  if (cls==="w2") stub.append(L("Social Security","−"+money(x.ssEe)),L("Medicare","−"+money(x.medEe)),L("Federal income tax","−"+money(x.fit)));
+  stub.append(L("Gross pay",money(x.paid),"t"));
+  if (cls==="w2"){
+    stub.append(L("Social Security (6.2%)","−"+money(x.ssEe)),L("Medicare (1.45%)","−"+money(x.medEe)));
+    stub.append(L("Federal income tax"+(x.fitHow==="entered"?" (entered)":x.fitHow==="provider"?" (by provider)":x.fitHow==="default"?" (no W-4: IRS default)":" (from W-4)"),x.fitHow==="provider"?"not entered":"−"+money(x.fit)));
+  }
   if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
   if (x.reimb) stub.append(L("Mileage ("+x.miles+" mi, not taxed)","+"+money(x.reimb)));
-  stub.append(L(cls==="w2"?"Take-home pay":"Pay this period",money(x.net),"t"));
-  if (cls==="w2") stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"You also owe about ",el("b",{},money(x.erTax))," in employer taxes."));
-  else stub.append(el("div",{class:"kv",style:"display:block;margin-top:6px"},"No taxes withheld. Paid this year: ",el("b",{},money(x.ytd+x.paid))));
-  box.append(el("div",{class:"pdgrid"},inputs,stub));
-  box.addEventListener("click",ev=>ev.stopPropagation());
+  stub.append(L(cls==="w2"?"Estimated take-home pay":"Estimated pay this period",money(x.net),"t"));
+  const side=el("div",{class:"pdbox"});
+  if (cls==="w2"){
+    const w4=x.w4;
+    side.append(el("div",{},el("b",{},"W-4: "),w4?W4_STATUS[w4.status]+(w4.step2?" · Step 2 checked":"")+(Number(w4.dependents)?" · credits "+money(w4.dependents):"")+(Number(w4.extra)?" · extra "+money(w4.extra)+"/period":""):"none on file (IRS default: Single, no adjustments)",
+      " ",el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPayRate(e);}},w4?"Edit":"Enter W-4")));
+    if (x.fitInfo) side.append(el("div",{class:"kv"},"How it's worked out: "+money(x.paid)+" × "+x.ppy+" pay periods"+(w4&&Number(w4.otherIncome)?" + other income":"")+" − "+(w4&&w4.step2?"no":(w4&&w4.status==="mfj"?"$12,900":"$8,600"))+" adjustment"+(w4&&Number(w4.deductions)?" − deductions":"")+
+      " = "+money(x.fitInfo.annualWage)+" a year, in the "+x.fitInfo.bracket+"% row of the IRS table"+(x.fit===0?". That's below the amount that's taxed, so nothing is withheld.":"."))); 
+    if (!paid) side.append(el("div",{class:"expform"},prNum("Federal income tax $ (type to use your provider's amount)",ed.fit,v=>prSet(e.id,"fit",v===""?null:v,"Federal income tax"),{placeholder:x.fitHow==="provider"?"":String(x.fitInfo?x.fitInfo.amount:"")})));
+    side.append(el("div",{class:"kv"},"Estimated employer taxes: ",el("b",{},money(x.erTax))," (Social Security, Medicare, FUTA, SUTA)."));
+  } else side.append(el("div",{class:"kv"},"1099 contractor: no taxes withheld. Paid this year: ",el("b",{},money(x.ytd+x.paid))));
+  box.append(el("div",{class:"pdgrid"},side,stub));
   return box;
+}
+
+// STEP 3 — confirm the numbers and export them (for your records or your payroll provider).
+function prStep3(st){
+  const box=document.createDocumentFragment(), {rows,paidIds,ap,apOk}=st;
+  const inRun=rows.filter(x=>x.hoursOk && !paidIds.has(x.e.id) && !x.blocked && x.cost>0);
+  const out=rows.filter(x=>!paidIds.has(x.e.id) && !(x.hoursOk && !x.blocked));
+  const total=r2(inRun.reduce((n,x)=>n+x.cost,0)), net=r2(inRun.reduce((n,x)=>n+x.net,0));
+  const p=el("div",{class:"panel"});
+  p.append(el("h2",{style:"margin:0 0 4px"},"Approve pay estimates for "+periodLabel(S.pr.start,S.pr.end)));
+  if (ap && apOk) p.append(el("div",{class:"banner info",style:"margin:8px 0"},el("span",{class:"grow"},"✓ Approved by ",el("b",{},ap.by)," on "+new Date(ap.at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+". The numbers are locked for payment.")));
+  else if (ap && !apOk) p.append(el("div",{class:"banner warn",style:"margin:8px 0"},el("span",{class:"grow"},"Something changed since this was approved by "+ap.by+". Check the numbers and approve again.")));
+  const tbl=el("table",{class:"ptable"},el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{class:"num"},"Gross"),el("th",{class:"num"},"Est. take-home"),el("th",{class:"num hide-sm"},"Est. employer taxes"),el("th",{class:"num"},"Est. total cost"))));
+  const tb=el("tbody"); inRun.forEach(x=>tb.append(el("tr",{},el("td",{},x.e.name),el("td",{class:"num"},money(x.paid)),el("td",{class:"num"},money(x.net)),el("td",{class:"num hide-sm"},money(x.erTax)),el("td",{class:"num"},money(x.cost)))));
+  tb.append(el("tr",{class:"tot"},el("td",{},el("b",{},inRun.length+" people")),el("td",{class:"num"},money(r2(inRun.reduce((n,x)=>n+x.paid,0)))),el("td",{class:"num"},el("b",{},money(net))),el("td",{class:"num hide-sm"},money(r2(inRun.reduce((n,x)=>n+x.erTax,0)))),el("td",{class:"num"},el("b",{},money(total)))));
+  tbl.append(tb); p.append(tbl);
+  if (!inRun.length) p.append(el("div",{class:"empty"},"Nobody's hours are approved yet. Go back to step 1."));
+  if (out.length) p.append(el("p",{class:"kv",style:"margin:10px 0 0"},"Not in this approval: "+out.map(x=>x.e.name.split(" ")[0]+" ("+(x.blocked?"needs attention":"hours not approved")+")").join(", ")+". They can be approved and paid separately later."));
+  p.append(el("div",{class:"acts",style:"margin-top:12px"},
+    el("button",{class:"btn",onclick:()=>{ S.pr.step=1; render(); }},"Back"),
+    el("button",{class:"btn",disabled:!inRun.length,onclick:()=>exportPayrollCsv(inRun)},"Export CSV"),
+    el("span",{class:"grow"}),
+    ap&&apOk ? nextBtn(3,"Next: record payment")
+      : el("button",{class:"btn primary",disabled:!inRun.length,onclick:()=>{
+          if (!confirm("Approve payroll for "+periodLabel(S.pr.start,S.pr.end)+"?\n\n"+inRun.length+" people · take-home "+money(net)+" · total cost "+money(total)+"\n\nThese are estimates. Approving locks them as the starting point for recording payment and records that you approved them.")) return;
+          const approval={by:prBy(),at:Date.now(),people:inRun.map(snapOf),total,net};
+          write(async()=>{ await runSave({approval},{action:"approve",detail:"Payroll approved: "+inRun.length+" people, take-home "+money(net)+", total cost "+money(total)}); S.pr.step=3; },"Payroll approved"); }},"Approve payroll")));
+  p.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"Dayzift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
+  box.append(p);
+  box.append(el("p",{class:"kv"},"Use a payroll provider? Export the CSV and send it to them, then come back to record the payment. Dayzift doesn't move any money."));
+  return box;
+}
+
+// STEP 4 — record how and when it was paid. Each payment is kept; corrections void a payment instead of erasing it.
+function prStep4(st){
+  const box=document.createDocumentFragment(), {rows,paidIds,ap,apOk,pays,legacy,run}=st;
+  if (legacy) box.append(el("div",{class:"panel"},el("h2",{style:"margin:0"},"Paid"),
+    el("p",{class:"kv"},"Recorded "+money(legacy.amount)+" in the Books before approvals were added: "+(legacy.payrollRun.people||[]).map(p=>p.name).join(", ")+"."),
+    el("button",{class:"btn small ghost",onclick:()=>voidLegacy(legacy)},"Void this record")));
+  pays.forEach(p=>box.append(payCard(p)));
+  (run.payments||[]).filter(p=>p.voided).forEach(p=>box.append(payCard(p)));
+  const left=ap&&apOk ? ap.people.filter(s=>!paidIds.has(s.empId)) : [];
+  if (!ap || !apOk){
+    if (!pays.length && !legacy) box.append(el("div",{class:"panel"},el("div",{class:"empty"},"Approve the payroll in step 3 first. Payments are recorded from the approved numbers."),
+      el("div",{class:"acts"},el("button",{class:"btn",onclick:()=>{ S.pr.step=2; render(); }},"Go to step 3"))));
+    return box;
+  }
+  if (!left.length){ box.append(el("p",{class:"kv"},"Everyone in the approved payroll has been paid.")); return box; }
+  const blockedNow=rows.filter(x=>!paidIds.has(x.e.id) && x.blocked);
+  const reviewed=rows.filter(x=>!paidIds.has(x.e.id)).flatMap(x=>x.issues.filter(i=>i.reviewed).map(i=>x.e.name.split(" ")[0]+": "+(i.act==="shift"?"shift on "+niceDate(ymd(new Date(i.shift.start)))+" left out":"no W-4, IRS default")));
+  const f=el("form",{class:"panel"});
+  const pf=(S.pr.pf ||= {date:today(),method:PAY_METHODS_PR[0],ref:"",who:{},amt:{},ok:false});   // survives a screen refresh
+  const date=el("input",{type:"date",name:"date",value:pf.date,required:true});
+  const method=el("select",{name:"method"},PAY_METHODS_PR.map(m=>el("option",{selected:m===pf.method},m)));
+  const ref=el("input",{name:"ref",value:pf.ref,placeholder:"Check numbers, batch ID, confirmation code",autocomplete:"off"});
+  const checks=left.map(s=>{ const x=rows.find(y=>y.e.id===s.empId); const bad=!x||x.blocked;
+    return el("div",{class:"row",style:"gap:8px;padding:6px 0;border-top:1px solid var(--line);flex-wrap:nowrap"},el("input",{type:"checkbox",name:"who",value:s.empId,checked:!bad&&pf.who[s.empId]!==false,disabled:bad,style:"width:auto","aria-label":"Paid "+s.name}),
+      el("span",{class:"grow"},el("b",{},s.name),bad?el("span",{class:"pill bad",style:"margin-left:6px"},"Needs attention"):null,el("div",{class:"kv",style:"font-size:12px"},"Estimate "+money(s.net))),
+      el("label",{class:"kv",style:"display:flex;align-items:center;gap:6px"},"Actually paid $",el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",name:"amt_"+s.empId,value:pf.amt[s.empId]!=null?pf.amt[s.empId]:s.net.toFixed(2),disabled:bad,style:"width:110px"}))); });
+  const sumBox=el("div",{class:"confirmbox"});
+  const confirmBox=el("input",{type:"checkbox",name:"ok",checked:!!pf.ok,style:"width:auto"});
+  const actual=id=>{ const v=f.querySelector("[name=amt_"+id+"]"); return r2(v?String(v.value).replace(/[^\d.]/g,""):0); };
+  const draw=()=>{ const ids=[...f.querySelectorAll("[name=who]:checked")].map(x=>x.value), sel=left.filter(s=>ids.includes(s.empId)).map(s=>({...s,actual:actual(s.empId)}));
+    const diff=sel.filter(s=>Math.abs(s.actual-s.net)>0.004);
+    sumBox.replaceChildren(el("div",{},el("span",{},"Pay period"),el("b",{},periodLabel(S.pr.start,S.pr.end))),
+      el("div",{},el("span",{},"Payment date"),el("b",{},date.value?longDate(date.value):"\u2014")),
+      el("div",{},el("span",{},"How"),el("b",{},method.value+(ref.value.trim()?" · "+ref.value.trim():""))),
+      el("div",{},el("span",{},"Workers"),el("b",{},sel.length?sel.map(s=>s.name.split(" ")[0]).join(", "):"none")),
+      el("div",{},el("span",{},"Estimated take-home"),el("b",{},money(r2(sel.reduce((n,s)=>n+s.net,0))))),
+      el("div",{class:"t"},el("span",{},"Actually paid to workers"),el("b",{},money(r2(sel.reduce((n,s)=>n+s.actual,0))))),
+      diff.length?el("div",{},el("span",{},"Differs from the estimate"),el("b",{class:"neg"},diff.map(s=>s.name.split(" ")[0]+" ("+(s.actual>s.net?"+":"\u2212")+money(Math.abs(r2(s.actual-s.net)))+")").join(", "))):null,
+      el("div",{},el("span",{},"Recorded in the Books"),el("b",{},money(r2(sel.reduce((n,s)=>n+s.cost-s.net+s.actual,0))))),
+      el("div",{},el("span",{},"Unresolved exceptions"),el("b",{class:blockedNow.length?"neg":""},blockedNow.length?blockedNow.map(x=>x.e.name.split(" ")[0]+" (not included)").join(", "):"None")),
+      reviewed.length?el("div",{},el("span",{},"Reviewed and accepted"),el("b",{},reviewed.join("; "))):null,
+      el("div",{},el("span",{},"Approved by"),el("b",{},ap.by+", "+new Date(ap.at).toLocaleDateString("en-US",{month:"short",day:"numeric"}))));
+  };
+  const keep=()=>{ pf.date=date.value; pf.method=method.value; pf.ref=ref.value; pf.ok=confirmBox.checked;
+    f.querySelectorAll("[name=who]").forEach(x=>{ pf.who[x.value]=x.checked; }); f.querySelectorAll("[name^=amt_]").forEach(x=>{ pf.amt[x.name.slice(4)]=x.value; }); };
+  f.addEventListener("change",()=>{ keep(); draw(); }); f.addEventListener("input",()=>{ keep(); draw(); });
+  f.append(el("h2",{style:"margin:0 0 4px"},"Record as paid"),
+    el("p",{class:"kv",style:"margin:0 0 10px"},"Enter what you actually paid. It can differ from the estimate (for example, if your payroll provider withheld a different amount). Dayzift records it; it doesn't send any money."),
+    el("div",{class:"expform"},el("label",{class:"f"},"Payment date",date),el("label",{class:"f"},"Paid by",method),el("label",{class:"f full"},"Reference (optional)",ref)),
+    el("div",{style:"margin:10px 0"},el("div",{class:"kv",style:"font-weight:700;margin-bottom:2px"},"Who was paid"),...checks),
+    sumBox,
+    el("label",{class:"row",style:"gap:8px;margin:12px 0;font-weight:600"},confirmBox,"I confirm these amounts were actually paid to these people on this date."),
+    el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"submit",class:"btn primary"},"Record as paid")));
+  draw();
+  f.onsubmit=ev=>{ ev.preventDefault();
+    const ids=[...f.querySelectorAll("[name=who]:checked")].map(x=>x.value), sel=left.filter(s=>ids.includes(s.empId)).map(s=>({...s,actual:actual(s.empId)}));
+    if (!sel.length) return toast("Pick who was paid.");
+    if (sel.some(s=>!(s.actual>=0))) return toast("Enter the amount actually paid to each person.");
+    if (!date.value) return toast("Pick the payment date.");
+    if (!confirmBox.checked) return toast("Tick the box to confirm the payment.");
+    // Each person keeps the approved estimate AND what was actually paid; the Books get the actual pay plus estimated employer taxes.
+    const pay={id:newId(),date:date.value,method:method.value,ref:ref.value.trim(),people:sel,total:r2(sel.reduce((n,s)=>n+s.cost-s.net+s.actual,0)),net:r2(sel.reduce((n,s)=>n+s.net,0)),actual:r2(sel.reduce((n,s)=>n+s.actual,0)),
+      by:prBy(),at:Date.now(),approvedBy:ap.by,approvedAt:ap.at};
+    const expId=newId(); pay.expenseId=expId;
+    write(async()=>{
+      await Store.set("expenses",expId,{date:pay.date,amount:pay.total,category:"Payroll",vendor:"Crew payroll "+niceDate(S.pr.start)+" – "+niceDate(S.pr.end)+" ("+pay.method+")",
+        payrollRun:{start:S.pr.start,end:S.pr.end,runId:runId(S.pr.start,S.pr.end),paymentId:pay.id,people:sel.map(s=>({empId:s.empId,name:s.name,cls:s.cls,paid:s.paid,net:s.net,actual:s.actual,erTax:s.erTax}))},createdAt:Date.now(),businessId:S.businessId});
+      await runSave({payments:[...(prRun().payments||[]),pay]},{action:"pay",detail:"Recorded as paid: "+sel.map(s=>s.name.split(" ")[0]+" "+money(s.actual)+(Math.abs(s.actual-s.net)>0.004?" (estimate "+money(s.net)+")":"")).join(", ")+" by "+pay.method+" on "+longDate(pay.date)});
+      S.pr.pf=null;
+    },"Recorded as paid and added to the Books"); };
+  box.append(f);
+  return box;
+}
+function payCard(p){
+  const c=el("div",{class:"panel"+(p.voided?" voided":"")});
+  const act=s=>s.actual!=null?s.actual:s.net;
+  c.append(el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0;font-size:18px"},(p.voided?"Voided payment":"Paid")+" · "+niceDate(p.date)),
+    el("span",{class:"pill "+(p.voided?"bad":"ok")},p.voided?"Voided":"✓ Recorded")));
+  c.append(el("div",{class:"kv"},p.method+(p.ref?" \u00b7 "+p.ref:"")+" \u00b7 "+p.people.length+" people \u00b7 actually paid "+money(p.actual!=null?p.actual:p.net)+" (estimate was "+money(p.net)+") \u00b7 in the Books "+money(p.total)),
+    el("div",{class:"kv"},"Recorded by "+p.by+" "+new Date(p.at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+" · approved by "+p.approvedBy),
+    el("div",{class:"kv"},p.people.map(s=>s.name+" "+money(act(s))+(Math.abs(act(s)-s.net)>0.004?" (est. "+money(s.net)+")":"")).join(" \u00b7 ")));
+  // Audit: if hours or pay rates changed after this was paid, show it; the recorded figures never change.
+  if (!p.voided && S.pr){
+    const changed=p.people.map(s=>{ const e=empById(s.empId); if (!e) return null; const now=calcPay(e,S.pr.start,S.pr.end);
+      return Math.abs(now.paid-s.paid)>0.004||Math.abs((now.qty||0)-(s.qty||0))>0.004 ? s.name.split(" ")[0]+": gross now "+money(now.paid)+" (paid on "+money(s.paid)+")"+(Math.abs((now.qty||0)-(s.qty||0))>0.004?", hours/work "+s.qty+" \u2192 "+now.qty:"") : null; }).filter(Boolean);
+    if (changed.length) c.append(el("div",{class:"banner warn",style:"margin:8px 0 0"},el("span",{class:"grow"},el("b",{},"Changed after payment: "),changed.join("; ")+". The recorded payment keeps its original figures. If someone is owed more or less, pay the difference and record it, or void and re-record this payment.")));
+  }
+  if (p.voided) c.append(el("div",{class:"kv"},"Voided by "+p.voided.by+" "+new Date(p.voided.at).toLocaleDateString("en-US",{month:"short",day:"numeric"})+": "+p.voided.reason));
+  else c.append(el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{class:"btn small ghost",onclick:()=>voidPayment(p)},"Void (correct a mistake)")));
+  return c;
+}
+function voidPayment(p){
+  const reason=(prompt("Why is this payment being voided? (for example: \"recorded the wrong date\")\n\nThe record stays in the history marked as voided, and it comes out of the Books. You can then record it again.","")||"").trim();
+  if (!reason) return;
+  const pays=(prRun().payments||[]).map(x=>x.id===p.id?{...x,voided:{by:prBy(),at:Date.now(),reason}}:x);
+  write(async()=>{ if (p.expenseId) await Store.del("expenses",p.expenseId).catch(()=>{});
+    await runSave({payments:pays},{action:"void",detail:"Payment of "+longDate(p.date)+" voided: "+reason}); },"Payment voided");
+}
+function voidLegacy(x){
+  const reason=(prompt("Why is this payroll record being voided?","")||"").trim(); if (!reason) return;
+  write(async()=>{ await Store.del("expenses",x.id); await runSave({},{action:"void",detail:"Earlier payroll record ("+money(x.amount)+") voided: "+reason}); },"Payroll record voided");
+}
+function prHistory(run){
+  const h=(run.history||[]).slice().reverse();
+  const d=el("details",{class:"panel",style:"margin-top:14px"},el("summary",{style:"cursor:pointer;font-weight:800"},"History for this pay period ("+h.length+")"));
+  if (!h.length) d.append(el("div",{class:"empty"},"Nothing yet. Reviews, approvals, adjustments and payments are listed here with who did them and when."));
+  h.forEach(x=>d.append(el("div",{class:"costrow"},el("span",{class:"kv",style:"min-width:130px"},new Date(x.at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})),
+    el("span",{class:"grow"},x.detail||x.action),el("span",{class:"kv"},x.by))));
+  return d;
 }
 // Once a year: 1099 totals and the tax rates used. Folded away the rest of the time.
 function yearEndPanel(start){
@@ -4129,7 +4496,7 @@ function yearEndPanel(start){
   const cons=S.employees.filter(e=>(payRateFor(e.id)||{}).cls==="1099");
   const yearEnd=yr+"-12-32";   // sorts after every date in the year, so all recorded runs count
   d.append(el("h3",{style:"margin:14px 0 4px;font-size:16px"},"1099s"),
-    el("div",{class:"sub"},"Contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" need a 1099-NEC by January 31. Totals come from payroll you marked as paid."));
+    el("div",{class:"sub"},"A tracking aid: contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" generally need a 1099-NEC by January 31. Totals come from pay you recorded as paid. Dayzift doesn't prepare or file 1099s or any other tax forms; use these totals with your accountant or filing service."));
   const co=S.companies.map(c=>({name:c.name,w9:c.w9,paid:S.expenses.filter(x=>x.companyId===c.id&&(x.date||"").startsWith(yr)).reduce((n,x)=>n+(Number(x.amount)||0),0)}));
   const list=[...cons.map(e=>({name:e.name,w9:(payRateFor(e.id)||{}).w9,paid:ytdBefore(e.id,yearEnd)})),...co];
   if (!list.length) d.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
@@ -4138,30 +4505,25 @@ function yearEndPanel(start){
     el("div",{class:"row",style:"gap:6px"},
       el("span",{class:"pill "+(c.w9?"ok":"bad")},c.w9?"W-9 on file":"Collect W-9"),
       el("span",{class:"pill "+(c.paid>=TAX.necThreshold?"warn":"")},c.paid>=TAX.necThreshold?"1099-NEC needed":"Under $"+TAX.necThreshold.toLocaleString())))));
-  d.append(el("h3",{style:"margin:18px 0 4px;font-size:16px"},"Tax rates used"),
+  d.append(el("h3",{style:"margin:18px 0 4px;font-size:16px"},"Tax assumptions"),
     el("div",{class:"expform",style:"margin-top:8px"},
       prNum("State unemployment (SUTA) %",sutaRate(),v=>saveBizNum("sutaRate",v)),
       prNum("SUTA wage base $",sutaBase(),v=>saveBizNum("sutaBase",v)),
       prNum("Mileage rate $ per mile",mileageRate(),v=>saveBizNum("mileageRate",v))),
-    el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages. These are estimates to pay from, not tax advice."));
+    el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Federal income tax: IRS Publication 15-T (2026) percentage method from each W-4, or your provider's amounts (see Payroll settings). Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages; other states' income tax isn't calculated. These are assumptions for estimates, not tax advice."));
   return d;
 }
 function saveBizNum(field,v){
   const n=Number(v); if(!(n>=0)) return toast("Enter a number.");
   write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({[field]:n}); S.business[field]=n; render(); },"Saved");
 }
-function recordPayroll(rows){
-  const {start,end}=S.pr; const total=r2(rows.reduce((n,x)=>n+x.cost,0));
-  if (!confirm("Mark "+periodLabel(start,end)+" as paid?\n\nThis records "+money(total)+" of payroll in your Books. Dayzift doesn't send any money; pay your crew the way you normally do.")) return;
-  const people=rows.filter(x=>x.cost>0).map(x=>({empId:x.e.id,name:x.e.name,cls:x.cls,paid:x.paid,net:x.net,erTax:x.erTax}));
-  write(()=>Store.set("expenses",newId(),{date:end,amount:total,category:"Payroll",vendor:"Crew payroll "+niceDate(start)+" – "+niceDate(end),
-    payrollRun:{start,end,people},createdAt:Date.now(),businessId:S.businessId}),"Marked as paid and recorded in the Books");
-}
 function exportPayrollCsv(rows){
   const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
-  const head=["Name","Type","W-9 on file","Period start","Period end","Gross pay","Mileage","Employee SS","Employee Medicare","Federal income tax","Deductions","Take-home","Employer SS","Employer Medicare","FUTA","SUTA","Total cost"];
+  const head=["Name","Type","W-9 on file","Period start","Period end","Hours","Overtime hours","Federal tax from","Gross pay","Mileage","Employee SS","Employee Medicare","Federal income tax","Deductions","Take-home","Employer SS","Employer Medicare","FUTA","SUTA","Total cost"];
+  const how={w4:"W-4 (IRS 15-T 2026 estimate)",default:"No W-4: IRS default",entered:"Entered",provider:"Payroll provider",none:""};
   const lines=[head.join(",")].concat(rows.map(x=>[x.e.name,x.cls==="1099"?"1099":"W-2",x.cls==="1099"?((x.r&&x.r.w9)?"Yes":"No"):"",S.pr.start,S.pr.end,
-    x.paid,x.reimb,x.ssEe,x.medEe,x.fit,x.other,x.net,x.ssEr,x.medEr,x.futa,x.suta,x.cost].map((v,i)=>i>=5?Number(v).toFixed(2):q(v)).join(",")));
+    x.t&&x.t.id==="hourly"?x.qty:"",x.otHours||"",how[x.fitHow]||"",
+    x.paid,x.reimb,x.ssEe,x.medEe,x.fit,x.other,x.net,x.ssEr,x.medEr,x.futa,x.suta,x.cost].map((v,i)=>i>=8?Number(v).toFixed(2):q(v)).join(",")));
   try {
     const url=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"}));
     const a=document.createElement("a"); a.href=url; a.download="dayzift-payroll-"+S.pr.start+"-to-"+S.pr.end+".csv";
@@ -4171,18 +4533,35 @@ function exportPayrollCsv(rows){
 function openPayRate(e){
   const r=payRateFor(e.id)||{cls:"1099",payType:"hourly",rate:""};
   const f=$("#empForm"); f.replaceChildren();
+  // Form W-4 (2020 or later), for estimating federal income tax withholding on W-2 employees.
+  const w=r.w4||{};
+  const w4Box=el("fieldset",{class:"full",id:"w4Box",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0;display:"+(r.cls==="w2"?"block":"none")},
+    el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Form W-4 (for estimating federal income tax)"),
+    el("div",{class:"expform"},
+      el("label",{class:"f"},"Step 1(c) filing status",el("select",{name:"w4status"},el("option",{value:""},"No W-4 on file"),...Object.entries(W4_STATUS).map(([k,l])=>el("option",{value:k,selected:w.status===k},l)))),
+      el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},el("input",{type:"checkbox",name:"w4step2",checked:!!w.step2,style:"width:auto;margin:0"}),"Step 2 box checked"),
+      el("label",{class:"f"},"Step 3 credits $ (per year)",el("input",{name:"w4dep",type:"number",min:"0",step:"1",value:w.dependents??""})),
+      el("label",{class:"f"},"Step 4(a) other income $ (per year)",el("input",{name:"w4oth",type:"number",min:"0",step:"1",value:w.otherIncome??""})),
+      el("label",{class:"f"},"Step 4(b) deductions $ (per year)",el("input",{name:"w4ded",type:"number",min:"0",step:"1",value:w.deductions??""})),
+      el("label",{class:"f"},"Step 4(c) extra withholding $ (per pay period)",el("input",{name:"w4extra",type:"number",min:"0",step:"0.01",value:w.extra??""}))),
+    el("p",{class:"kv",style:"margin:6px 0 0"},"Copy these from the employee's signed W-4. Without one, the IRS says to withhold as Single with no adjustments. Dayzift's figure is an estimate; your payroll provider or accountant has the final say."));
   f.append(el("h2",{},"How "+e.name.split(" ")[0]+" is paid"),
-    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls},el("option",{value:"1099"},"1099 contractor"),el("option",{value:"w2"},"W-2 employee"))),
+    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"?"block":"none"; }},el("option",{value:"1099"},"1099 contractor"),el("option",{value:"w2"},"W-2 employee"))),
     el("label",{class:"f"},"Pay type",el("select",{name:"payType",value:r.payType},PAY_TYPES.map(t=>el("option",{value:t.id},t.label)))),
     el("label",{class:"f"},"Rate",el("input",{name:"rate",type:"number",min:"0",step:"0.01",inputmode:"decimal",required:true,value:r.rate??""})),
     el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
       el("input",{type:"checkbox",name:"w9",checked:!!r.w9,style:"width:auto;margin:0"}),"W-9 on file"),
     el("p",{class:"kv full",style:"margin:0"},"Only owners can see pay. For % of job price, enter the percent (35 means 35%). Whether someone is a contractor or an employee depends on how you run the work, so check with your accountant if you're unsure."),
+    w4Box,
     el("div",{class:"acts"},el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},"Save")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
-    const data={cls:d.cls==="w2"?"w2":"1099",payType:d.payType,rate:Number(d.rate)||0,w9:!!f.querySelector("[name=w9]").checked,businessId:S.businessId,updatedAt:Date.now()};
+    const num=v=>v===""||v==null?0:Math.max(0,Number(v)||0);
+    const w4=d.w4status?{status:d.w4status,step2:!!f.querySelector("[name=w4step2]").checked,dependents:num(d.w4dep),otherIncome:num(d.w4oth),deductions:num(d.w4ded),extra:num(d.w4extra),updatedAt:Date.now(),by:S.myEmail||"owner"}:null;
+    const data={cls:d.cls==="w2"?"w2":"1099",payType:d.payType,rate:Number(d.rate)||0,w9:!!f.querySelector("[name=w9]").checked,w4,businessId:S.businessId,updatedAt:Date.now(),updatedBy:S.myEmail||"owner"};
+    // Keep earlier pay rules so a later change never rewrites what an older payment was based on.
+    const prev=payRateFor(e.id); if (prev){ const {id,history,...old}=prev; data.history=[...(prev.history||[]),old].slice(-20); }
     write(()=>Store.set("payRates",e.id,data),"Pay saved"); };
   $("#empDlg").showModal();
 }
@@ -4467,7 +4846,7 @@ $("#pendingViewBtn").addEventListener("click", ()=>{ $("#pendingDlg").close();
   if ($("#pendingViewBtn").dataset.admin){ if (S.adminView) return adminBackHome(); S.tab="platform"; } else S.tab="requests";
   render(); });
 
-const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates","invoices","publicInvoices"];
+const OWNER_ONLY = ["expenses","bookings","customers","pointsLedger","companies","payRates","invoices","publicInvoices","payrollRuns"];
 let crewSyncT=null;
 function syncCrewAccess(){
   // Owners keep the business's crew list (crewUids) matching the linked, active team members.
