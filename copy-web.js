@@ -7,7 +7,6 @@ const root = path.join(__dirname, "..");
 const out = path.join(root, "www");
 const files = [
   ["app.html", "index.html"],
-  ["dashboard.html", "dashboard.html"],
   ["firebase-config.js", "firebase-config.js"],
   ["favicon.svg", "favicon.svg"],
 ];

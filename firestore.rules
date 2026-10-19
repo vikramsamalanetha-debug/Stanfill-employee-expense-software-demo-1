@@ -38,6 +38,14 @@ service cloud.firestore {
     // The business a record belongs to may never change.
     function sameBusiness() { return request.resource.data.get('businessId', null) == resource.data.get('businessId', null); }
     function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    // A new business works inside Dayzift from day one (its trial), but nothing reaches the public under
+    // its name until the platform admin verifies it: no invoice links or emails, no website bookings.
+    // Businesses from before approvals existed have no status, and they count as verified.
+    function verifiedBiz(b) {
+      return b is string && exists(/databases/$(database)/documents/businesses/$(b))
+        && !(bizData(b).get('status', '') in ['pending', 'suspended', 'archived']);
+    }
+    function shortText(d, k, n) { return !(k in d) || (d[k] is string && d[k].size() <= n); }
 
     // ---------- businesses ----------
     match /businesses/{b} {
@@ -48,7 +56,7 @@ service cloud.firestore {
       allow list: if isPlatformAdmin() || ownsData(resource.data) || invitedOwner(resource.data);
 
       // New businesses start "pending" with the creator as the only owner. The platform admin can pre-register.
-      // No email confirmation needed here: every new business waits for the platform admin's approval.
+      // No email confirmation needed here: until the platform admin verifies it, nothing it does reaches the public.
       allow create: if isPlatformAdmin() || (
         signedIn() && request.auth.token.email != null
         && request.resource.data.get('status', '') == 'pending'
@@ -202,7 +210,8 @@ service cloud.firestore {
     match /publicInvoices/{key} {
       allow get: if true;
       allow list: if isOwner(resource.data.get('businessId', null));
-      allow create: if isOwner(request.resource.data.get('businessId', null)) && key.size() >= 20;
+      allow create: if isOwner(request.resource.data.get('businessId', null)) && key.size() >= 20
+        && verifiedBiz(request.resource.data.get('businessId', null));
       allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
         || (changedOnly(['viewedAt']) && resource.data.get('viewedAt', null) == null
             && request.resource.data.viewedAt is int && request.resource.data.viewedAt <= request.time.toMillis() + 120000);
@@ -213,7 +222,8 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.get('businessId', null))
         && request.resource.data.get('createdBy', '') == uid()
         && request.resource.data.get('to', '') is string && request.resource.data.to.size() < 200
-        && request.resource.data.get('kind', '') == 'invoice';
+        && request.resource.data.get('kind', '') == 'invoice'
+        && verifiedBiz(request.resource.data.get('businessId', null));
       allow read: if isOwner(resource.data.get('businessId', null));
       allow update, delete: if false;
     }
@@ -227,11 +237,19 @@ service cloud.firestore {
 
     match /bookings/{id} {
       allow read: if (signedIn() && resource.data.get('uid', null) == uid()) || isOwner(resource.data.get('businessId', null));
-      // customers send requests as themselves, always "pending"
+      // customers send requests as themselves, always "pending", only to a verified business,
+      // and with sensible sizes (each request emails the owner)
       allow create: if signedIn()
         && request.resource.data.get('uid', null) == uid()
         && request.resource.data.get('status', '') == 'pending'
-        && request.resource.data.get('businessId', null) is string;
+        && verifiedBiz(request.resource.data.get('businessId', null))
+        && request.resource.data.keys().size() <= 40
+        && shortText(request.resource.data, 'name', 120)
+        && shortText(request.resource.data, 'phone', 120)
+        && shortText(request.resource.data, 'email', 200)
+        && shortText(request.resource.data, 'service', 200)
+        && shortText(request.resource.data, 'size', 120)
+        && shortText(request.resource.data, 'details', 3000);
       allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
         // the customer can ask for a new date or cancel their own upcoming booking, nothing else
         || (signedIn() && resource.data.get('uid', null) == uid()
@@ -261,9 +279,14 @@ service cloud.firestore {
     }
 
     match /devices/{token} {
-      allow create: if signedIn() && request.resource.data.get('uid', null) == uid();
+      // the email on a phone must be the signed-in account's own (admin alerts go to phones by email)
+      function ownEmailOnly() {
+        return request.resource.data.get('email', '') == ''
+          || (request.auth.token.email != null && request.resource.data.get('email', '') == myEmail());
+      }
+      allow create: if signedIn() && request.resource.data.get('uid', null) == uid() && ownEmailOnly();
       // a phone that changes hands re-registers under the new account
-      allow update: if signedIn() && request.resource.data.get('uid', null) == uid();
+      allow update: if signedIn() && request.resource.data.get('uid', null) == uid() && ownEmailOnly();
       allow delete: if signedIn() && resource.data.get('uid', null) == uid();
       allow read: if isPlatformAdmin();
     }
