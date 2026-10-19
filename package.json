@@ -2,7 +2,7 @@
   "name": "dazift",
   "version": "1.0.0",
   "private": true,
-  "description": "Dayzift crew & bookkeeping app — a product of LIT America (www.litamerica.net)",
+  "description": "DayZift crew & bookkeeping app — a product of LIT America (www.litamerica.net)",
   "scripts": {
     "build:web": "node scripts/copy-web.js"
   },

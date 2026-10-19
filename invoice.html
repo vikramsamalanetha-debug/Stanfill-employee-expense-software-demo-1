@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <!-- A client's view of one invoice, opened from the link the business sent.
-     Dayzift never takes payments: "Pay online" goes to the business's own payment page.
+     DayZift never takes payments: "Pay online" goes to the business's own payment page.
      A product of LIT America (www.litamerica.net). -->
 <style>
 :root{--bg:#EEF1F5;--ink:#16202E;--muted:#5E6878;--line:#E4E7EC}
@@ -197,7 +197,7 @@ function invDocBuild(p,h){
   inner.append(el("div",{class:"iv-sum"},left,T));
   inner.append(el("div",{class:"iv-thanks"},el("b",{},p.footer||"Thank you for your business!"),
     el("div",{class:"c"},"Questions? "+([b.phone,b.email].filter(Boolean).join(" or ")||"Contact "+(b.name||"us")))));
-  doc.append(el("div",{class:"iv-made"},"Sent with Dayzift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
+  doc.append(el("div",{class:"iv-made"},"Sent with DayZift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
   return doc;
 }
 

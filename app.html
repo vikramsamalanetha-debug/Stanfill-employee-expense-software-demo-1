@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dayzift</title>
+<title>DayZift</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#1F7A69">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -606,6 +606,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .checkline small{display:block;color:var(--muted);font-size:13px;line-height:1.35}
 .gate-brand{display:flex;align-items:center;gap:10px;letter-spacing:-.03em}
 .gate-mark{width:34px;height:34px;flex:none}
+.gate-brand .dz-logo{height:42px;width:auto;display:block}
 .gate-home{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
 .gate-home:hover .gate-mark{transform:scale(1.06)}
 .gate-mark{transition:transform .15s}
@@ -643,18 +644,17 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       <ul>
         <li><b>Jobs and crews</b> Book it, assign the crew, watch it move to done.</li>
         <li><b>Shifts you can check</b> Hours, route and job check-ins for every shift.</li>
-        <li><b>Payroll and books</b> Pay worked out from the board. Profit for the month at a glance.</li>
+        <li><b>Crew pay and books</b> Pay estimates from the hours on the board. Profit for the month at a glance.</li>
       </ul>
     </div>
     <div class="gs-shots" aria-hidden="true">
       <img src="/shots/board.webp" alt="" loading="lazy" decoding="async" class="gs-a">
       <img src="/shots/payroll.webp" alt="" loading="lazy" decoding="async" class="gs-b">
     </div>
-    <svg class="gs-sun" viewBox="0 0 400 220" aria-hidden="true"><path d="M70 220a130 130 0 0 1 260 0z" fill="#F2C230" opacity=".14"/><path d="M200 56V14M98 108 68 78M302 108l30-30" stroke="#F2C230" stroke-width="14" stroke-linecap="round" opacity=".14"/></svg>
   </aside>
   <div class="gate-main">
     <div class="gate-panel">
-      <h1 class="gate-brand"><a href="/" class="gate-home" title="Back to the Dayzift homepage"><svg aria-hidden="true" class="gate-mark" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#F2C230"/><path d="M15 31a9 9 0 0 1 18 0z" fill="#145848"/><path d="M10.80 31.00L6.00 31.00M14.67 21.67L11.27 18.27M24.00 17.80L24.00 13.00M33.33 21.67L36.73 18.27M37.20 31.00L42.00 31.00" stroke="#145848" stroke-width="3.4" stroke-linecap="round" fill="none"/><path d="M8.5 36.5h31" stroke="#145848" stroke-width="3.6" stroke-linecap="round"/></svg>Dayzift</a></h1>
+      <h1 class="gate-brand"><a href="/" class="gate-home" title="Back to the DayZift homepage"><svg class="dz-logo" role="img" aria-label="DayZift" viewBox="-4 -104 456 128" xmlns="http://www.w3.org/2000/svg"><g transform="translate(-9.9 -116.7) scale(1.241)"><clipPath id="dzG"><path d="M18 26H50A34 34 0 0 1 50 94H18Q8 94 8 84V36Q8 26 18 26Z"/></clipPath><path d="M18 26H50A34 34 0 0 1 50 94H18Q8 94 8 84V36Q8 26 18 26Z" fill="#1F7A69"/><rect x="0" y="26" width="100" height="16" fill="#14574A" clip-path="url(#dzG)"/><rect x="25" y="14" width="10" height="22" rx="5" fill="#F2C230" stroke="#FFFFFF" stroke-width="3.5"/><rect x="49" y="14" width="10" height="22" rx="5" fill="#F2C230" stroke="#FFFFFF" stroke-width="3.5"/><path d="M29 66L41 77.5L63 54" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></g><g transform="translate(108.6 0)"><g fill="#14201D"><path d="M31.7 0C54.1 0 68 -14.2 68 -36.4C68 -58.6 53.9 -72.8 31.7 -72.8H4.7V0ZM22.3 -14.6V-58.1H30.6C44 -58.1 50.3 -50.7 50.3 -36.4C50.3 -22.1 44.1 -14.6 30.8 -14.6Z"/><path d="M89 0.9C96.3 0.9 100.9 -1.7 104 -7.2H104.2V0H120.6V-34.7C120.6 -46.1 112.4 -52.7 97.4 -52.7C82.4 -52.7 74 -46 73.2 -34.9H88.9C89.2 -38.4 92.1 -40.6 96.8 -40.6C101.2 -40.6 104 -38.5 104 -35.4V-35.2C104 -32.1 100.6 -31.4 91.4 -30.6C80.4 -29.7 71.3 -26 71.3 -14.4C71.3 -4.2 78.7 0.9 89 0.9ZM94.1 -10.1C90 -10.1 87.3 -12 87.3 -15.2C87.3 -18.6 90.5 -20.4 95 -21.1C99.1 -21.8 102.3 -22.4 104.1 -23.2V-18.6C104.1 -13.5 99.8 -10.1 94.1 -10.1Z"/><path d="M129.6 20.4H140.9C149.5 20.4 154.4 16.6 158 7.3L180.2 -51.6H162.8L155 -27.8C153.9 -24.3 152.8 -20.7 151.9 -17C150.8 -20.7 149.8 -24.3 148.7 -27.8L141.1 -51.6H123.5L143.3 -0.1L142.4 2.2C141.2 6 140.2 7.4 136.7 7.4H129.6Z"/></g><g fill="#1F7A69"><path d="M181 0H240.2V-14.9H202.8C205.5 -17.9 208.1 -20.8 210.6 -23.8L239.8 -59.4V-72.8H181.8V-57.8H218.4C215.8 -54.9 213.2 -52 210.7 -49.1L181 -13.4Z"/><path d="M245.4 0H262.2V-51.6H245.4ZM253.8 -56.6C259.2 -56.6 263 -60.2 263 -65.1C263 -70 259.2 -73.5 253.8 -73.5C248.4 -73.5 244.5 -70 244.5 -65.1C244.5 -60.2 248.4 -56.6 253.8 -56.6Z"/><path d="M302.6 -51.6H292.1V-54.3C292.1 -58.3 293.5 -59.8 297.5 -59.8H302.6V-72.8H293.3C281 -72.8 275.2 -67.8 275.2 -57.3V-51.6H265.8V-38.6H275.2V0H292.1V-38.6H302.6Z"/><path d="M339.8 -51.6H329.2V-65.6H312.3V-51.6H303.5V-38.6H312.3V-14.5C312.3 -4.5 317.9 0 330.2 0H339.8V-13H333.9C330.2 -13 329.2 -14 329.2 -17.3V-38.6H339.8Z"/></g></g></svg></a></h1>
       <p>Sign in to manage your business, or create an account.</p>
       <div class="gate-tabs">
         <button id="gateLoginTab" aria-selected="true">Sign In</button>
@@ -767,7 +767,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 <div class="wrap" id="mainApp" hidden>
   <header class="top">
     <div class="brand">
-      <h1 id="bizNameHeader">Dayzift<span class="sparkle" aria-hidden="true"></span></h1>
+      <h1 id="bizNameHeader">DayZift<span class="sparkle" aria-hidden="true"></span></h1>
       <p id="appTagline">Crew board, team locations and the books, all in one place.</p>
     </div>
     <div class="whoami" id="whoami"></div>
@@ -776,7 +776,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   <nav class="groups" id="groupNav" aria-label="Sections"></nav>
   <nav class="subtabs" id="subNav" aria-label="Pages in this section"></nav>
   <main id="view"></main>
-  <footer class="lit-credit app-foot">Dayzift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
+  <footer class="lit-credit app-foot">DayZift &middot; A product of <a href="https://www.litamerica.net" target="_blank" rel="noopener"><b>LIT America</b></a></footer>
 </div>
 
 <dialog id="jobDlg"><form method="dialog" id="jobForm"></form></dialog>
@@ -1058,7 +1058,7 @@ function drawWho(){
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
-// A new business uses Dayzift right away (its trial starts at sign-up). Until LIT America verifies it,
+// A new business uses DayZift right away (its trial starts at sign-up). Until LIT America verifies it,
 // anything that reaches the public under its name stays off: invoice emails and links, and website bookings.
 const bizVerified=()=>S.demo||!S.business||S.business.status!=="pending";
 function drawBanners(){
@@ -1523,7 +1523,7 @@ function settingsNotify(){
     setRow("Alert phone numbers (text)",ph.length?ph.join(", "):"None. Texting is off.",el("button",{class:"btn small",onclick:()=>addAlert("phone")},"Add number")),
     (em.length||ph.length)?setRow("Back to default","Send alerts to every owner again.",el("button",{class:"btn small ghost",onclick:resetAlerts},"Reset")):null));
   let status;
-  if (!isNative()) status="Phone alerts need the Dayzift phone app.";
+  if (!isNative()) status="Phone alerts need the DayZift phone app.";
   else if (pushToken) status="On for this phone.";
   else status="Not set up yet. Sign out, sign back in, and tap Allow when asked about notifications.";
   frag.append(setPanel("Phone alerts","Pop-up alerts on every phone signed in as an owner.",
@@ -1576,7 +1576,7 @@ function settingsAccount(){
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isPlatformAdmin?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
-  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"Dayzift \u00b7 A product of ",
+  frag.append(el("p",{class:"kv",style:"margin-top:16px"},"DayZift \u00b7 A product of ",
     el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},el("b",{},"LIT America"))));
   return frag;
 }
@@ -1822,8 +1822,8 @@ function enterConsole(){
   Object.assign(S,{console:true,adminView:false,viewOnly:false,business:null,businessId:null,homeBusiness:null,isOwner:false});
   if (!["clients","approvals","activity","addbiz"].includes(S.tab)) S.tab="clients";
   Store.mode="db"; Store.db=firebase.firestore();
-  const h=$("#bizNameHeader"); if (h) h.firstChild.textContent="Dayzift Platform";
-  document.title="Dayzift Platform";
+  const h=$("#bizNameHeader"); if (h) h.firstChild.textContent="DayZift Platform";
+  document.title="DayZift Platform";
   booted=true; showApp(); render();
   loadPlatformActivity();
   enablePush();      // the admin's phone still gets sign-up and approval alerts
@@ -2186,7 +2186,7 @@ function setStatus(j,status){
 }
 
 /* ---- Repeat clients ----
-   Dayzift remembers each client from their past jobs: address, phone, usual service and price, crew, notes,
+   DayZift remembers each client from their past jobs: address, phone, usual service and price, crew, notes,
    time and how often they come. Nothing extra is stored; the latest job for that name is the profile. */
 const REPEATS=[["","One-time"],["7","Every week"],["14","Every 2 weeks"],["21","Every 3 weeks"],["28","Every 4 weeks"],["month","Every month"]];
 function addRepeat(ymdStr, rep, times){
@@ -2422,7 +2422,7 @@ function subsPanel(){
   const p=el("div",{class:"panel",style:"margin-top:20px"});
   p.append(el("div",{class:"row",style:"margin-bottom:6px"},el("h2",{class:"grow",style:"margin:0"},"Subcontractors"),
     el("button",{class:"btn",onclick:()=>openCompany()},"Add subcontractor")));
-  p.append(el("div",{class:"sub",style:"margin:4px 0 12px"},"Keep each sub's W-9, insurance and license dates in one place. Dayzift flags anything expired or expiring within 30 days."));
+  p.append(el("div",{class:"sub",style:"margin:4px 0 12px"},"Keep each sub's W-9, insurance and license dates in one place. DayZift flags anything expired or expiring within 30 days."));
   if (!S.companies.length){ p.append(el("div",{class:"empty"},"No subcontractors yet.")); return p; }
   const grid=el("div",{class:"team"});
   S.companies.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c=>{
@@ -2454,7 +2454,7 @@ function openCompany(c){
     el("label",{class:"f"},"License expires",el("input",{name:"licenseExp",type:"date",value:c.licenseExp||""})),
     el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink)"},
       el("input",{type:"checkbox",name:"w9",checked:!!c.w9,style:"width:auto;margin:0"}),"W-9 on file"),
-    el("p",{class:"kv full",style:"margin:-4px 0 0"},"Keep the W-9 itself in your own files. Dayzift only records that you have it, not the tax ID on it."),
+    el("p",{class:"kv full",style:"margin:-4px 0 0"},"Keep the W-9 itself in your own files. DayZift only records that you have it, not the tax ID on it."),
     el("div",{class:"acts"},
       !isNew?el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Remove "+c.name+"? Payments already logged stay in the books.")){ $("#empDlg").close(); write(()=>Store.del("companies",c.id),"Removed"); } }},"Remove"):null,
       el("span",{class:"grow"}),
@@ -3071,7 +3071,7 @@ function expenseReportPdf(){
   table("Every expense",exp.slice(),-1);
   table("Money in",income.slice(),1);
   const pages=pdf.getNumberOfPages();
-  for (let i=1;i<=pages;i++){ pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(140); pdf.text("Dayzift \u00b7 A product of LIT America (www.litamerica.net)",L,770); pdf.text("Page "+i+" of "+pages,R,770,{align:"right"}); }
+  for (let i=1;i<=pages;i++){ pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(140); pdf.text("DayZift \u00b7 A product of LIT America (www.litamerica.net)",L,770); pdf.text("Page "+i+" of "+pages,R,770,{align:"right"}); }
   try {
     const url=URL.createObjectURL(pdf.output("blob"));
     const a=document.createElement("a"); a.href=url; a.download=fileSlug()+"-expense-report-"+P.file+".pdf";
@@ -3234,7 +3234,7 @@ function openCosts(j){
 }
 
 /* ---- invoices ----
-   Dayzift writes the invoice, sends the link, tracks it and records payments.
+   DayZift writes the invoice, sends the link, tracks it and records payments.
    It never takes or moves money: "Pay online" is the owner's own Stripe, Square or PayPal link.
    Job prices stay the income in the books. Extra lines (billed materials, fees) add to income;
    deposits are held and taken off later invoices, and retainage is just billed later. */
@@ -3612,7 +3612,7 @@ function openPayment(d){
   const t=invTotals(d);
   const f=el("form",{class:"expform"});
   f.append(el("h2",{class:"full",style:"margin:0"},"Record a payment"),
-    el("p",{class:"kv full",style:"margin:0"},(d.number||"")+" · "+(d.client.name||"")+" · "+money(t.dueNowBal>0?t.dueNowBal:t.balance)+" due. Dayzift doesn't take payments; this records money you received."),
+    el("p",{class:"kv full",style:"margin:0"},(d.number||"")+" · "+(d.client.name||"")+" · "+money(t.dueNowBal>0?t.dueNowBal:t.balance)+" due. DayZift doesn't take payments; this records money you received."),
     el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,value:String(t.dueNowBal>0?t.dueNowBal:t.balance)})),
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
     el("label",{class:"f"},"How they paid",el("select",{name:"method"},PAY_METHODS.map(m=>el("option",{},m)))),
@@ -3677,11 +3677,11 @@ function openSend(d){
   const note=el("div",{class:"kv",style:"min-height:1.4em"});
   const stamp=via=>{ if (d.sentVia!==via){ d.sentVia=via; write(()=>Store.update("invoices",d.id,{sentVia:via}),null); } };
   body.append(el("h2",{style:"margin:0"},"Send "+d.number),
-    el("p",{class:"kv",style:"margin:4px 0 12px"},"Your client opens a link to see the invoice, print it"+(st.payLink?", and pay online with your payment link":"")+". Dayzift never handles the money."),
+    el("p",{class:"kv",style:"margin:4px 0 12px"},"Your client opens a link to see the invoice, print it"+(st.payLink?", and pay online with your payment link":"")+". DayZift never handles the money."),
     el("div",{class:"linkbox"},el("input",{readonly:true,value:S.demo?"Links are live in your own account, not the demo":url,"aria-label":"Invoice link",onfocus:ev=>ev.target.select()})));
   const emailIn=el("input",{type:"email",value:d.client.email||"",placeholder:"client@email.com","aria-label":"Client email"});
   body.append(el("div",{class:"sendgrid"},
-    el("div",{class:"sendopt"},el("b",{},"Email it from Dayzift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via Dayzift, with your phone and email in it so the client can reach you."),
+    el("div",{class:"sendopt"},el("b",{},"Email it from DayZift"),el("div",{class:"kv"},"Sent from "+(b.name||"your business")+" via DayZift, with your phone and email in it so the client can reach you."),
       el("div",{class:"row",style:"margin-top:6px"},emailIn,el("button",{class:"btn primary",onclick:async ev=>{
         const btn=ev.currentTarget;
         const to=emailIn.value.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return note.textContent="Enter the client's email address.";
@@ -3774,7 +3774,7 @@ function invDocBuild(p,h){
   inner.append(el("div",{class:"iv-sum"},left,T));
   inner.append(el("div",{class:"iv-thanks"},el("b",{},p.footer||"Thank you for your business!"),
     el("div",{class:"c"},"Questions? "+([b.phone,b.email].filter(Boolean).join(" or ")||"Contact "+(b.name||"us")))));
-  doc.append(el("div",{class:"iv-made"},"Sent with Dayzift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
+  doc.append(el("div",{class:"iv-made"},"Sent with DayZift · A product of ",el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},"LIT America")));
   return doc;
 }
 function printInvoice(inv){
@@ -3862,7 +3862,7 @@ function settingsInvoices(){
       el("label",{class:"f"},"Markup on billed materials %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(st.markup||0)})),
       hasProjects()?el("label",{class:"f"},"Retainage on project invoices %",el("input",{name:"retainage",type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",value:String(st.retainage||0)})):null,
       el("label",{class:"f full"},"Online payment link (optional)",el("input",{name:"payLink",type:"url",value:st.payLink,placeholder:"Your Stripe, Square or PayPal payment link"})),
-      el("p",{class:"kv full",style:"margin:-4px 0 0"},"Clients see a Pay online button that opens your own payment page. The money goes straight to you; Dayzift never touches it. Record the payment here when it arrives."),
+      el("p",{class:"kv full",style:"margin:-4px 0 0"},"Clients see a Pay online button that opens your own payment page. The money goes straight to you; DayZift never touches it. Record the payment here when it arrives."),
       el("label",{class:"f full"},"How to pay (shown on invoices)",el("textarea",{name:"payNote",rows:"2",placeholder:"Checks payable to "+(b.name||"us")+". Zelle: 731-555-0100. Cash on completion."},st.payNote)),
       el("label",{class:"f full"},"Footer note",el("input",{name:"footer",value:st.footer})),
       el("label",{class:"full row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",name:"autoRemind",checked:st.autoRemind!==false,style:"width:auto"}),"Turn on overdue reminders for new invoices"),
@@ -3883,7 +3883,7 @@ function settingsInvoices(){
 
 /* ---- payroll ----
    Works out each person's pay for a period from the jobs they finished and the pay rule the owner set.
-   Dayzift never moves money or files taxes; it gives the owner the breakdown to pay from. */
+   DayZift never moves money or files taxes; it gives the owner the breakdown to pay from. */
 const PAY_TYPES=[
   {id:"hourly",label:"Hourly",unit:"Hours",rateLabel:"$ per hour"},
   {id:"perjob",label:"Per job",unit:"Jobs",rateLabel:"$ per job"},
@@ -4030,7 +4030,7 @@ function calcPay(e,start,end){
   const ssEe=r2(ssBase*TAX.ssRate/100), ssEr=ssEe;
   const addl=Math.max(0,(ytd+wages)-Math.max(TAX.addlMedOver,ytd));
   const medEe=r2(wages*TAX.medRate/100+addl*TAX.addlMedRate/100), medEr=r2(wages*TAX.medRate/100);
-  // Federal income tax: entered amount wins; otherwise Dayzift's W-4 estimate, or "by provider".
+  // Federal income tax: entered amount wins; otherwise DayZift's W-4 estimate, or "by provider".
   const w4=r&&r.w4&&r.w4.status?r.w4:null, ppy=paySched().every===2?26:52;
   let fit=0, fitHow, fitInfo=null;
   if (has(ed.fit)){ fit=r2(ed.fit); fitHow="entered"; }
@@ -4089,7 +4089,7 @@ function openPaySched(){
     el("label",{class:"f"},"Pay period starts on",el("select",{name:"dow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:ps.startDow===d},DOW_SHORT[d])))),
     el("p",{class:"kv full",style:"margin:0"},"Payroll and the timesheet open on your pay period automatically. For every 2 weeks, the current period starts this week."),
     el("label",{class:"f"},"Overtime workweek starts on",el("select",{name:"wwdow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:workweekDow()===d},DOW_SHORT[d])))),
-    el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"Dayzift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))),
+    el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"DayZift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))),
     el("p",{class:"kv full",style:"margin:0"},"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week."),
     el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),el("button",{type:"submit",class:"btn primary"},"Save")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
@@ -4252,7 +4252,7 @@ function prStep1(st){
   const ww=workweekDow(), ps=paySched();
   box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek. Your workweek runs "+DOW_SHORT[ww]+" to "+DOW_SHORT[(ww+6)%7]+
     (ww!==ps.startDow?" (your pay period starts "+DOW_SHORT[ps.startDow]+", so a workweek can cross two pay periods; overtime is counted on the whole workweek)":"")+
-    ". Some states add daily overtime; Dayzift doesn't, so adjust Overtime hours if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+    ". Some states add daily overtime; DayZift doesn't, so adjust Overtime hours if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
   const tbl=el("table",{class:"ptable"});
   tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{},"Hours / work"),el("th",{},"Status"),el("th",{}))));
   const tb=el("tbody");
@@ -4359,7 +4359,7 @@ function prStep2(st){
   });
   tbl.append(tb);
   box.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
-  box.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"Dayzift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
+  box.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"DayZift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
   box.append(el("div",{class:"paybox"},el("div",{},el("div",{class:"kv"},"Estimated crew pay (approved hours)"),el("div",{class:"big"},money(sum("net"))),
     el("div",{class:"kv"},"Estimated take-home pay \u00b7 gross "+money(sum("paid"))+" \u00b7 estimated employer taxes "+money(sum("erTax"))+" \u00b7 estimated total cost "+money(sum("cost")))),
     el("span",{class:"grow"}),el("button",{class:"btn",onclick:()=>{ S.pr.step=0; render(); }},"Back"),nextBtn(2,"Next: approve")));
@@ -4421,9 +4421,9 @@ function prStep3(st){
           if (!confirm("Approve payroll for "+periodLabel(S.pr.start,S.pr.end)+"?\n\n"+inRun.length+" people · take-home "+money(net)+" · total cost "+money(total)+"\n\nThese are estimates. Approving locks them as the starting point for recording payment and records that you approved them.")) return;
           const approval={by:prBy(),at:Date.now(),people:inRun.map(snapOf),total,net};
           write(async()=>{ await runSave({approval},{action:"approve",detail:"Payroll approved: "+inRun.length+" people, take-home "+money(net)+", total cost "+money(total)}); S.pr.step=3; },"Payroll approved"); }},"Approve payroll")));
-  p.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"Dayzift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
+  p.append(el("div",{class:"estnote"},el("b",{},"Pay estimates only. "),"DayZift calculates estimated wages, deductions, and taxes using available information and configured rates. It does not process payments, remit taxes, or file payroll forms. Verify amounts with your payroll provider or accountant before paying workers."));
   box.append(p);
-  box.append(el("p",{class:"kv"},"Use a payroll provider? Export the CSV and send it to them, then come back to record the payment. Dayzift doesn't move any money."));
+  box.append(el("p",{class:"kv"},"Use a payroll provider? Export the CSV and send it to them, then come back to record the payment. DayZift doesn't move any money."));
   return box;
 }
 
@@ -4474,7 +4474,7 @@ function prStep4(st){
     f.querySelectorAll("[name=who]").forEach(x=>{ pf.who[x.value]=x.checked; }); f.querySelectorAll("[name^=amt_]").forEach(x=>{ pf.amt[x.name.slice(4)]=x.value; }); };
   f.addEventListener("change",()=>{ keep(); draw(); }); f.addEventListener("input",()=>{ keep(); draw(); });
   f.append(el("h2",{style:"margin:0 0 4px"},"Record as paid"),
-    el("p",{class:"kv",style:"margin:0 0 10px"},"Enter what you actually paid. It can differ from the estimate (for example, if your payroll provider withheld a different amount). Dayzift records it; it doesn't send any money."),
+    el("p",{class:"kv",style:"margin:0 0 10px"},"Enter what you actually paid. It can differ from the estimate (for example, if your payroll provider withheld a different amount). DayZift records it; it doesn't send any money."),
     el("div",{class:"expform"},el("label",{class:"f"},"Payment date",date),el("label",{class:"f"},"Paid by",method),el("label",{class:"f full"},"Reference (optional)",ref)),
     el("div",{style:"margin:10px 0"},el("div",{class:"kv",style:"font-weight:700;margin-bottom:2px"},"Who was paid"),...checks),
     sumBox,
@@ -4544,7 +4544,7 @@ function yearEndPanel(start){
   const cons=S.employees.filter(e=>(payRateFor(e.id)||{}).cls==="1099");
   const yearEnd=yr+"-12-32";   // sorts after every date in the year, so all recorded runs count
   d.append(el("h3",{style:"margin:14px 0 4px;font-size:16px"},"1099s"),
-    el("div",{class:"sub"},"A tracking aid: contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" generally need a 1099-NEC by January 31. Totals come from pay you recorded as paid. Dayzift doesn't prepare or file 1099s or any other tax forms; use these totals with your accountant or filing service."));
+    el("div",{class:"sub"},"A tracking aid: contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" generally need a 1099-NEC by January 31. Totals come from pay you recorded as paid. DayZift doesn't prepare or file 1099s or any other tax forms; use these totals with your accountant or filing service."));
   const co=S.companies.map(c=>({name:c.name,w9:c.w9,paid:S.expenses.filter(x=>x.companyId===c.id&&(x.date||"").startsWith(yr)).reduce((n,x)=>n+(Number(x.amount)||0),0)}));
   const list=[...cons.map(e=>({name:e.name,w9:(payRateFor(e.id)||{}).w9,paid:ytdBefore(e.id,yearEnd)})),...co];
   if (!list.length) d.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
@@ -4592,7 +4592,7 @@ function openPayRate(e){
       el("label",{class:"f"},"Step 4(a) other income $ (per year)",el("input",{name:"w4oth",type:"number",min:"0",step:"1",value:w.otherIncome??""})),
       el("label",{class:"f"},"Step 4(b) deductions $ (per year)",el("input",{name:"w4ded",type:"number",min:"0",step:"1",value:w.deductions??""})),
       el("label",{class:"f"},"Step 4(c) extra withholding $ (per pay period)",el("input",{name:"w4extra",type:"number",min:"0",step:"0.01",value:w.extra??""}))),
-    el("p",{class:"kv",style:"margin:6px 0 0"},"Copy these from the employee's signed W-4. Without one, the IRS says to withhold as Single with no adjustments. Dayzift's figure is an estimate; your payroll provider or accountant has the final say."));
+    el("p",{class:"kv",style:"margin:6px 0 0"},"Copy these from the employee's signed W-4. Without one, the IRS says to withhold as Single with no adjustments. DayZift's figure is an estimate; your payroll provider or accountant has the final say."));
   f.append(el("h2",{},"How "+e.name.split(" ")[0]+" is paid"),
     el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"?"block":"none"; }},el("option",{value:"1099"},"1099 contractor"),el("option",{value:"w2"},"W-2 employee"))),
     el("label",{class:"f"},"Pay type",el("select",{name:"payType",value:r.payType},PAY_TYPES.map(t=>el("option",{value:t.id},t.label)))),
@@ -4992,7 +4992,7 @@ async function enablePush(){
     const PN = window.Capacitor.Plugins.PushNotifications; if (!PN) return;
     let perm = await PN.checkPermissions();
     if (perm.receive==="prompt" || perm.receive==="prompt-with-rationale") perm = await PN.requestPermissions();
-    if (perm.receive!=="granted"){ toast("Turn on notifications for Dayzift in your phone\u2019s settings to get booking alerts."); return; }
+    if (perm.receive!=="granted"){ toast("Turn on notifications for DayZift in your phone\u2019s settings to get booking alerts."); return; }
     await PN.register();
   } catch(e){ console.warn("Push setup failed", e); }
 }
@@ -5033,7 +5033,7 @@ function resetToSignedOut(){
   Object.assign(S,{myUserId:null,myEmail:null,isOwner:false,isPlatformAdmin:false,business:null,businessId:null,homeBusiness:null,
     adminView:false,viewOnly:false,tab:"home",who:"all",projFilter:null,pr:null,dutyErr:null,invLook:null});
   pendingPopupShown=false; booted=false; clearTimeout(crewSyncT);
-  document.title="Dayzift";
+  document.title="DayZift";
   showGate(); window.scrollTo(0,0);
 }
 window.signOutApp = signOutApp;
@@ -5058,7 +5058,7 @@ async function demoPasswordOk(pw){
     return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("")===DEMO_PASS_HASH;
   } catch(e){ return false; }
 }
-// Reset emails go out through Dayzift's own mail server (more reliable than Firebase's built-in sender);
+// Reset emails go out through DayZift's own mail server (more reliable than Firebase's built-in sender);
 // if that can't be reached, fall back to Firebase. Returns "ok", "too-many" or "error".
 const RESET_URL="https://us-central1-stanfill-clean-pros.cloudfunctions.net/passwordReset";
 async function sendResetEmail(email){
@@ -5812,7 +5812,7 @@ function startDemo(type){
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=true;
   if (!switching && !/[?&]tour=0\b/.test(location.search)) setTimeout(demoWelcome,350);
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
-  document.title=biz.name+" · Dayzift demo";
+  document.title=biz.name+" · DayZift demo";
   booted=true;
   subscribeAll(); showApp();
   if (keepView) demoViewAs("crew"); else render();
@@ -5845,7 +5845,7 @@ function demoWelcome(){
   const sel=el("select",{id:"dwType","aria-label":"Your type of business",onchange:ev=>{ startDemo(ev.target.value); setBlurb(); }},
     DEMO_TYPES.map(t=>el("option",{value:t,selected:t===S.demoKind},t==="Construction"?"Construction / remodeling":t)));
   d.append(el("div",{class:"wl-logo","aria-hidden":"true"},"\u2600"),
-    el("h2",{id:"dwTitle"},"Welcome to the Dayzift demo"),
+    el("h2",{id:"dwTitle"},"Welcome to the DayZift demo"),
     el("p",{style:"margin:6px 0 16px"},"A full, made-up business you can click around. Nothing you do here is saved or seen by anyone."),
     el("label",{class:"f",for:"dwType"},"What kind of business do you run?",sel), blurb,
     el("div",{class:"acts",style:"margin-top:18px;flex-wrap:wrap"},
@@ -5864,7 +5864,7 @@ function tourSteps(){
     hasProjects()?{tab:"projects",nav:"projects",title:"Projects",text:"Remodels and builds with phases, a site lead, and the contract against costs so far. Bill deposits, progress and retainage."}:null,
     {tab:"team",nav:"team",title:"Crew & locations",text:"Who's on shift, where they are and what job they're on. Location is shared only during a shift and stops when it ends."},
     {tab:"payroll",nav:"payroll",title:"Crew pay",text:"Four clear steps: review hours, estimate pay, approve, and record what you actually paid. Every change is kept with who and when."},
-    {tab:"invoices",nav:"invoices",title:"Invoices",text:"Turn finished jobs into invoices with your logo. See when the client opens one, and let Dayzift send the overdue reminders."},
+    {tab:"invoices",nav:"invoices",title:"Invoices",text:"Turn finished jobs into invoices with your logo. See when the client opens one, and let DayZift send the overdue reminders."},
     {tab:"books",nav:"books",title:"The books",text:"Money in, money out and profit for any month, quarter or year. Snap receipts and download an expense report as a PDF."},
     {tab:"home",focus:".banner.demo .seg",title:"See what your crew see",text:"Switch to Crew view to see the app on a crew member's phone. You can also change the type of business here."},
     {end:true,title:"That's the tour!",text:"Keep exploring the demo, or start your own business free for 30 days. No credit card needed."}
