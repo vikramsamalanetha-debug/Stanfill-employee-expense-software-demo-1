@@ -1058,8 +1058,16 @@ function drawWho(){
   if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
+// A new business uses Dayzift right away (its trial starts at sign-up). Until LIT America verifies it,
+// anything that reaches the public under its name stays off: invoice emails and links, and website bookings.
+const bizVerified=()=>S.demo||!S.business||S.business.status!=="pending";
 function drawBanners(){
   const b=$("#banners"); b.replaceChildren();
+  if (!S.demo && !S.adminView && S.isOwner && !bizVerified()){
+    b.append(el("div",{class:"banner info"},
+      el("span",{class:"grow"},el("b",{},"Your 30-day free trial has started."),
+        " We're verifying "+(S.business.name||"your business")+", usually the same day. Until then, emailing invoices, invoice links and website booking requests are switched off. Everything else is ready to use.")));
+  }
   if (S.adminView){
     b.append(el("div",{class:"banner "+(S.viewOnly?"info":"warn")},
       el("span",{class:"grow"}, S.viewOnly
@@ -1741,7 +1749,7 @@ function maybeShowAdminPending(force){
   $("#pendingCount").textContent=n;
   $("#pendingDlg h2").firstChild.textContent="You have ";
   $("#pendingDlg h2").lastChild.textContent=" business(es) waiting for approval";
-  $("#pendingDlg .kv").textContent="New businesses can't use Dayzift until you approve them in Platform Admin.";
+  $("#pendingDlg .kv").textContent="They're already on their trial. Approving switches on invoice emails, invoice links and website bookings.";
   $("#pendingViewBtn").dataset.admin="1"; $("#pendingViewBtn").textContent="Review now";
   if (!$("#pendingDlg").open) $("#pendingDlg").showModal();
 }
@@ -3350,7 +3358,7 @@ async function saveInvoice(inv){
   }
   // Paid in full: every job on it is paid.
   if (inv.status==="sent" && t.balance<=0.004) for (const id of inv.jobIds){ const j=S.jobs.find(x=>x.id===id); if (j&&!j.paid) await Store.update("jobs",id,{paid:true}); }
-  if (inv.publicKey) await Store.set("publicInvoices",inv.publicKey,publicCopy(inv));
+  if (inv.publicKey && bizVerified()) await Store.set("publicInvoices",inv.publicKey,publicCopy(inv));
   return inv;
 }
 async function releaseInvoiceCosts(inv){
@@ -3650,8 +3658,19 @@ function showInvoiceSent(d,to,ref,due){
   setTimeout(()=>stop(),120000);
   $("#invDlg").addEventListener("close",()=>stop(),{once:true});
 }
+// Refresh the client copy of every sent invoice (new look, contact details, or the business was just verified).
+async function publishSentInvoices(){
+  for (const inv of S.invoices.filter(i=>i.status==="sent"&&i.publicKey)) await Store.set("publicInvoices",inv.publicKey,publicCopy(inv)).catch(()=>{});
+}
 function openSend(d){
   const body=invDlg(); body.replaceChildren();
+  if (!bizVerified()){
+    body.append(el("h2",{style:"margin:0"},"Send "+d.number),
+      el("div",{class:"banner info",style:"margin:12px 0"},el("span",{class:"grow"},"Emailing invoices and invoice links switch on once we've verified your business, usually the same day. Until then you can print it or save it as a PDF and send it yourself.")),
+      el("div",{class:"row",style:"margin-top:14px"},el("button",{class:"btn ghost",onclick:()=>printInvoice(d)},"Print or PDF"),el("span",{class:"grow"}),
+        el("button",{class:"btn primary",onclick:()=>$("#invDlg").close()},"Done")));
+    return;
+  }
   const t=invTotals(d), url=invUrl(d), st=invSettings(), b=S.business||{};
   const due=t.dueNowBal>0?t.dueNowBal:t.balance;
   const msg=(t.balance>0.004?"Hi "+((d.client.name||"").split(" ")[0]||"there")+", here's invoice "+d.number+" from "+(b.name||"us")+" for "+money(due)+(d.dueDate&&d.dueDate>today()?", due "+niceDate(d.dueDate):"")+": ":"Thanks! Here's your paid receipt "+d.number+" from "+(b.name||"us")+": ")+url;
@@ -3857,7 +3876,7 @@ function settingsInvoices(){
       color:/^#[0-9a-f]{6}$/i.test(d.color||"")?d.color:"",logo,website:(d.website||"").trim()};
     write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({invoice}); S.business.invoice=invoice; S.invLook=null;
       // Invoices already sent show the new look, contact details and payment notes too.
-      for (const inv of S.invoices.filter(i=>i.status==="sent"&&i.publicKey)) await Store.set("publicInvoices",inv.publicKey,publicCopy(inv)).catch(()=>{});
+      if (bizVerified()) await publishSentInvoices();
       render(); },"Invoice settings saved"); };
   return f;
 }
@@ -4859,6 +4878,7 @@ let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=win
 window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
 
 let pendingPopupShown=false;
+if (window.top!==window.self){ try { window.top.location.replace(window.location.href); } catch(e){ document.documentElement.style.display="none"; } }
 function maybeShowPendingPopup(){
   if (!S.isOwner || S.adminView || pendingPopupShown) return;
   const pending = S.bookings.filter(b=>(b.status||"pending")==="pending");
@@ -5008,6 +5028,7 @@ async function signOutApp(){
 }
 function resetToSignedOut(){
   unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
+  if (bizUnsub){ try{ bizUnsub(); }catch(e){} bizUnsub=null; }
   COLLS.forEach(c=>{ S[c]=[]; });
   Object.assign(S,{myUserId:null,myEmail:null,isOwner:false,isPlatformAdmin:false,business:null,businessId:null,homeBusiness:null,
     adminView:false,viewOnly:false,tab:"home",who:"all",projFilter:null,pr:null,dutyErr:null,invLook:null});
@@ -5297,8 +5318,26 @@ function enterBusiness(biz, opts){
   Store.mode="db"; Store.db=firebase.firestore();
   subscribeAll();
   S.tab="home"; S.setTab=null; S.pr=null; S.invLook=null;   // every sign-in / client opened starts on Home
+  watchBusiness(biz.id, !!opts.adminView);
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
+}
+// Keep the business record current: when LIT America verifies it, invoice links switch on without signing in again.
+let bizUnsub=null;
+function watchBusiness(id, adminView){
+  if (bizUnsub){ try{ bizUnsub(); }catch(e){} bizUnsub=null; }
+  if (S.demo || adminView || !id) return;
+  bizUnsub=firebase.firestore().doc("businesses/"+id).onSnapshot(snap=>{
+    if (!snap.exists || S.businessId!==id) return;
+    const was=S.business&&S.business.status, now=snap.get("status");
+    Object.assign(S.business, snap.data());
+    if (was==="pending" && now!=="pending" && now!=="suspended" && now!=="archived"){
+      toast("Your business is verified. Invoice emails, links and website bookings are switched on.");
+      if (S.isOwner) publishSentInvoices();
+    }
+    if ((now==="suspended"||now==="archived") && !S.isPlatformAdmin) showPendingApproval(S.business);
+    render();
+  }, e=>console.warn("business",e));
 }
 // Platform admin: look inside a client's business (read-only unless editing is turned on).
 function adminOpenBusiness(b){
@@ -5920,7 +5959,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
     if (isPlatformAdmin){ toast("Business registered!"); enterBusiness({id,...data}); }
-    else { toast("Submitted — waiting for approval."); showPendingApproval({id,...data}); }
+    else { toast("You're all set. Your 30-day free trial starts today."); enterBusiness({id,...data}); }
   } catch(e){ bizMsg(e.message); }
 });
 
@@ -5950,7 +5989,7 @@ async function routeUser(user){
     try { biz = await resolveBusiness(user.uid, user.email, myPhone, user.emailVerified); }
     catch(e){ console.warn(e); showGate(); gateMsg("Couldn’t load your business. Check your connection and sign in again."); return; }
     if (biz){
-      if ((biz.status==="pending"||biz.status==="suspended"||biz.status==="archived") && !S.isPlatformAdmin) showPendingApproval(biz);
+      if ((biz.status==="suspended"||biz.status==="archived") && !S.isPlatformAdmin) showPendingApproval(biz);
       else enterBusiness(biz);
     }
     else if (acct.role==="crew" && !user.emailVerified) showVerify(user);

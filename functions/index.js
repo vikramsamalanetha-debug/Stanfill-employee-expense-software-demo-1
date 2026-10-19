@@ -63,7 +63,12 @@ async function sendEmail(subject, heading, rows, note) {
 // Push to every phone the admin is signed in on (the app saves those in the "devices" collection).
 async function sendPush(title, body) {
   const snap = await admin.firestore().collection("devices").where("email", "in", adminList().slice(0, 10)).get();
-  const tokens = snap.docs.map((d) => d.id).filter(Boolean);
+  // Only phones whose account really is an admin's (the email on a device record is written by the phone).
+  const ok = new Set();
+  await Promise.all([...new Set(snap.docs.map((d) => d.get("uid")).filter(Boolean))].map(async (u) => {
+    try { const usr = await admin.auth().getUser(u); if (usr.email && adminList().includes(usr.email.toLowerCase())) ok.add(u); } catch (e) { /* gone */ }
+  }));
+  const tokens = snap.docs.filter((d) => ok.has(d.get("uid"))).map((d) => d.id).filter(Boolean);
   if (!tokens.length) { logger.info("No admin phone registered for push"); return; }
   const res = await admin.messaging().sendEachForMulticast({
     tokens,
@@ -100,7 +105,7 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
   await alertAdmin(
     `Approve on Dayzift: ${b.name || "new business"}`, "A business is waiting for your approval",
     [["Business", b.name], ["Type", b.category], ["Location", place], ["Phone", b.phone], ["Business email", b.email], ["Owner email", (b.ownerEmails || [])[0]], ["About", b.description], ["Submitted", when(b.createdAt)]],
-    "They can't use Dayzift until you approve them in Platform Admin.",
+    "Their 30-day trial has already started. Approving them in Platform Admin switches on invoice emails, invoice links and website bookings.",
     "Approve: " + (b.name || "new business"), [b.category, place].filter(Boolean).join(" · ") || "Waiting for your approval");
 });
 
@@ -262,6 +267,8 @@ const dayWin = (iso, w) => { const d = reqDay(iso); return d && winShort(w) ? d 
 // "Hi Jane" — but never greet someone by an email address or a number.
 const firstName = (n) => { const f = String(n || "").trim().split(/\s+/)[0]; return f && !/[@\d]/.test(f) ? f : "there"; };
 // 7316022456 → 731-602-2456 (anything that isn't a 10-digit US number is left as typed)
+// Long text a customer typed is shortened in emails.
+const clip = (v, n) => { const t = String(v == null ? "" : v); return t.length > n ? t.slice(0, n) + "…" : t; };
 const nicePhone = (p) => { const d = String(p || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""); return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : String(p || ""); };
 
 // Who hears about new requests: the alert emails set in Settings, otherwise every owner.
@@ -289,7 +296,7 @@ async function customerEmailFor(bk) {
 
 function bookingRows(bk, b) {
   return [["Service", bk.service], ["Date wanted", reqDay(bk.requestedDate)], ["Time", WIN[bk.timeWindow] || ""], ["Size", bk.size], ["Name", bk.name], ["Contact", /@/.test(bk.phone || "") ? bk.phone : nicePhone(bk.phone)],
-    ["Details", bk.details], ["Rewards", bk.wantsRewards ? "Wants to join " + ((b && b.rewardsName) || "rewards") : ""]]
+    ["Details", clip(bk.details, 1000)], ["Rewards", bk.wantsRewards ? "Wants to join " + ((b && b.rewardsName) || "rewards") : ""]]
     .filter(([, v]) => v);
 }
 const rowsHtml = (rows) => `<table style="border-collapse:collapse;font-size:15px;margin:0 0 18px">${rows.map(([k, v]) =>
@@ -383,17 +390,28 @@ exports.notifyNewBooking = onDocumentCreated({ document: "bookings/{id}", secret
   // A secret for the Approve / Decline links, kept where customers can't read it.
   const key = crypto.randomBytes(18).toString("hex");
   await db.doc("bookingKeys/" + snap.id).set({ key, businessId: bk.businessId, createdAt: Date.now() });
-  // Keep a lid on volume: a customer who sends lots of requests only gets the first few emails.
+  // Keep a lid on volume, so nobody can use a booking form to flood an inbox (or our mail account):
+  // more than 5 requests a day from one account, or 40 a day to one business, are saved but not emailed.
+  const inDay = (d) => { const c = d.get("createdAt"); return c && (c.toMillis ? c.toMillis() : c) > Date.now() - 864e5; };
   let spam = false;
   if (bk.uid) {
     const mine = await db.collection("bookings").where("uid", "==", bk.uid).select("createdAt").get();
-    spam = mine.docs.filter((d) => { const c = d.get("createdAt"); return c && (c.toMillis ? c.toMillis() : c) > Date.now() - 864e5; }).length > 5;
+    spam = mine.docs.filter(inDay).length > 5;
+  }
+  if (!spam) {
+    const theirs = await db.collection("bookings").where("businessId", "==", bk.businessId).select("createdAt").get();
+    spam = theirs.docs.filter(inDay).length > 40;
+  }
+  if (spam) {
+    logger.warn("Booking " + snap.id + " saved without emails (too many requests)");
+    await snap.ref.update({ ownerNotifiedAt: Date.now(), flagged: "volume" }).catch(() => {});
+    return;
   }
   const day = dayWin(bk.requestedDate, bk.timeWindow);
   const results = await Promise.allSettled([
     emailOwners(snap.id, bk, biz, key, 0),
     pushOwners(biz, bk.businessId, "New booking request", [bk.name, bk.service, day].filter(Boolean).join(" · ")),
-    spam ? Promise.resolve(false) : emailCustomer(bk, biz, "received"),
+    emailCustomer(bk, biz, "received"),
   ]);
   results.forEach((r, i) => { if (r.status === "rejected") logger.error(["Owner email", "Owner push", "Customer email"][i] + " failed", r.reason); });
   const upd = { ownerNotifiedAt: Date.now() };
