@@ -143,6 +143,20 @@ table.tsheet td.tot,table.tsheet th.tot{text-align:right;padding-left:8px;white-
 .tcell.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);font-weight:800}
 .tcell.live{background:var(--primary-soft);color:var(--primary)}
 .hoursform{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg)}
+dialog.welcome{max-width:460px;width:calc(100% - 24px);border:0;border-radius:var(--radius-lg);padding:26px 24px 20px;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+dialog.welcome::backdrop{background:rgba(20,20,20,.55)}
+dialog.welcome h2{margin:10px 0 0;font:750 26px/1.15 var(--display)}
+dialog.welcome .wl-logo{width:44px;height:44px;border-radius:12px;background:var(--sun,#F2C230);display:grid;place-items:center;font-size:24px;color:#145848}
+dialog.welcome select{width:100%;font-size:16px}
+.tour-shade{position:fixed;inset:0;z-index:9000;background:transparent}
+.tour-shade.on{background:rgba(20,20,20,.55)}
+.tour-spot{position:fixed;z-index:9001;border-radius:12px;box-shadow:0 0 0 9999px rgba(20,20,20,.55),0 0 0 3px var(--sun,#F2C230);pointer-events:none;transition:all .25s ease}
+.tour-card{position:fixed;z-index:9002;background:var(--surface,#fff);color:var(--ink);border-radius:var(--radius-lg);padding:16px 18px 14px;box-shadow:0 20px 60px rgba(0,0,0,.3);outline:none;transition:top .25s ease,left .25s ease}
+.tour-card h3{margin:4px 0 6px;font:700 19px/1.2 var(--display)}
+.tour-card p{margin:0 0 10px;font-size:15px;line-height:1.5;color:var(--ink)}
+.tour-card .acts{margin-top:8px;gap:8px}
+.tour-dots{display:flex;gap:5px;margin:2px 0 4px}.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.tour-dots i.on{background:var(--primary)}
+@media (prefers-reduced-motion:reduce){.tour-spot,.tour-card{transition:none}}
 .estnote{background:var(--lemon-soft);border-radius:var(--radius);padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.5}
 .prsteps{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 14px;padding:0}
 .prsteps li button{width:100%;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:10px 12px;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
@@ -1065,6 +1079,7 @@ function drawBanners(){
       el("div",{class:"seg","aria-label":"View the demo as"},
         el("button",{type:"button","aria-pressed":String(!asCrew),onclick:()=>demoViewAs("owner")},"Owner view"),
         el("button",{type:"button","aria-pressed":String(asCrew),onclick:()=>demoViewAs("crew")},"Crew view")),
+      el("button",{class:"btn small lemon",onclick:()=>{ if (!S.isOwner) demoViewAs("owner"); demoTour(0); }},"Take the tour"),
       el("button",{class:"btn small",onclick:exitDemo},"Sign out")));
   } else if (Store.mode==="local") b.append(el("div",{class:"banner info"},
     "Preview mode: changes are saved on this device only. Open the published link to share the board with your crew."));
@@ -1213,20 +1228,20 @@ function drawNav(){
   if (isDesktop()){   // sidebar: every page listed under its section
     gn.className="side";
     gn.replaceChildren(...groups.map(g=>{
-      if (g.tabs.length===1) return el("div",{class:"side-group"},el("button",{type:"button",class:"side-item","aria-current":S.tab===g.tabs[0][0]?"page":"false",onclick:()=>goTab(g.tabs[0][0])},
+      if (g.tabs.length===1) return el("div",{class:"side-group"},el("button",{type:"button",class:"side-item","data-tab":g.tabs[0][0],"data-group":g.id,"aria-current":S.tab===g.tabs[0][0]?"page":"false",onclick:()=>goTab(g.tabs[0][0])},
         navIcon(g.icon),el("span",{},g.label),g.badge?el("span",{class:"dot"},String(g.badge)):null));
       return el("div",{class:"side-group"},el("div",{class:"side-label"},navIcon(g.icon),g.label),
-        ...g.tabs.map(([id,label])=>el("button",{type:"button",class:"side-item sub","aria-current":S.tab===id?"page":"false",onclick:()=>goTab(id)},label)));
+        ...g.tabs.map(([id,label])=>el("button",{type:"button",class:"side-item sub","data-tab":id,"data-group":g.id,"aria-current":S.tab===id?"page":"false",onclick:()=>goTab(id)},label)));
     }));
     sn.replaceChildren();
     return;
   }
   gn.className="groups";
-  gn.replaceChildren(...groups.map(g=>el("button",{type:"button","aria-current":g===cur?"page":"false",
+  gn.replaceChildren(...groups.map(g=>el("button",{type:"button","data-group":g.id,"aria-current":g===cur?"page":"false",
     onclick:()=>{ const keep=lastInGroup[g.id]; goTab(g.tabs.some(t=>t[0]===keep)?keep:g.tabs[0][0]); }},
     navIcon(g.icon), el("span",{},g.label), g.badge?el("span",{class:"dot","aria-label":g.badge+" waiting"},String(g.badge)):null)));
   sn.replaceChildren(...(cur.tabs.length>1 ? cur.tabs.map(([id,label])=>
-    el("button",{type:"button",class:"chip","aria-pressed":String(S.tab===id),onclick:()=>goTab(id)},label)) : []));
+    el("button",{type:"button",class:"chip","data-tab":id,"aria-pressed":String(S.tab===id),onclick:()=>goTab(id)},label)) : []));
 }
 
 /* ---- Home: what needs attention today ---- */
@@ -5755,7 +5770,8 @@ function startDemo(type){
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
   if (!["home","board","projects","team","timesheet","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
-  S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=switching;
+  S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=true;
+  if (!switching && !/[?&]tour=0\b/.test(location.search)) setTimeout(demoWelcome,350);
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
   document.title=biz.name+" · Dayzift demo";
   booted=true;
@@ -5775,6 +5791,98 @@ function demoViewAs(role){
   S.who="all"; pendingPopupShown=true;
   subscribeAll(); render(); window.scrollTo(0,0);
 }
+/* ---- Demo welcome and guided tour ----
+   The welcome asks what kind of business the visitor runs and reloads the demo as that business.
+   The tour opens each main page, highlights it in the menu, and says what it's for in a sentence or two. */
+const DEMO_BLURB={Cleaning:"a cleaning company with 4 cleaners and repeat clients",Construction:"a remodeling company with projects, phases and subs",Plumbing:"a plumbing company with service calls and repipes",
+  Electrical:"an electrical contractor with installs and inspections",HVAC:"an HVAC company with installs and service calls",Roofing:"a roofing company with crews and storm-season jobs",
+  Handyman:"a handyman business with lots of small jobs","Lawn Care":"a lawn and landscape crew with weekly routes","Pet Care":"a pet care business with regular visits"};
+function demoWelcome(){
+  if (!S.demo) return;
+  let d=$("#demoWelcome"); if (d) d.remove();
+  d=el("dialog",{id:"demoWelcome",class:"welcome","aria-labelledby":"dwTitle"});
+  const blurb=el("p",{class:"kv",style:"margin:6px 0 0;min-height:1.4em"});
+  const setBlurb=()=>{ blurb.textContent="You'll see "+(S.business&&S.business.name||"a business")+": "+(DEMO_BLURB[S.demoKind]||"a made-up business like yours")+"."; };
+  const sel=el("select",{id:"dwType","aria-label":"Your type of business",onchange:ev=>{ startDemo(ev.target.value); setBlurb(); }},
+    DEMO_TYPES.map(t=>el("option",{value:t,selected:t===S.demoKind},t==="Construction"?"Construction / remodeling":t)));
+  d.append(el("div",{class:"wl-logo","aria-hidden":"true"},"\u2600"),
+    el("h2",{id:"dwTitle"},"Welcome to the Dayzift demo"),
+    el("p",{style:"margin:6px 0 16px"},"A full, made-up business you can click around. Nothing you do here is saved or seen by anyone."),
+    el("label",{class:"f",for:"dwType"},"What kind of business do you run?",sel), blurb,
+    el("div",{class:"acts",style:"margin-top:18px;flex-wrap:wrap"},
+      el("button",{type:"button",class:"btn",onclick:()=>{ d.close(); d.remove(); toast("Explore away. Tap “Take the tour” any time."); }},"I'll explore on my own"),
+      el("span",{class:"grow"}),
+      el("button",{type:"button",class:"btn primary",id:"dwGo",onclick:()=>{ d.close(); d.remove(); demoTour(0); }},"Show me around (1 minute)")));
+  setBlurb();
+  document.body.append(d); d.showModal(); setTimeout(()=>{ const g=$("#dwGo"); if (g) g.focus(); },50);
+}
+function tourSteps(){
+  const clean=!hasProjects();
+  return [
+    {tab:"home",focus:".home-stats",title:"Your day at a glance",text:"Booking requests waiting, today's jobs, who's on shift and what's unpaid. Tap any box to jump straight there."+(clean?" Regulars due for a visit show up here too.":"")},
+    {tab:"requests",nav:"requests",title:"Booking requests",text:"Requests from your website land here, with the day, time and details. Approve or decline in one tap, or straight from the email alert."},
+    {tab:"board",nav:"board",title:"The job board",text:"Every job from new to done. Put one or more people on a job and it appears on their phone."+(clean?" Repeat clients are remembered: “Book next” fills everything in.":"")},
+    hasProjects()?{tab:"projects",nav:"projects",title:"Projects",text:"Remodels and builds with phases, a site lead, and the contract against costs so far. Bill deposits, progress and retainage."}:null,
+    {tab:"team",nav:"team",title:"Crew & locations",text:"Who's on shift, where they are and what job they're on. Location is shared only during a shift and stops when it ends."},
+    {tab:"payroll",nav:"payroll",title:"Crew pay",text:"Four clear steps: review hours, estimate pay, approve, and record what you actually paid. Every change is kept with who and when."},
+    {tab:"invoices",nav:"invoices",title:"Invoices",text:"Turn finished jobs into invoices with your logo. See when the client opens one, and let Dayzift send the overdue reminders."},
+    {tab:"books",nav:"books",title:"The books",text:"Money in, money out and profit for any month, quarter or year. Snap receipts and download an expense report as a PDF."},
+    {tab:"home",focus:".banner.demo .seg",title:"See what your crew see",text:"Switch to Crew view to see the app on a crew member's phone. You can also change the type of business here."},
+    {end:true,title:"That's the tour!",text:"Keep exploring the demo, or start your own business free for 30 days. No credit card needed."}
+  ].filter(Boolean);
+}
+let tourState=null;
+function demoTour(i){
+  endTour(true);
+  const steps=tourSteps(); if (i<0) i=0; if (i>=steps.length) return endTour();
+  const st=steps[i];
+  if (!S.isOwner) demoViewAs("owner");
+  if (st.tab && S.tab!==st.tab) goTab(st.tab);
+  const mask=el("div",{class:"tour-spot","aria-hidden":"true"});
+  const shade=el("div",{class:"tour-shade",onclick:()=>endTour()});
+  const prog=el("div",{class:"tour-dots","aria-hidden":"true"},...steps.map((_,k)=>el("i",{class:k===i?"on":""})));
+  const card=el("div",{class:"tour-card",role:"dialog","aria-modal":"true","aria-labelledby":"tourT",tabindex:"-1"},
+    el("div",{class:"kv",style:"font-size:12px;font-weight:700"},"Step "+(i+1)+" of "+steps.length),
+    el("h3",{id:"tourT"},st.title),el("p",{},st.text),prog,
+    st.end ? el("div",{class:"acts"},
+        el("button",{type:"button",class:"btn",onclick:()=>endTour()},"Keep exploring"),el("span",{class:"grow"}),
+        el("a",{class:"btn primary",href:location.pathname+"?register",onclick:()=>endTour()},"Start free 30-day trial"))
+      : el("div",{class:"acts"},
+        el("button",{type:"button",class:"btn ghost",onclick:()=>endTour()},"Skip"),el("span",{class:"grow"}),
+        i>0?el("button",{type:"button",class:"btn",onclick:()=>demoTour(i-1)},"Back"):null,
+        el("button",{type:"button",class:"btn primary",onclick:()=>demoTour(i+1)},i===steps.length-2?"Finish":"Next")));
+  document.body.append(shade,mask,card);
+  const key=ev=>{ if (ev.key==="Escape") endTour(); else if (ev.key==="ArrowRight") demoTour(i+1); else if (ev.key==="ArrowLeft"&&i>0) demoTour(i-1); };
+  document.addEventListener("keydown",key);
+  // Where to point: the page's menu item (sidebar on a computer, bottom bar on a phone), or a part of the page.
+  const target=()=>{
+    if (st.focus) return document.querySelector(st.focus);
+    if (!st.nav) return null;
+    const grp=(navGroups().find(g=>g.tabs.some(t=>t[0]===st.nav))||{}).id;
+    return isDesktop() ? document.querySelector('#groupNav [data-tab="'+st.nav+'"]') : (document.querySelector('#subNav [data-tab="'+st.nav+'"]')||document.querySelector('#groupNav [data-group="'+grp+'"]'));
+  };
+  const place=()=>{
+    const t=target(), vw=window.innerWidth, vh=window.innerHeight, cw=Math.min(360,vw-24);
+    card.style.width=cw+"px";
+    if (!t){ mask.style.display="none"; shade.classList.add("on"); card.style.left=Math.round((vw-cw)/2)+"px"; card.style.top=Math.round(vh/2-card.offsetHeight/2)+"px"; return; }
+    shade.classList.remove("on"); mask.style.display="block";
+    const r=t.getBoundingClientRect(), pad=6;
+    Object.assign(mask.style,{left:(r.left-pad)+"px",top:(r.top-pad)+"px",width:(r.width+pad*2)+"px",height:(r.height+pad*2)+"px"});
+    const ch=card.offsetHeight; let x,y;
+    if (isDesktop() && st.nav && r.right+cw+28<vw){ x=r.right+18; y=Math.min(Math.max(12,r.top-20),vh-ch-12); }
+    else if (r.top>vh/2){ x=Math.min(Math.max(12,r.left+r.width/2-cw/2),vw-cw-12); y=Math.max(12,r.top-ch-18); }
+    else { x=Math.min(Math.max(12,r.left+r.width/2-cw/2),vw-cw-12); y=Math.min(r.bottom+18,vh-ch-12); }
+    card.style.left=Math.round(x)+"px"; card.style.top=Math.round(y)+"px";
+  };
+  const t0=target(); if (t0 && st.focus){ const r=t0.getBoundingClientRect(); if (r.top<70||r.bottom>window.innerHeight-20) t0.scrollIntoView({block:"center"}); }
+  else window.scrollTo(0,0);
+  setTimeout(()=>{ place(); card.focus(); },60);
+  const tick=setInterval(place,400);          // the page redraws now and then; keep the highlight in place
+  window.addEventListener("resize",place); window.addEventListener("scroll",place,{passive:true});
+  tourState={i,off:()=>{ clearInterval(tick); window.removeEventListener("resize",place); window.removeEventListener("scroll",place); document.removeEventListener("keydown",key); shade.remove(); mask.remove(); card.remove(); }};
+}
+function endTour(quiet){ if (tourState){ tourState.off(); tourState=null; } }
+
 // Signing out of the demo reloads the sign-in page, which throws the demo copy away.
 function exitDemo(){ location.href=location.pathname; }
 
