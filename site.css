@@ -23,7 +23,7 @@ section{padding:80px 0}
 .nav .w{display:flex;align-items:center;height:56px;gap:8px}
 .logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:19px;letter-spacing:-.02em}
 .logo svg{width:28px;height:28px}
-.logo svg.dz-logo{height:36px;width:auto}
+.logo svg.dz-logo{height:32px;width:auto}
 .nav nav{margin-left:auto;display:flex;align-items:center;gap:2px}
 .nav nav a{font-size:14px;text-decoration:none;color:var(--ink);opacity:.85;padding:7px 10px;border-radius:999px}
 .nav nav a:hover{opacity:1;background:rgba(0,0,0,.04)}
