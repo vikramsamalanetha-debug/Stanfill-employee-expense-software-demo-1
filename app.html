@@ -5008,6 +5008,18 @@ async function demoPasswordOk(pw){
     return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("")===DEMO_PASS_HASH;
   } catch(e){ return false; }
 }
+// Reset emails go out through Dayzift's own mail server (more reliable than Firebase's built-in sender);
+// if that can't be reached, fall back to Firebase. Returns "ok", "too-many" or "error".
+const RESET_URL="https://us-central1-stanfill-clean-pros.cloudfunctions.net/passwordReset";
+async function sendResetEmail(email){
+  try {
+    const r=await fetch(RESET_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});
+    if (r.status===429) return "too-many";
+    if (r.ok) return "ok";
+  } catch(e){ /* fall back below */ }
+  try { await auth.sendPasswordResetEmail(email); return "ok"; }
+  catch(e){ return e && e.code==="auth/user-not-found" ? "ok" : e && e.code==="auth/too-many-requests" ? "too-many" : "error"; }
+}
 function wireGate(){
   $("#gateLoginTab").addEventListener("click",()=>switchGateTab("login"));
   $("#gateRegisterTab").addEventListener("click",()=>switchGateTab("register"));
@@ -5051,9 +5063,10 @@ function wireGate(){
   $("#gateForgotBtn").addEventListener("click", async ()=>{
     const email=$("#gateLoginEmail").value.trim();
     if (!email) return gateMsg("Type your email above, then tap “Forgot your password?” again.");
-    try { await auth.sendPasswordResetEmail(email); }
-    catch(e){ if (e && e.code!=="auth/user-not-found") return gateMsg(friendlyAuthError(e)); }
-    gateMsg(""); toast("If that email has an account, a reset link is on its way.");
+    const r=await sendResetEmail(email);
+    if (r==="too-many") return gateMsg("Too many reset requests for this email. Please wait an hour, or email support@dayzift.com.");
+    if (r==="error") return gateMsg("Couldn’t send the reset email. Check your connection and try again.");
+    gateMsg(""); toast("If that email has an account, a reset link is on its way. Check your spam folder too.");
   });
   $("#verifyResendBtn").addEventListener("click", async ()=>{
     try { await auth.currentUser.sendEmailVerification(); $("#verifyNote").textContent="Sent. Check your inbox."; }

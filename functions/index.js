@@ -634,3 +634,67 @@ exports.calendarBookings = onDocumentWritten({ document: "bookings/{id}" }, asyn
   if (was === now) return;
   try { await recheckDays(a.businessId || b.businessId, [was, now]); } catch (e) { logger.error("Calendar booking recheck failed", e); }
 });
+
+// ---------- Password reset emails ----------
+// Sent through the same mail server as booking and invoice emails (Firebase's own reset emails come from a
+// firebaseapp.com address that Yahoo, iCloud and Outlook often junk or drop). The answer is the same whether or not
+// an account exists, so nobody can use it to find out who has an account. Each try is logged in "authMail".
+const RESET_ORIGINS = ["https://dayzift.com", "https://www.dayzift.com", "https://stanfillelitecleanpros.com", "https://www.stanfillelitecleanpros.com",
+  "https://localhost", "capacitor://localhost", "http://localhost"];
+exports.passwordReset = onRequest({ invoker: "public", cors: false, secrets: [SMTP_PASS] }, async (req, res) => {
+  const origin = req.get("origin") || "";
+  if (RESET_ORIGINS.includes(origin) || /^https:\/\/[a-z0-9-]+\.github\.io$/.test(origin)) {
+    res.set("Access-Control-Allow-Origin", origin); res.set("Vary", "Origin");
+    res.set("Access-Control-Allow-Methods", "POST"); res.set("Access-Control-Allow-Headers", "Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.status(204).send("");
+  if (req.method !== "POST") return res.status(405).json({ ok: false });
+  const body = typeof req.body === "object" && req.body ? req.body : {};
+  const email = String(body.email || "").trim().toLowerCase();
+  const bizId = /^[\w-]{1,80}$/.test(String(body.businessId || "")) ? String(body.businessId) : "";
+  if (!okEmail(email)) return res.status(400).json({ ok: false, error: "bad-email" });
+  const db = admin.firestore(), hash = crypto.createHash("sha256").update(email).digest("hex");
+  const ipHash = crypto.createHash("sha256").update(String(req.ip || "")).digest("hex").slice(0, 32);
+  const log = (fields) => db.collection("authMail").add({ kind: "reset", emailHash: hash, ipHash, businessId: bizId || null, at: Date.now(), ...fields }).catch(() => {});
+  // At most 3 per email and 10 per connection in an hour.
+  const hour = Date.now() - 36e5;
+  const lim = db.doc("authLimits/" + hash), ipLim = db.doc("authLimits/ip_" + ipHash);
+  const [l1, l2] = await Promise.all([lim.get(), ipLim.get()]);
+  const recent = (s) => ((s.exists && s.get("times")) || []).filter((t) => t > hour);
+  if (recent(l1).length >= 3 || recent(l2).length >= 10) { await log({ sent: false, why: "rate-limited" }); return res.status(429).json({ ok: false, error: "too-many" }); }
+  await Promise.all([lim.set({ times: [...recent(l1), Date.now()] }), ipLim.set({ times: [...recent(l2), Date.now()] })]);
+  let user = null;
+  try { user = await admin.auth().getUserByEmail(email); } catch (e) { /* no account: answer the same way */ }
+  if (!user) { await log({ sent: false, why: "no-account" }); return res.json({ ok: true }); }
+  if (user.disabled) { await log({ sent: false, why: "disabled" }); return res.json({ ok: true }); }
+  try {
+    let biz = null;
+    if (bizId) { try { biz = (await db.doc("businesses/" + bizId).get()).data() || null; } catch (e) { /* ignore */ } }
+    const name = biz && biz.name ? String(biz.name).replace(/["<>\r\n]/g, "").slice(0, 80) : "Dayzift";
+    const back = biz && biz.website && /^https:\/\//i.test(biz.website) ? biz.website : bizId === "stanfill-elite-clean-pros" ? "https://stanfillelitecleanpros.com" : "https://dayzift.com/app";
+    let link;
+    try { link = await admin.auth().generatePasswordResetLink(email, { url: back }); }
+    catch (e) { link = await admin.auth().generatePasswordResetLink(email); }   // the return address isn't on Firebase's allowed list
+    const first = String(user.displayName || "").split(" ")[0] || "there";
+    const html = `<div style="background:#EEF1F5;padding:24px 12px;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#16202E">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #E4E7EC;border-radius:10px;overflow:hidden">
+    <div style="height:6px;background:#1F7A69"></div>
+    <div style="padding:26px 28px">
+      <div style="font-size:18px;font-weight:800;margin-bottom:14px">${esc(name)}</div>
+      <p style="margin:0 0 12px;font-size:15px">Hi ${esc(first)},</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.55">We got a request to reset the password for <b>${esc(email)}</b>. Tap the button to choose a new one. The link works for one hour.</p>
+      <a href="${esc(link)}" style="display:inline-block;background:#1F7A69;color:#fff;padding:12px 22px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none">Choose a new password</a>
+      <p style="margin:20px 0 0;font-size:13px;color:#5E6878;line-height:1.5">Didn't ask for this? You can ignore this email; your password stays the same.</p>
+    </div>
+    <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">${name === "Dayzift" ? "Dayzift" : "Sent with Dayzift for " + esc(name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
+  </div></div>`;
+    const text = `Hi ${first},\n\nWe got a request to reset the password for ${email}. Open this link to choose a new one (it works for one hour):\n${link}\n\nDidn't ask for this? Ignore this email; your password stays the same.\n\n${name}\nSent with Dayzift · A product of LIT America`;
+    await transport().sendMail({ from: `"${name}" <${SMTP_USER.value()}>`, to: email, subject: `Reset your ${name} password`, html, text });
+    await log({ sent: true });
+    return res.json({ ok: true });
+  } catch (e) {
+    logger.error("Password reset email failed", e);
+    await log({ sent: false, why: "error", error: String(e && e.message || e).slice(0, 300) });
+    return res.status(502).json({ ok: false, error: "send-failed" });
+  }
+});
