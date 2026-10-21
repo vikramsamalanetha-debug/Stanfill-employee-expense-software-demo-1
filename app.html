@@ -4879,7 +4879,7 @@ let rw=window.innerWidth<640; window.addEventListener("resize",()=>{ const n=win
 window.addEventListener("pagehide",()=>{ /* shifts are ended explicitly; stale signal shows after 15 min */ });
 
 let pendingPopupShown=false;
-if (window.top!==window.self){ try { window.top.location.replace(window.location.href); } catch(e){ document.documentElement.style.display="none"; } }
+if (window.top!==window.self){ document.documentElement.style.display="none"; try { window.top.location.replace(window.location.href); } catch(e){} }
 function maybeShowPendingPopup(){
   if (!S.isOwner || S.adminView || pendingPopupShown) return;
   const pending = S.bookings.filter(b=>(b.status||"pending")==="pending");
