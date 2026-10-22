@@ -626,6 +626,20 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
 .sctl{flex:0 0 auto}
 </style>
+<!-- Google Analytics, live dayzift.com only (never the phone app or tests). It counts visits, demo use and sign-ups.
+     Every page is reported under one fixed name and address, so business names and data never go to Google. -->
+<script>
+(function(){
+  window.track=function(){};
+  if (!/(^|\.)dayzift\.com$/.test(location.hostname)) return;
+  var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id=G-23F1RJ68YJ'; document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);};
+  gtag('js',new Date());
+  var q=new URLSearchParams(location.search), keep=q.get('demo')?'?demo='+encodeURIComponent(q.get('demo')):(q.has('register')?'?register':'');
+  gtag('config','G-23F1RJ68YJ',{page_title:'DayZift app',page_location:location.origin+location.pathname+keep});
+  window.track=function(name,params){ try{ gtag('event',name,params||{}); }catch(e){} };
+})();
+</script>
 </head>
 <body>
 
@@ -5095,6 +5109,7 @@ function wireGate(){
     if (!isCrew && !CATEGORIES.includes(category)) return gateMsg("Choose your type of business, or tick \u201cI'm joining a crew\u201d.");
     try {
       const cred = await auth.createUserWithEmailAndPassword(email,password);
+      track("sign_up",{method:"email",role:isCrew?"crew":"owner"});
       const acct={name,email,phone,role:isCrew?"crew":"owner",createdAt:Date.now()}; if (!isCrew){ acct.plannedCategory=category; acct.plannedBusinessName=bizName; }
       await firebase.firestore().doc("crewAccounts/"+cred.user.uid).set(acct);
       // Business owners go straight to setting up their business (the platform admin approves it).
@@ -5800,6 +5815,7 @@ function startDemo(type){
   if (!DEMO_PROFILES[type]) type="Construction";
   const keepView = S.demo && !S.isOwner;   // switching type keeps Crew view if that's what was showing
   const switching = S.demo;                // the booking-requests popup only shows on the first load
+  track(switching?"demo_switch":"demo_start",{demo_type:type});
   S.demo=true; S.demoKind=type;
   installDemoShim();
   Store.useDemo();
@@ -5876,6 +5892,8 @@ function demoTour(i){
   endTour(true);
   const steps=tourSteps(); if (i<0) i=0; if (i>=steps.length) return endTour();
   const st=steps[i];
+  if (i===0) track("demo_tour_start",{demo_type:S.demoKind||""});
+  if (i===steps.length-1) track("demo_tour_complete",{demo_type:S.demoKind||""});
   if (!S.isOwner) demoViewAs("owner");
   if (st.tab && S.tab!==st.tab) goTab(st.tab);
   const mask=el("div",{class:"tour-spot","aria-hidden":"true"});
@@ -5886,7 +5904,7 @@ function demoTour(i){
     el("h3",{id:"tourT"},st.title),el("p",{},st.text),prog,
     st.end ? el("div",{class:"acts"},
         el("button",{type:"button",class:"btn",onclick:()=>endTour()},"Keep exploring"),el("span",{class:"grow"}),
-        el("a",{class:"btn primary",href:location.pathname+"?register",onclick:()=>endTour()},"Start free 30-day trial"))
+        el("a",{class:"btn primary",href:location.pathname+"?register",onclick:()=>{ track("demo_trial_click",{demo_type:S.demoKind||""}); endTour(); }},"Start free 30-day trial"))
       : el("div",{class:"acts"},
         el("button",{type:"button",class:"btn ghost",onclick:()=>endTour()},"Skip"),el("span",{class:"grow"}),
         i>0?el("button",{type:"button",class:"btn",onclick:()=>demoTour(i-1)},"Back"):null,
@@ -5959,6 +5977,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
+    if (!isPlatformAdmin) track("trial_start",{business_type:category});
     if (isPlatformAdmin){ toast("Business registered!"); enterBusiness({id,...data}); }
     else { toast("You're all set. Your 30-day free trial starts today."); enterBusiness({id,...data}); }
   } catch(e){ bizMsg(e.message); }

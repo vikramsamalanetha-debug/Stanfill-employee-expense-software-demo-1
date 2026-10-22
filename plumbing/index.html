@@ -19,6 +19,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<!-- Google Analytics: visits and button clicks on the public website -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-23F1RJ68YJ"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-23F1RJ68YJ');</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -84,6 +87,6 @@
 </div>
 <script>(function(){var bar=document.querySelector(".sticky"),hero=document.querySelector(".hero .ctas");if(!bar||!hero||!("IntersectionObserver" in window)){if(bar)bar.classList.add("on");return;}
 new IntersectionObserver(function(es){bar.classList.toggle("on",!es[0].isIntersecting&&es[0].boundingClientRect.top<0);}).observe(hero);})();
-window.dataLayer=window.dataLayer||[];document.addEventListener("click",function(e){var a=e.target.closest("[data-track]");if(a)window.dataLayer.push({event:"cta_click",cta:a.dataset.track,page:location.pathname});});</script>
+window.dataLayer=window.dataLayer||[];document.addEventListener("click",function(e){var a=e.target.closest("[data-track]");if(a){window.dataLayer.push({event:"cta_click",cta:a.dataset.track,page:location.pathname});if(window.gtag)gtag("event","cta_click",{cta:a.dataset.track});}});</script>
 </body>
 </html>
