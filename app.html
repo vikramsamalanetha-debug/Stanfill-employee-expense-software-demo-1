@@ -626,18 +626,18 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
 .sctl{flex:0 0 auto}
 </style>
-<!-- Google Analytics, live dayzift.com only (never the phone app or tests). It counts visits, demo use and sign-ups.
-     Every page is reported under one fixed name and address, so business names and data never go to Google. -->
+<!-- Google Tag Manager, live dayzift.com only (never the phone app or tests). Tracking is set up in tagmanager.google.com.
+     Every app screen is reported under one fixed name and address, so business names and data never go to Google. -->
 <script>
 (function(){
   window.track=function(){};
   if (!/(^|\.)dayzift\.com$/.test(location.hostname)) return;
-  var s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id=G-23F1RJ68YJ'; document.head.appendChild(s);
-  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);};
-  gtag('js',new Date());
+  window.dataLayer=window.dataLayer||[];
   var q=new URLSearchParams(location.search), keep=q.get('demo')?'?demo='+encodeURIComponent(q.get('demo')):(q.has('register')?'?register':'');
-  gtag('config','G-23F1RJ68YJ',{page_title:'DayZift app',page_location:location.origin+location.pathname+keep});
-  window.track=function(name,params){ try{ gtag('event',name,params||{}); }catch(e){} };
+  dataLayer.push({dz_page_title:'DayZift app',dz_page_location:location.origin+location.pathname+keep});
+  // Each event clears the details of the one before, so nothing carries over by mistake.
+  window.track=function(name,params){ try{ dataLayer.push(Object.assign({event:name,cta:undefined,demo_type:undefined,business_type:undefined,role:undefined,method:undefined},params||{})); }catch(e){} };
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TNF9WLR4');
 })();
 </script>
 </head>
