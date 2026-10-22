@@ -228,6 +228,9 @@ footer .lit a{display:inline;font-weight:700;color:var(--ink)}
 @media (min-width:761px){footer{padding-bottom:40px}}
 
 </style>
+<!-- Google Analytics: visits and button clicks on the public website -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-23F1RJ68YJ"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-23F1RJ68YJ');</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -521,7 +524,7 @@ document.querySelectorAll(".toggle button").forEach(function(b){ b.onclick=funct
 })();
 // Clicks on main buttons, for Google Tag Manager / Analytics when added (dataLayer events).
 window.dataLayer=window.dataLayer||[];
-document.addEventListener("click",function(e){ var a=e.target.closest("[data-track]"); if(a) window.dataLayer.push({event:"cta_click",cta:a.dataset.track}); });
+document.addEventListener("click",function(e){ var a=e.target.closest("[data-track]"); if(a) {window.dataLayer.push({event:"cta_click",cta:a.dataset.track});if(window.gtag)gtag("event","cta_click",{cta:a.dataset.track});}; });
 </script>
 </body>
 </html>
