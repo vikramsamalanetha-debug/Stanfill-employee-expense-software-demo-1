@@ -633,7 +633,11 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   window.track=function(){};
   if (!/(^|\.)dayzift\.com$/.test(location.hostname)) return;
   window.dataLayer=window.dataLayer||[];
-  var q=new URLSearchParams(location.search), keep=q.get('demo')?'?demo='+encodeURIComponent(q.get('demo')):(q.has('register')?'?register':'');
+  var q=new URLSearchParams(location.search), k=new URLSearchParams();
+  // Keep only the demo/register flag and campaign tags (utm_*), so ad and post links are credited correctly.
+  if (q.get('demo')) k.set('demo',q.get('demo')); else if (q.has('register')) k.set('register','');
+  q.forEach(function(v,n){ if (/^utm_(source|medium|campaign|content|term)$/.test(n)) k.set(n,v); });
+  var keep=k.toString()?'?'+k.toString().replace('register=&','register&').replace(/register=$/,'register'):'';
   dataLayer.push({dz_page_title:'DayZift app',dz_page_location:location.origin+location.pathname+keep});
   // Each event clears the details of the one before, so nothing carries over by mistake.
   window.track=function(name,params){ try{ dataLayer.push(Object.assign({event:name,cta:undefined,demo_type:undefined,business_type:undefined,role:undefined,method:undefined},params||{})); }catch(e){} };
