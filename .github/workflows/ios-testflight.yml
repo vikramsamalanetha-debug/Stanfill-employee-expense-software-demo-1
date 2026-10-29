@@ -1,0 +1,138 @@
+# Builds the DayZift iPhone app on GitHub's Mac computers and uploads it to TestFlight
+# (App Store Connect). No Mac needed: run it from the Actions tab ("Run workflow").
+#
+# Needs these repository secrets (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID        10-character Team ID (developer.apple.com → Account → Membership details)
+#   ASC_KEY_ID           App Store Connect API key ID
+#   ASC_ISSUER_ID        App Store Connect API issuer ID
+#   ASC_KEY_P8           the whole text of the downloaded AuthKey_XXXX.p8 file
+# and an app record for bundle ID net.litamerica.dazift in App Store Connect.
+#
+# A product of LIT America — www.litamerica.net
+name: Build iPhone app (TestFlight)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      BUNDLE_ID: net.litamerica.dazift
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the Apple keys are set
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+          ISS: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          missing=""
+          [ -z "$TEAM" ] && missing="$missing APPLE_TEAM_ID"
+          [ -z "$KID" ] && missing="$missing ASC_KEY_ID"
+          [ -z "$ISS" ] && missing="$missing ASC_ISSUER_ID"
+          [ -z "$P8" ] && missing="$missing ASC_KEY_P8"
+          if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing"; exit 1; fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Arrange uploaded files into folders
+        run: |
+          mkdir -p scripts assets
+          cp copy-web.js scripts/copy-web.js
+          for f in icon-only.png icon-foreground.png icon-background.png splash.png splash-dark.png; do [ -f "$f" ] && cp "$f" assets/; done
+
+      - name: Install Capacitor and phone features
+        run: |
+          npm install
+          npm install @capacitor/ios@^7 @capacitor/camera@^7 @capacitor-community/background-geolocation@^1
+          # Push notifications on iPhone need Apple push keys in Firebase first; booking alerts come by email until then.
+
+      - name: Copy web app into www/
+        run: npm run build:web
+
+      - name: Create iPhone project
+        run: npx cap add ios
+
+      - name: App icon and splash screen
+        continue-on-error: true
+        run: npx capacitor-assets generate --ios --iconBackgroundColor '#F2C230' --splashBackgroundColor '#1F7A69' --splashBackgroundColorDark '#0F2A25'
+
+      - name: Permissions, name and settings (Info.plist)
+        run: |
+          P=ios/App/App/Info.plist
+          pb(){ /usr/libexec/PlistBuddy -c "$1" "$P" 2>/dev/null || true; }
+          set_str(){ pb "Delete :$1"; /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$P"; }
+          set_str CFBundleDisplayName "DayZift"
+          set_str NSLocationWhenInUseUsageDescription "DayZift shares your location with your business owner only while you're on shift."
+          set_str NSLocationAlwaysAndWhenInUseUsageDescription "DayZift keeps sharing your location with your business owner while you're on shift, even if the app is in the background. It stops when you end your shift."
+          set_str NSCameraUsageDescription "DayZift uses the camera to photograph receipts for your expenses."
+          set_str NSPhotoLibraryUsageDescription "DayZift lets you attach receipt photos from your library to expenses."
+          pb "Delete :ITSAppUsesNonExemptEncryption"; /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
+          pb "Delete :UIBackgroundModes"; /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" -c "Add :UIBackgroundModes:0 string location" "$P"
+          plutil -p "$P"
+
+      - name: Sync web app into iPhone project
+        run: npx cap sync ios
+
+      - name: Apple API key
+        env:
+          P8: ${{ secrets.ASC_KEY_P8 }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          printf '%s\n' "$P8" > "$RUNNER_TEMP/keys/AuthKey_$KID.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/keys/AuthKey_$KID.p8" >> "$GITHUB_ENV"
+
+      - name: Build and sign
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+          ISS: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild -version
+          xcodebuild archive \
+            -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/DayZift.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$KID" -authenticationKeyIssuerID "$ISS" \
+            DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            MARKETING_VERSION="1.0.${{ github.run_number }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      - name: Upload to TestFlight
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+          ISS: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/DayZift.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$KID" -authenticationKeyIssuerID "$ISS"
+          echo "Uploaded DayZift 1.0.${{ github.run_number }} (build ${{ github.run_number }}). It appears in App Store Connect → TestFlight after Apple processes it (usually 10–30 minutes)."
+
+      - name: Remove the key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
