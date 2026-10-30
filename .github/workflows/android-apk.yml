@@ -93,6 +93,30 @@ jobs:
           sed -i 's/^          //' android/app/proguard-rules.pro
           grep -n -E "minifyEnabled|proguardFiles" android/app/build.gradle
 
+      - name: Edge-to-edge on every Android version
+        run: |
+          # Google Play asks apps to turn on edge-to-edge themselves (EdgeToEdge.enable), so the app looks
+          # the same on Android 14 and older as on 15+. Capacitor then keeps the page clear of the status
+          # and navigation bars (adjustMarginsForEdgeToEdge in capacitor.config.json).
+          F=$(find android/app/src/main/java -name MainActivity.java | head -1)
+          PKG=$(grep -m1 '^package ' "$F")
+          cat > "$F" <<JAVA
+          $PKG
+
+          import android.os.Bundle;
+          import androidx.activity.EdgeToEdge;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  EdgeToEdge.enable(this);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          JAVA
+          cat "$F"
+
       - name: Firebase file for push notifications
         if: env.PUSH == 'yes'
         run: cp google-services.json android/app/google-services.json
