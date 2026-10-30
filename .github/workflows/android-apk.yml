@@ -78,6 +78,20 @@ jobs:
           sed -i -E "s/compileSdkVersion *= *[0-9]+/compileSdkVersion = 36/; s/targetSdkVersion *= *[0-9]+/targetSdkVersion = 36/" android/variables.gradle
           grep -q "suppressUnsupportedCompileSdk" android/gradle.properties || echo "android.suppressUnsupportedCompileSdk=36" >> android/gradle.properties
           grep -n -E "minSdkVersion|targetSdkVersion|compileSdkVersion" android/variables.gradle
+          # Shrink and scramble the Google Play build (R8), as Google Play asks. The test APK is left as is.
+          sed -i -E "s/minifyEnabled false/minifyEnabled true/; s/proguard-android\.txt/proguard-android-optimize.txt/" android/app/build.gradle
+          cat >> android/app/proguard-rules.pro <<'RULES'
+          # Capacitor finds plugins and their methods by name, so keep them whole.
+          -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+          -keep class com.getcapacitor.** { *; }
+          -keep class com.capacitorjs.** { *; }
+          -keep class * extends com.getcapacitor.Plugin { *; }
+          -keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+          -keep class **.backgroundgeolocation.** { *; }
+          -keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
+          RULES
+          sed -i 's/^          //' android/app/proguard-rules.pro
+          grep -n -E "minifyEnabled|proguardFiles" android/app/build.gradle
 
       - name: Firebase file for push notifications
         if: env.PUSH == 'yes'
@@ -135,6 +149,14 @@ jobs:
         with:
           name: DayZift-google-play-aab
           path: DayZift.aab
+
+      # Lets Google Play show readable crash reports for the scrambled build (upload it with the bundle if Play asks).
+      - uses: actions/upload-artifact@v4
+        if: env.PLAY == 'yes'
+        with:
+          name: DayZift-mapping
+          path: android/app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore
 
       - name: Publish as latest release
         env:

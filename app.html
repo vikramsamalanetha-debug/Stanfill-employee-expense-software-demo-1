@@ -634,7 +634,8 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
   window.track=function(){};
   var C=window.Capacitor, plat=(C&&C.isNativePlatform&&C.isNativePlatform()&&C.getPlatform)?C.getPlatform():'';
   if (!plat && !/(^|\.)dayzift\.com$/.test(location.hostname)) return;
-  window.dataLayer=window.dataLayer||[];
+  // No ads, ever. In Europe and the UK, Google Analytics counts visits without cookies (consent mode).
+  window.dataLayer=window.dataLayer||[];var gtag=function(){dataLayer.push(arguments);};gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'granted'});gtag('consent','default',{analytics_storage:'denied',region:['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']});
   if (plat) {
     dataLayer.push({dz_page_title:'DayZift '+(plat==='ios'?'iPhone':'Android')+' app',dz_page_location:'https://dayzift.com/'+plat+'-app'});
     window.track=function(name,params){ try{ dataLayer.push(Object.assign({event:name,cta:undefined,demo_type:undefined,business_type:undefined,role:undefined,method:undefined},params||{})); }catch(e){} };
@@ -750,9 +751,10 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
       </label>
       <label class="f">Business email<input id="bizEmail" type="email" autocomplete="email" placeholder="you@yourbusiness.com"></label>
       <label class="f">Phone<input id="bizPhone" type="tel" autocomplete="tel"></label>
+      <label class="f">Country<select id="bizCountry"></select></label>
       <div class="row">
         <label class="f grow">City<input id="bizCity" type="text"></label>
-        <label class="f" style="width:80px">State<input id="bizState" type="text" maxlength="2" placeholder="TN"></label>
+        <label class="f" style="width:130px"><span id="bizStateLbl">State</span><input id="bizState" type="text" maxlength="40" placeholder="TN"></label>
       </div>
       <label class="f">Short description<textarea id="bizDescription" placeholder="What you do, and for whom"></textarea></label>
       <button class="btn primary" id="bizRegBtn">Create my business</button>
@@ -908,7 +910,47 @@ function el(tag, props, ...kids){
 // Leaving out a part of a page (cond ? el(...) : null) must never print the word "null".
 [Element.prototype,DocumentFragment.prototype].forEach(P=>["append","prepend","replaceChildren"].forEach(m=>{ const o=P[m];
   P[m]=function(...k){ return o.apply(this,k.flat().filter(x=>x!=null&&x!==false)); }; }));
-const money = n => { const v=Number(n)||0; return (v<0?"\u2212$":"$") + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+// Where the business is, and the money it works in. Businesses from before this setting are US / US dollars.
+// [name, currency, distance unit]. Numbers are written the local way ("en-IN" → ₹1,23,456.00, "en-DE" → 1.234,56 €).
+const COUNTRIES={US:["United States","USD","mi"],CA:["Canada","CAD","km"],GB:["United Kingdom","GBP","mi"],IE:["Ireland","EUR","km"],
+  AU:["Australia","AUD","km"],NZ:["New Zealand","NZD","km"],IN:["India","INR","km"],
+  AT:["Austria","EUR","km"],BE:["Belgium","EUR","km"],BG:["Bulgaria","EUR","km"],HR:["Croatia","EUR","km"],CY:["Cyprus","EUR","km"],
+  CZ:["Czechia","CZK","km"],DK:["Denmark","DKK","km"],EE:["Estonia","EUR","km"],FI:["Finland","EUR","km"],FR:["France","EUR","km"],
+  DE:["Germany","EUR","km"],GR:["Greece","EUR","km"],HU:["Hungary","HUF","km"],IT:["Italy","EUR","km"],LV:["Latvia","EUR","km"],
+  LT:["Lithuania","EUR","km"],LU:["Luxembourg","EUR","km"],MT:["Malta","EUR","km"],NL:["Netherlands","EUR","km"],NO:["Norway","NOK","km"],
+  PL:["Poland","PLN","km"],PT:["Portugal","EUR","km"],RO:["Romania","RON","km"],SK:["Slovakia","EUR","km"],SI:["Slovenia","EUR","km"],
+  ES:["Spain","EUR","km"],SE:["Sweden","SEK","km"],CH:["Switzerland","CHF","km"]};
+const CURRENCIES=["USD","CAD","GBP","EUR","AUD","NZD","INR","CHF","CZK","DKK","HUF","NOK","PLN","RON","SEK"];
+const bizCountry=()=>{ const c=S.business&&S.business.country; return COUNTRIES[c]?c:"US"; };
+const bizCurrency=()=>{ const c=S.business&&S.business.currency; return CURRENCIES.includes(c)?c:COUNTRIES[bizCountry()][1]; };
+const isUS=()=>bizCountry()==="US";
+const distUnit=()=>COUNTRIES[bizCountry()][2];
+// US: "Sales tax". India, Australia, New Zealand, Canada: "GST". UK and Europe: "VAT".
+const taxName=()=>{ const c=bizCountry(); return c==="US"?"Sales tax":["IN","AU","NZ","CA"].includes(c)?"GST":"VAT"; };
+// A guess for new sign-ups, from the phone or computer's time zone. They can change it.
+function guessCountry(){
+  let tz=""; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||""; }catch(e){}
+  if (/^Asia\/(Kolkata|Calcutta)$/.test(tz)) return "IN";
+  if (/^Australia\//.test(tz)) return "AU";
+  if (/^Pacific\/Auckland$/.test(tz)) return "NZ";
+  const eu={London:"GB",Belfast:"GB",Dublin:"IE",Vienna:"AT",Brussels:"BE",Sofia:"BG",Zagreb:"HR",Nicosia:"CY",Prague:"CZ",Copenhagen:"DK",Tallinn:"EE",
+    Helsinki:"FI",Paris:"FR",Berlin:"DE",Athens:"GR",Budapest:"HU",Rome:"IT",Riga:"LV",Vilnius:"LT",Luxembourg:"LU",Malta:"MT",Amsterdam:"NL",Oslo:"NO",
+    Warsaw:"PL",Lisbon:"PT",Bucharest:"RO",Bratislava:"SK",Ljubljana:"SI",Madrid:"ES",Stockholm:"SE",Zurich:"CH"};
+  const m=tz.match(/^Europe\/(\w+)$/); if (m && eu[m[1]]) return eu[m[1]];
+  if (/^America\/(Toronto|Vancouver|Edmonton|Winnipeg|Halifax|Regina|St_Johns)$/.test(tz)) return "CA";
+  return "US";
+}
+const _mf={};
+function moneyFmt(dp){
+  const c=bizCountry(), cur=bizCurrency(), k=c+cur+dp;
+  if (!_mf[k]){ try { _mf[k]=new Intl.NumberFormat("en-"+c,{style:"currency",currency:cur,minimumFractionDigits:dp,maximumFractionDigits:dp}); }
+    catch(e){ _mf[k]=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:dp,maximumFractionDigits:dp}); } }
+  return _mf[k];
+}
+const money = n => { const v=Number(n)||0; return (v<0?"\u2212":"") + moneyFmt(2).format(Math.abs(v)); };
+const money0 = n => { const v=Number(n)||0; return (v<0?"\u2212":"") + moneyFmt(0).format(Math.abs(v)); };
+// The currency sign on its own, for form labels: "$", "₹", "€" or "£".
+const cs = () => { const p=moneyFmt(0).formatToParts(1).find(x=>x.type==="currency"); return p?p.value:bizCurrency(); };
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const today = () => ymd(new Date());
@@ -1139,9 +1181,9 @@ function drawBanners(){
 
 /* ---- Rewards: members, balances and the points log ---- */
 function rewardsName(){ const b=S.business||{}; return b.rewardsName || ((b.category||"Cleaning")==="Cleaning" ? "Clean Rewards" : "Rewards"); }
-const CLEAN_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
-const GENERAL_TIERS=[{p:100,t:"$10 off next booking"},{p:250,t:"$30 off next booking"},{p:500,t:"20% off a visit"},{p:1000,t:"Free standard visit"}];
-let REWARD_TIERS=CLEAN_TIERS;
+const CLEAN_TIERS=()=>[{p:100,t:money0(10)+" off next booking"},{p:250,t:"Free add-on"},{p:500,t:"20% off a full clean"},{p:1000,t:"Free standard clean"}];
+const GENERAL_TIERS=()=>[{p:100,t:money0(10)+" off next booking"},{p:250,t:money0(30)+" off next booking"},{p:500,t:"20% off a visit"},{p:1000,t:"Free standard visit"}];
+let REWARD_TIERS=CLEAN_TIERS();
 const ledgerMs = r => (r.createdAt && r.createdAt.toMillis ? r.createdAt.toMillis() : (typeof r.createdAt==="number"?r.createdAt:0));
 function addLedger(c, delta, type, reason){
   if (S.demo) return write(()=>Store.set("pointsLedger",newId(),{uid:c.id,businessId:S.businessId,customerName:c.name||"",delta,type,reason,by:S.myEmail,createdAt:Date.now()}),"Points updated");
@@ -1175,7 +1217,7 @@ function viewRewards(){
   frag.append(el("div",{class:"toolbar"},
     el("span",{class:"kv grow"},el("b",{},String(rows.length))," member(s) \u00b7 ",el("b",{},String(total))," points outstanding \u00b7 ",el("b",{},String(ready))," can redeem a reward")));
   const mp=el("div",{class:"panel"}); mp.append(el("h2",{},rewardsName()+" members"));
-  mp.append(el("div",{class:"sub"},"Points are added automatically when a job for a member is marked paid (1 point per $1). Customers see this same log on their website account."));
+  mp.append(el("div",{class:"sub"},"Points are added automatically when a job for a member is marked paid (1 point per "+money0(1)+"). Customers see this same log on their website account."));
   if(!rows.length) mp.append(el("div",{class:"empty"},"No members yet. Customers join from the booking form or their account page."));
   rows.forEach(({c,bal:b})=>{
     const next=REWARD_TIERS.find(t=>t.p>b);
@@ -1590,7 +1632,7 @@ function settingsAccess(){
   return frag;
 }
 function settingsRewards(){
-  const p=setPanel(rewardsName(),"Customers earn 1 point per $1 once a job is marked paid. Points and members are on the Rewards tab.",
+  const p=setPanel(rewardsName(),"Customers earn 1 point per "+money0(1)+" once a job is marked paid. Points and members are on the Rewards tab.",
     ...REWARD_TIERS.map(t=>setRow(t.p+" points",t.t,null)),
     setRow("Members and balances","See who has points and redeem rewards.",el("button",{class:"btn small",onclick:()=>{S.tab="rewards";render();}},"Open Rewards")));
   return p;
@@ -1608,6 +1650,13 @@ function settingsAccount(){
     el("a",{href:"https://www.litamerica.net",target:"_blank",rel:"noopener"},el("b",{},"LIT America"))));
   return frag;
 }
+function countrySelect(sel,onchange){
+  return el("select",{name:"country",id:"bizCountrySel",onchange},Object.entries(COUNTRIES).sort((a,b)=>a[1][0].localeCompare(b[1][0])).map(([k,v])=>el("option",{value:k,selected:k===sel},v[0])));
+}
+function currencyLabel(c){
+  let sym=c; try { const p=new Intl.NumberFormat("en",{style:"currency",currency:c,currencyDisplay:"narrowSymbol"}).formatToParts(1).find(x=>x.type==="currency"); if (p) sym=p.value; } catch(e){}
+  return c+(sym!==c?" ("+sym+")":"");
+}
 function settingsBusiness(){
   const b=S.business;
   const f=el("form",{class:"panel",style:"max-width:720px;"});
@@ -1616,6 +1665,9 @@ function settingsBusiness(){
     el("div",{class:"expform"},
       el("label",{class:"f full"},"Business name",el("input",{name:"name",required:true,maxlength:"120",value:b.name||""})),
       el("label",{class:"f"},"Type of business",el("select",{name:"category",value:CATEGORIES.includes(b.category)?b.category:"Other"},CATEGORIES.map(c=>el("option",{},c)))),
+      el("label",{class:"f"},"Country",countrySelect(bizCountry(),ev=>{ f.querySelector("[name=currency]").value=COUNTRIES[ev.target.value][1]; })),
+      el("label",{class:"f"},"Currency",el("select",{name:"currency"},CURRENCIES.map(c=>el("option",{value:c,selected:c===bizCurrency()},currencyLabel(c))))),
+      el("p",{class:"kv full",style:"margin:-4px 0 0"},"Prices, invoices and reports show in this currency. Changing it doesn't convert amounts you've already entered."),
       el("div",{class:"checks",style:"align-self:end;padding-bottom:9px"},
         el("label",{},el("input",{type:"checkbox",name:"projects",checked:hasProjects()}),"Projects & subcontractors"),
         el("label",{},el("input",{type:"checkbox",name:"rewards",checked:hasRewards()}),"Customer rewards")),
@@ -1626,12 +1678,13 @@ function settingsBusiness(){
     const services=[...new Set(d.services.split("\n").map(x=>x.trim()).filter(Boolean))].slice(0,30);
     const name=d.name.trim(), rn=d.rewardsName.trim();
     const category=CATEGORIES.includes(d.category)?d.category:"Other";
+    const country=COUNTRIES[d.country]?d.country:"US", currency=CURRENCIES.includes(d.currency)?d.currency:COUNTRIES[country][1];
     const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked,rewards:!!f.querySelector("[name=rewards]").checked};
     if(!name) return toast("Enter your business name.");
     if(!services.length) return toast("List at least one service.");
     write(async()=>{
-      await firebase.firestore().doc("businesses/"+S.businessId).update({name,services,category,features,rewardsName:rn||firebase.firestore.FieldValue.delete()});
-      Object.assign(S.business,{name,services,category,features}); if(rn) S.business.rewardsName=rn; else delete S.business.rewardsName;
+      await firebase.firestore().doc("businesses/"+S.businessId).update({name,services,category,country,currency,features,rewardsName:rn||firebase.firestore.FieldValue.delete()});
+      Object.assign(S.business,{name,services,category,country,currency,features}); if(rn) S.business.rewardsName=rn; else delete S.business.rewardsName;
       applyBusinessLists(S.business);
       const h=$("#bizNameHeader"); if(h) h.firstChild.textContent=name; document.title=name;
       render();
@@ -2970,7 +3023,7 @@ function viewBooks(){
   frag.append(bar);
 
   const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&inPeriod(i.issueDate,P)).reduce((n,i)=>n+invTotals(i).tax,0));
-  if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},"Sales tax on invoices in this period: ",el("b",{},money(salesTax)),". It isn't counted as income. Set it aside for the state.")));
+  if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},taxName()+" on invoices in this period: ",el("b",{},money(salesTax)),". It isn't counted as income. "+(isUS()?"Set it aside for the state.":"Set it aside for the tax office."))));
   frag.append(el("div",{class:"sum"},
     el("div",{class:"stat"},el("div",{class:"l"},"Money in (jobs and invoices)"),el("div",{class:"v"},money(inc))),
     el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
@@ -3062,6 +3115,8 @@ function viewBooks(){
 }
 const fileSlug=()=>String((S.business&&S.business.name)||"books").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 // A printable expense report for the period: totals, expenses by category, then every expense and income line.
+// The PDF's built-in font only has Western European letters, so swap anything else for plain text.
+function pdfSafe(t){ return String(t).replace(/\u2212/g,"-").replace(/\u20B9\s?/g,"Rs ").replace(/\u00A0|\u202F/g," ").replace(/[^\x00-\xFF\u20AC]/g,""); }
 function expenseReportPdf(){
   if (!window.jspdf){ toast("Couldn't make the PDF. Check your connection and try again."); return; }
   const P=booksPeriod(), {income,exp}=monthRows();
@@ -3069,7 +3124,7 @@ function expenseReportPdf(){
   const { jsPDF }=window.jspdf, pdf=new jsPDF({unit:"pt",format:"letter"});
   const W=612, L=48, R=W-48, B=742; let y=56;
   const ensure=h=>{ if (y+h>B){ pdf.addPage(); y=56; } };
-  const clean=t=>String(t).replace(/\u2212/g,"-");   // the PDF font has no "−" sign
+  const clean=t=>pdfSafe(t);   // the PDF font has no "−" or "₹" sign
   const text=(t,x,o)=>pdf.text(clean(t),x,y,o||{});
   const head=t=>{ ensure(40); y+=10; pdf.setFont("helvetica","bold"); pdf.setFontSize(13); text(t,L); y+=8; pdf.setDrawColor(220); pdf.line(L,y,R,y); y+=16; pdf.setFontSize(10); pdf.setFont("helvetica","normal"); };
   pdf.setFont("helvetica","bold"); pdf.setFontSize(18); text((S.business&&S.business.name)||"Books",L); y+=20;
@@ -3158,7 +3213,7 @@ function laborFor(j){
     else if (r.payType==="percent"){ amt=(Number(j.price)||0)/n*rate/100; how=rate+"% of their share"; }
     else if (r.payType==="day"){ amt=rate; how="Day rate"; }
     else how="Paid by "+((PAY_TYPES.find(t=>t.id===r.payType)||{}).label||"another rule").toLowerCase()+", not per job";
-    if (amt && r.cls==="w2"){ amt*=1.0765; how+=" + employer taxes"; }
+    if (amt && r.cls==="w2" && isUS()){ amt*=1.0765; how+=" + employer taxes"; }
     return {e,amt:r2(amt),how};
   });
 }
@@ -3235,7 +3290,7 @@ function openCosts(j){
     coWrap,
     el("label",{class:"f full"},"What was it",el("input",{name:"desc",placeholder:hasProjects()?"2x4s and deck screws, Lowe’s":"Degreaser and microfiber cloths",autocomplete:"off"})),
     el("label",{class:"f"},"Quantity",el("input",{name:"qty",type:"number",min:"0",step:"any",inputmode:"decimal",value:"1"})),
-    el("label",{class:"f"},"Cost each $",el("input",{name:"unitCost",type:"number",min:"0",step:"0.01",inputmode:"decimal",placeholder:"0.00"})),
+    el("label",{class:"f"},"Cost each "+cs(),el("input",{name:"unitCost",type:"number",min:"0",step:"0.01",inputmode:"decimal",placeholder:"0.00"})),
     billWrap,
     el("div",{class:"full"},el("button",{type:"button",class:"btn primary",onclick:()=>{
       const g=n=>add.querySelector("[name="+n+"]");
@@ -3346,7 +3401,7 @@ const invUrl = inv => ((location.protocol.startsWith("http") && !isNative()) ? l
 function randomKey(){ const b=new Uint8Array(18); crypto.getRandomValues(b); return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }
 // What the client sees, kept in a separate record that anyone with the link can open.
 // "Sales tax (9.75%)", or "Sales tax (9.75% on $312.50)" when only some lines are taxed.
-function taxLabel(rate,base,net){ return "Sales tax ("+rate+"%"+(base!=null && Math.abs((Number(net)||0)-(Number(base)||0))>0.004 ? " on "+money(base) : "")+")"; }
+function taxLabel(rate,base,net){ return taxName()+" ("+rate+"%"+(base!=null && Math.abs((Number(net)||0)-(Number(base)||0))>0.004 ? " on "+money(base) : "")+")"; }
 function publicCopy(inv){
   const t=invTotals(inv), st=invSettings(), b=S.business||{};
   return {businessId:S.businessId,invoiceId:inv.id,number:inv.number,kind:inv.kind||"standard",
@@ -3358,6 +3413,7 @@ function publicCopy(inv){
     subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,taxBase:t.subtotal?Math.round(t.taxable*(1-t.discount/t.subtotal)*100)/100:0,total:t.total,credit:t.credit,
     retainagePct:inv.kind==="deposit"?0:Number(inv.retainagePct)||0,held:t.held,dueNow:t.dueNow,paid:t.paid,balance:t.balance,dueNowBal:t.dueNowBal,
     status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
+    country:bizCountry(),currency:bizCurrency(),taxName:taxName(),
     viewedAt:(pubFor(inv)||{}).viewedAt||null,updatedAt:Date.now()};
 }
 async function saveInvoice(inv){
@@ -3532,10 +3588,10 @@ function invoiceEditor(d){
   // Adjustments and totals
   const dep=d.kind==="deposit"?0:depositsAvailable(d.client.name,d.projectId,d.id);
   const adj=el("div",{class:"expform",style:"margin-top:14px"},
-    inp("Discount $","discount",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
-    inp("Sales tax %","taxRate",{type:"number",min:"0",step:"0.001",inputmode:"decimal"}),
+    inp("Discount "+cs(),"discount",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
+    inp(taxName()+" %","taxRate",{type:"number",min:"0",step:"0.001",inputmode:"decimal"}),
     d.kind!=="deposit"&&(hasProjects()||Number(d.retainagePct))?inp("Retainage %","retainagePct",{type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",title:"Held back until the work is accepted"}):null,
-    d.kind!=="deposit"&&(dep>0||Number(d.depositApplied))?el("div",{},inp("Deposit to take off $","depositApplied",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
+    d.kind!=="deposit"&&(dep>0||Number(d.depositApplied))?el("div",{},inp("Deposit to take off "+cs(),"depositApplied",{type:"number",min:"0",step:"0.01",inputmode:"decimal"}),
       el("div",{class:"kv",style:"margin-top:4px"},money(dep)+" in paid deposits available. ",dep>0?el("a",{href:"#",onclick:ev=>{ev.preventDefault(); d.depositApplied=Math.min(dep,invTotals({...d,depositApplied:0}).total); invoiceEditor(d);}},"Use it"):null)):null);
   const tot=el("div",{class:"stub invtot"});
   // Deposits change what's due, so offer them up front rather than hiding them.
@@ -3557,7 +3613,7 @@ function invoiceEditor(d){
       "Email a friendly reminder if it's overdue (every 3 days, up to 3 times)"));
   body.append(...[tot, depHint, more].filter(Boolean));
   // Typing a tax rate shows or hides the Tax column, so redraw once the field is left.
-  adj.querySelectorAll("input").forEach(x=>x.addEventListener("change",()=>{ if (x.closest("label")&&/Sales tax/.test(x.closest("label").textContent)) invoiceEditor(d); }));
+  adj.querySelectorAll("input").forEach(x=>x.addEventListener("change",()=>{ if (x.closest("label")&&x.name==="taxRate") invoiceEditor(d); }));
   function upd(){
     const term=(INV_TERMS.find(x=>x[0]===d.terms)||INV_TERMS[0])[1];
     moreSum.textContent=" · "+[term, d.dueDate&&d.terms!=="receipt"?"due "+niceDate(d.dueDate):null, Number(d.taxRate)?"tax "+d.taxRate+"%":null,
@@ -3628,7 +3684,7 @@ function invoiceDetail(d){
   const lines=el("div",{class:"stub",style:"max-width:none"});
   (d.lines||[]).forEach(l=>lines.append(el("div",{},el("span",{},(l.desc||"")+((Number(l.qty)||1)!==1?" ("+l.qty+" × "+money(l.unitPrice)+")":"")),el("b",{},money(invLineAmt(l))))));
   if (t.discount) lines.append(el("div",{},el("span",{},"Discount"),el("b",{},"−"+money(t.discount))));
-  if (t.tax) lines.append(el("div",{},el("span",{},"Sales tax"),el("b",{},money(t.tax))));
+  if (t.tax) lines.append(el("div",{},el("span",{},taxName()),el("b",{},money(t.tax))));
   lines.append(el("div",{class:"t"},el("span",{},"Total"),el("b",{},money(t.total))));
   body.append(lines);
   if (d.lastEmailAt||d.sentAt) body.append(el("p",{class:"kv",style:"margin:10px 0 0"},d.lastEmailAt?"Last emailed "+new Date(d.lastEmailAt).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})+". ":"",
@@ -3792,7 +3848,7 @@ function invDocBuild(p,h){
   // notes + totals
   const T=el("div",{class:"iv-tot"}); const L=(a,v,cl)=>T.append(el("div",{class:cl||""},el("span",{},a),el("b",{},v)));
   L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount));
-  if (p.tax) L("Sales tax ("+p.taxRate+"%"+(p.taxBase!=null&&Math.abs((p.subtotal-(p.discount||0))-p.taxBase)>0.004?" on "+money(p.taxBase):"")+")",money(p.tax));
+  if (p.tax) L((p.taxName||"Sales tax")+" ("+p.taxRate+"%"+(p.taxBase!=null&&Math.abs((p.subtotal-(p.discount||0))-p.taxBase)>0.004?" on "+money(p.taxBase):"")+")",money(p.tax));
   L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
   if (p.paid) L("Payments received","−"+money(p.paid));
   L(voided?"Amount due":paid?"Balance due":"Amount due",money(paid||voided?0:p.dueNowBal),"due");
@@ -3887,7 +3943,7 @@ function settingsInvoices(){
       el("label",{class:"f"},"Email on invoices (client replies go here)",el("input",{name:"email",type:"email",value:st.email})),
       el("label",{class:"f"},"Phone on invoices",el("input",{name:"phone",type:"tel",value:st.phone})),
       el("label",{class:"f"},"Usual payment terms",el("select",{name:"terms"},INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===st.terms},l)))),
-      el("label",{class:"f"},"Sales tax % (on taxable lines)",el("input",{name:"taxRate",type:"number",min:"0",step:"0.001",inputmode:"decimal",value:String(st.taxRate||0)})),
+      el("label",{class:"f"},taxName()+" % (on taxable lines)",el("input",{name:"taxRate",type:"number",min:"0",step:"0.001",inputmode:"decimal",value:String(st.taxRate||0)})),
       el("label",{class:"f"},"Markup on billed materials %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(st.markup||0)})),
       hasProjects()?el("label",{class:"f"},"Retainage on project invoices %",el("input",{name:"retainage",type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",value:String(st.retainage||0)})):null,
       el("label",{class:"f full"},"Online payment link (optional)",el("input",{name:"payLink",type:"url",value:st.payLink,placeholder:"Your Stripe, Square or PayPal payment link"})),
@@ -3914,24 +3970,24 @@ function settingsInvoices(){
    Works out each person's pay for a period from the jobs they finished and the pay rule the owner set.
    DayZift never moves money or files taxes; it gives the owner the breakdown to pay from. */
 const PAY_TYPES=[
-  {id:"hourly",label:"Hourly",unit:"Hours",rateLabel:"$ per hour"},
-  {id:"perjob",label:"Per job",unit:"Jobs",rateLabel:"$ per job"},
-  {id:"percent",label:"% of job price",unit:"Job revenue $",rateLabel:"Crew share %"},
-  {id:"day",label:"Day rate",unit:"Days",rateLabel:"$ per day"},
-  {id:"piece",label:"Piece rate",unit:"Units",rateLabel:"$ per unit"},
-  {id:"salary",label:"Salary / flat per period",unit:null,rateLabel:"$ per pay period"}
+  {id:"hourly",label:"Hourly",unit:"Hours",get rateLabel(){ return cs()+" per hour"; }},
+  {id:"perjob",label:"Per job",unit:"Jobs",get rateLabel(){ return cs()+" per job"; }},
+  {id:"percent",label:"% of job price",get unit(){ return "Job revenue "+cs(); },rateLabel:"Crew share %"},
+  {id:"day",label:"Day rate",unit:"Days",get rateLabel(){ return cs()+" per day"; }},
+  {id:"piece",label:"Piece rate",unit:"Units",get rateLabel(){ return cs()+" per unit"; }},
+  {id:"salary",label:"Salary / flat per period",unit:null,get rateLabel(){ return cs()+" per pay period"; }}
 ];
 const TAX={ssRate:6.2,ssBase:184500,medRate:1.45,addlMedOver:200000,addlMedRate:0.9,futaRate:0.6,futaBase:7000,necThreshold:2000};
 const r2=n=>Math.round((Number(n)||0)*100)/100;
 function sutaRate(){ return Number(S.business&&S.business.sutaRate)>=0 && S.business.sutaRate!=null ? Number(S.business.sutaRate) : 2.7; }
 function sutaBase(){ return Number(S.business&&S.business.sutaBase)||7000; }
-function mileageRate(){ return Number(S.business&&S.business.mileageRate)||0.70; }
+function mileageRate(){ return Number(S.business&&S.business.mileageRate)||(isUS()?0.70:0); }
 function payRateFor(empId){ return S.payRates.find(r=>r.id===empId)||null; }
 function payRuleText(r){
   if (!r) return "No pay rule yet";
   const t=PAY_TYPES.find(x=>x.id===r.payType)||PAY_TYPES[0];
-  const amt = t.id==="percent" ? (Number(r.rate)||0)+"% of job price" : money(r.rate)+(t.id==="salary"?" per period":" "+t.rateLabel.replace("$ ",""));
-  return (r.cls==="1099"?"1099 contractor":"W-2 employee")+" · "+amt;
+  const amt = t.id==="percent" ? (Number(r.rate)||0)+"% of job price" : money(r.rate)+(t.id==="salary"?" per period":" "+t.rateLabel.replace(cs()+" ",""));
+  return (isUS()?(r.cls==="1099"?"1099 contractor":"W-2 employee"):(r.cls==="1099"?"Contractor":"Employee"))+" · "+amt;
 }
 // What the board says each person did in the period.
 /* Overtime (federal FLSA rule): hours over 40 in a WORKWEEK, a fixed 7-day stretch that starts on the business's
@@ -4043,17 +4099,18 @@ function calcPay(e,start,end){
   const has=v=>v!=null&&v!=="";
   const qty = has(ed.qty) ? Number(ed.qty)||0 : auto;
   // W-2 hourly crew get time and a half for hours over 40 in a workweek.
-  const autoOt = (cls==="w2" && t.id==="hourly") ? Math.min(qty,hSrc.ot) : 0;
-  const otHours = (cls==="w2" && t.id==="hourly") ? (has(ed.ot) ? Math.min(qty,Number(ed.ot)||0) : autoOt) : 0;
+  const autoOt = (cls==="w2" && t.id==="hourly" && isUS()) ? Math.min(qty,hSrc.ot) : 0;
+  const otHours = (cls==="w2" && t.id==="hourly" && isUS()) ? (has(ed.ot) ? Math.min(qty,Number(ed.ot)||0) : autoOt) : 0;
   let base = t.id==="percent" ? qty*rate/100 : t.id==="salary" ? rate : qty*rate;
   const otPremium = otHours*rate*0.5;
   const tips=Number(ed.tips)||0, bonus=Number(ed.bonus)||0, miles=Number(ed.miles)||0;
   const wages=r2(base+otPremium+tips+bonus), reimb=r2(miles*mileageRate());
   const ytd=ytdBefore(e.id,start), other=r2(ed.deduct);
   const out={e,r,t,w,ck,src,cls,qty,auto,otHours,autoOt,wages,reimb,ytd,other,tips,bonus,miles,ed};
-  if (cls==="1099"){
+  // Outside the US, DayZift doesn't work out payroll taxes: pay is gross, less any deductions the owner enters.
+  if (cls==="1099" || !isUS()){
     const paid=r2(wages+reimb);
-    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,fitHow:"none",ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:ytd+paid>=TAX.necThreshold};
+    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,fitHow:"none",ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:isUS()&&ytd+paid>=TAX.necThreshold};
   }
   const ssBase=Math.max(0,Math.min(wages,TAX.ssBase-ytd));
   const ssEe=r2(ssBase*TAX.ssRate/100), ssEr=ssEe;
@@ -4079,7 +4136,7 @@ function payIssues(x){
     out.push({key:"shift:"+sh.id,shift:sh,blocking:!rv,reviewed:rv,
       text:"No clock-out on "+niceDate(ymd(d))+" (clocked in "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})+")"+(rv?" · left out"+(rv.note?": "+rv.note:"")+" by "+rv.by:" · these hours aren't counted"),act:"shift"});
   });
-  if (x.cls==="w2" && x.r && fitMode()==="calc" && !x.w4){
+  if (x.cls==="w2" && isUS() && x.r && fitMode()==="calc" && !x.w4){
     const rv=(run.w4ok||{})[x.e.id];
     out.push({key:"w4",blocking:!rv,reviewed:rv,text:rv?"No W-4 on file · withholding as Single with no adjustments (IRS default), OK'd by "+rv.by:"No W-4 on file · federal tax would be withheld as Single with no adjustments (the IRS default)",act:"w4"});
   }
@@ -4118,8 +4175,8 @@ function openPaySched(){
     el("label",{class:"f"},"Pay period starts on",el("select",{name:"dow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:ps.startDow===d},DOW_SHORT[d])))),
     el("p",{class:"kv full",style:"margin:0"},"Payroll and the timesheet open on your pay period automatically. For every 2 weeks, the current period starts this week."),
     el("label",{class:"f"},"Overtime workweek starts on",el("select",{name:"wwdow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:workweekDow()===d},DOW_SHORT[d])))),
-    el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"DayZift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))),
-    el("p",{class:"kv full",style:"margin:0"},"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week."),
+    isUS()?el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"DayZift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))):el("input",{type:"hidden",name:"fit",value:fitMode()}),
+    el("p",{class:"kv full",style:"margin:0"},isUS()?"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week.":"The workweek is a fixed 7 days. It can differ from the pay period; keep it the same every week. Overtime isn't added automatically outside the US; add it as a bonus if you pay it."),
     el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),el("button",{type:"submit",class:"btn primary"},"Save")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
     const startDow=Number(d.dow), every=d.every==="2"?2:1, t=new Date(); t.setDate(t.getDate()-((t.getDay()-startDow+7)%7));
@@ -4279,7 +4336,8 @@ const nextBtn=(i,label,dis)=>el("button",{class:"btn primary",disabled:!!dis,onc
 function prStep1(st){
   const box=document.createDocumentFragment(), {rows,paidIds}=st;
   const ww=workweekDow(), ps=paySched();
-  box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek. Your workweek runs "+DOW_SHORT[ww]+" to "+DOW_SHORT[(ww+6)%7]+
+  if (!isUS()) box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Pay in "+COUNTRIES[bizCountry()][0]+": "),"DayZift adds up hours and pay. It doesn't add overtime or work out taxes outside the US, so enter overtime as a bonus and tax as a deduction, using your accountant's figures."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Pay schedule")));
+  else box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek. Your workweek runs "+DOW_SHORT[ww]+" to "+DOW_SHORT[(ww+6)%7]+
     (ww!==ps.startDow?" (your pay period starts "+DOW_SHORT[ps.startDow]+", so a workweek can cross two pay periods; overtime is counted on the whole workweek)":"")+
     ". Some states add daily overtime; DayZift doesn't, so adjust Overtime hours if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
   const tbl=el("table",{class:"ptable"});
@@ -4347,9 +4405,9 @@ function prHoursDetail(x,paid){
   if (!paid){
     const inputs=el("div",{class:"expform"});
     if (t.unit) inputs.append(prNum(t.unit+(ed.qty!=null&&ed.qty!==""?" (changed from "+x.auto+")":""),ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>prSet(e.id,"qty",v===""?null:v,t.unit)));
-    if (x.cls==="w2"&&t.id==="hourly") inputs.append(prNum("Overtime hours"+(ed.ot!=null&&ed.ot!==""?" (changed from "+x.autoOt+")":""),ed.ot!=null&&ed.ot!==""?ed.ot:x.autoOt,v=>prSet(e.id,"ot",v===""?null:v,"Overtime hours")));
-    inputs.append(prNum("Tips $",ed.tips,v=>prSet(e.id,"tips",v,"Tips")), prNum("Bonus $",ed.bonus,v=>prSet(e.id,"bonus",v,"Bonus")),
-      prNum("Miles driven",ed.miles,v=>prSet(e.id,"miles",v,"Miles")), prNum("Advances / deductions $",ed.deduct,v=>prSet(e.id,"deduct",v,"Deductions")));
+    if (x.cls==="w2"&&isUS()&&t.id==="hourly") inputs.append(prNum("Overtime hours"+(ed.ot!=null&&ed.ot!==""?" (changed from "+x.autoOt+")":""),ed.ot!=null&&ed.ot!==""?ed.ot:x.autoOt,v=>prSet(e.id,"ot",v===""?null:v,"Overtime hours")));
+    inputs.append(prNum("Tips "+cs(),ed.tips,v=>prSet(e.id,"tips",v,"Tips")), prNum("Bonus "+cs(),ed.bonus,v=>prSet(e.id,"bonus",v,"Bonus")),
+      prNum(distUnit()==="mi"?"Miles driven":"Kilometres driven",ed.miles,v=>prSet(e.id,"miles",v,"Distance")), prNum("Advances / deductions "+cs(),ed.deduct,v=>prSet(e.id,"deduct",v,"Deductions")));
     box.append(inputs);
     box.append(el("div",{class:"acts"},el("span",{class:"kv grow"},x.hoursOk?"Approved by "+x.hoursOk.by+" "+ago(x.hoursOk.at)+". Changing anything above un-approves it.":""),
       el("button",{class:"btn small ghost",onclick:()=>goTab("timesheet")},"Timesheet"),
@@ -4378,9 +4436,9 @@ function prStep2(st){
     const e=x.e, isOpen=!!(S.pr.open2||{})[e.id], toggle=()=>{ (S.pr.open2 ||= {})[e.id]=!isOpen; render(); };
     const inRun=x.hoursOk||paidIds.has(e.id);
     tb.append(el("tr",{class:"prow"+(isOpen?" open":"")+(inRun?"":" muted"),onclick:toggle},
-      el("td",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},inRun?(x.cls==="1099"?"1099 · no withholding":"W-2"):"Hours not approved yet")),
+      el("td",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},inRun?(!isUS()?(x.cls==="1099"?"Contractor":"Employee"):x.cls==="1099"?"1099 · no withholding":"W-2"):"Hours not approved yet")),
       el("td",{class:"num"},money(x.paid)),
-      el("td",{class:"num hide-sm"},x.cls==="w2"?money(r2(x.ssEe+x.medEe+x.fit))+(x.fitHow==="provider"?" + fed. by provider":""):"—"),
+      el("td",{class:"num hide-sm"},x.cls==="w2"&&isUS()?money(r2(x.ssEe+x.medEe+x.fit))+(x.fitHow==="provider"?" + fed. by provider":""):"—"),
       el("td",{class:"num hide-sm"},x.other?money(x.other):"—"),
       el("td",{class:"num"},el("b",{},money(x.net))),
       el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
@@ -4404,15 +4462,16 @@ function prStub(x,paid){
   if (x.tips) stub.append(L("Tips",money(x.tips)));
   if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
   stub.append(L("Gross pay",money(x.paid),"t"));
-  if (cls==="w2"){
+  if (cls==="w2"&&isUS()){
     stub.append(L("Social Security (6.2%)","−"+money(x.ssEe)),L("Medicare (1.45%)","−"+money(x.medEe)));
     stub.append(L("Federal income tax"+(x.fitHow==="entered"?" (entered)":x.fitHow==="provider"?" (by provider)":x.fitHow==="default"?" (no W-4: IRS default)":" (from W-4)"),x.fitHow==="provider"?"not entered":"−"+money(x.fit)));
   }
   if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
-  if (x.reimb) stub.append(L("Mileage ("+x.miles+" mi, not taxed)","+"+money(x.reimb)));
-  stub.append(L(cls==="w2"?"Estimated take-home pay":"Estimated pay this period",money(x.net),"t"));
+  if (x.reimb) stub.append(L("Mileage ("+x.miles+" "+distUnit()+(isUS()?", not taxed":"")+")","+"+money(x.reimb)));
+  stub.append(L(cls==="w2"&&isUS()?"Estimated take-home pay":"Estimated pay this period",money(x.net),"t"));
   const side=el("div",{class:"pdbox"});
-  if (cls==="w2"){
+  if (!isUS()) side.append(el("div",{class:"kv"},"No taxes are worked out here. DayZift only calculates US payroll taxes, so take off any tax or other deductions under Advances / deductions, or use your accountant's figures."));
+  else if (cls==="w2"){
     const w4=x.w4;
     side.append(el("div",{},el("b",{},"W-4: "),w4?W4_STATUS[w4.status]+(w4.step2?" · Step 2 checked":"")+(Number(w4.dependents)?" · credits "+money(w4.dependents):"")+(Number(w4.extra)?" · extra "+money(w4.extra)+"/period":""):"none on file (IRS default: Single, no adjustments)",
       " ",el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPayRate(e);}},w4?"Edit":"Enter W-4")));
@@ -4481,7 +4540,7 @@ function prStep4(st){
   const checks=left.map(s=>{ const x=rows.find(y=>y.e.id===s.empId); const bad=!x||x.blocked;
     return el("div",{class:"row",style:"gap:8px;padding:6px 0;border-top:1px solid var(--line);flex-wrap:nowrap"},el("input",{type:"checkbox",name:"who",value:s.empId,checked:!bad&&pf.who[s.empId]!==false,disabled:bad,style:"width:auto","aria-label":"Paid "+s.name}),
       el("span",{class:"grow"},el("b",{},s.name),bad?el("span",{class:"pill bad",style:"margin-left:6px"},"Needs attention"):null,el("div",{class:"kv",style:"font-size:12px"},"Estimate "+money(s.net))),
-      el("label",{class:"kv",style:"display:flex;align-items:center;gap:6px"},"Actually paid $",el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",name:"amt_"+s.empId,value:pf.amt[s.empId]!=null?pf.amt[s.empId]:s.net.toFixed(2),disabled:bad,style:"width:110px"}))); });
+      el("label",{class:"kv",style:"display:flex;align-items:center;gap:6px"},"Actually paid "+cs(),el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",name:"amt_"+s.empId,value:pf.amt[s.empId]!=null?pf.amt[s.empId]:s.net.toFixed(2),disabled:bad,style:"width:110px"}))); });
   const sumBox=el("div",{class:"confirmbox"});
   const confirmBox=el("input",{type:"checkbox",name:"ok",checked:!!pf.ok,style:"width:auto"});
   const actual=id=>{ const v=f.querySelector("[name=amt_"+id+"]"); return r2(v?String(v.value).replace(/[^\d.]/g,""):0); };
@@ -4569,11 +4628,17 @@ function prHistory(run){
 // Once a year: 1099 totals and the tax rates used. Folded away the rest of the time.
 function yearEndPanel(start){
   const yr=start.slice(0,4);
+  if (!isUS()){
+    const d=el("details",{class:"panel",style:"margin-top:18px"},el("summary",{style:"cursor:pointer;font-weight:800"},"Rates ("+yr+")"));
+    d.append(el("div",{class:"expform",style:"margin-top:8px"},prNum("Mileage rate "+cs()+" per "+distUnit(),mileageRate(),v=>saveBizNum("mileageRate",v))),
+      el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"DayZift works out US payroll taxes only. In "+COUNTRIES[bizCountry()][0]+", use your accountant's or payroll provider's figures for tax and other deductions."));
+    return d;
+  }
   const d=el("details",{class:"panel",style:"margin-top:18px"},el("summary",{style:"cursor:pointer;font-weight:800"},"Year-end & taxes ("+yr+")"));
   const cons=S.employees.filter(e=>(payRateFor(e.id)||{}).cls==="1099");
   const yearEnd=yr+"-12-32";   // sorts after every date in the year, so all recorded runs count
   d.append(el("h3",{style:"margin:14px 0 4px;font-size:16px"},"1099s"),
-    el("div",{class:"sub"},"A tracking aid: contractors paid $"+TAX.necThreshold.toLocaleString()+" or more in "+yr+" generally need a 1099-NEC by January 31. Totals come from pay you recorded as paid. DayZift doesn't prepare or file 1099s or any other tax forms; use these totals with your accountant or filing service."));
+    el("div",{class:"sub"},"A tracking aid: contractors paid "+money0(TAX.necThreshold)+" or more in "+yr+" generally need a 1099-NEC by January 31. Totals come from pay you recorded as paid. DayZift doesn't prepare or file 1099s or any other tax forms; use these totals with your accountant or filing service."));
   const co=S.companies.map(c=>({name:c.name,w9:c.w9,paid:S.expenses.filter(x=>x.companyId===c.id&&(x.date||"").startsWith(yr)).reduce((n,x)=>n+(Number(x.amount)||0),0)}));
   const list=[...cons.map(e=>({name:e.name,w9:(payRateFor(e.id)||{}).w9,paid:ytdBefore(e.id,yearEnd)})),...co];
   if (!list.length) d.append(el("div",{class:"empty"},"No 1099 contractors or subs yet."));
@@ -4581,12 +4646,12 @@ function yearEndPanel(start){
     el("div",{class:"sinfo"},el("b",{},c.name),el("span",{class:"kv"},"Paid "+money(c.paid)+" so far")),
     el("div",{class:"row",style:"gap:6px"},
       el("span",{class:"pill "+(c.w9?"ok":"bad")},c.w9?"W-9 on file":"Collect W-9"),
-      el("span",{class:"pill "+(c.paid>=TAX.necThreshold?"warn":"")},c.paid>=TAX.necThreshold?"1099-NEC needed":"Under $"+TAX.necThreshold.toLocaleString())))));
+      el("span",{class:"pill "+(c.paid>=TAX.necThreshold?"warn":"")},c.paid>=TAX.necThreshold?"1099-NEC needed":"Under "+money0(TAX.necThreshold))))));
   d.append(el("h3",{style:"margin:18px 0 4px;font-size:16px"},"Tax assumptions"),
     el("div",{class:"expform",style:"margin-top:8px"},
       prNum("State unemployment (SUTA) %",sutaRate(),v=>saveBizNum("sutaRate",v)),
-      prNum("SUTA wage base $",sutaBase(),v=>saveBizNum("sutaBase",v)),
-      prNum("Mileage rate $ per mile",mileageRate(),v=>saveBizNum("mileageRate",v))),
+      prNum("SUTA wage base "+cs(),sutaBase(),v=>saveBizNum("sutaBase",v)),
+      prNum("Mileage rate "+cs()+" per mile",mileageRate(),v=>saveBizNum("mileageRate",v))),
     el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"2026 federal figures: Social Security 6.2% on wages up to $184,500, Medicare 1.45% with no cap (plus 0.9% on an employee's wages over $200,000), FUTA 0.6% on the first $7,000. Federal income tax: IRS Publication 15-T (2026) percentage method from each W-4, or your provider's amounts (see Payroll settings). Use the SUTA rate on your state unemployment notice. Tennessee has no state income tax on wages; other states' income tax isn't calculated. These are assumptions for estimates, not tax advice."));
   return d;
 }
@@ -4612,7 +4677,7 @@ function openPayRate(e){
   const f=$("#empForm"); f.replaceChildren();
   // Form W-4 (2020 or later), for estimating federal income tax withholding on W-2 employees.
   const w=r.w4||{};
-  const w4Box=el("fieldset",{class:"full",id:"w4Box",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0;display:"+(r.cls==="w2"?"block":"none")},
+  const w4Box=el("fieldset",{class:"full",id:"w4Box",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0;display:"+(r.cls==="w2"&&isUS()?"block":"none")},
     el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Form W-4 (for estimating federal income tax)"),
     el("div",{class:"expform"},
       el("label",{class:"f"},"Step 1(c) filing status",el("select",{name:"w4status"},el("option",{value:""},"No W-4 on file"),...Object.entries(W4_STATUS).map(([k,l])=>el("option",{value:k,selected:w.status===k},l)))),
@@ -4623,7 +4688,7 @@ function openPayRate(e){
       el("label",{class:"f"},"Step 4(c) extra withholding $ (per pay period)",el("input",{name:"w4extra",type:"number",min:"0",step:"0.01",value:w.extra??""}))),
     el("p",{class:"kv",style:"margin:6px 0 0"},"Copy these from the employee's signed W-4. Without one, the IRS says to withhold as Single with no adjustments. DayZift's figure is an estimate; your payroll provider or accountant has the final say."));
   f.append(el("h2",{},"How "+e.name.split(" ")[0]+" is paid"),
-    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"?"block":"none"; }},el("option",{value:"1099"},"1099 contractor"),el("option",{value:"w2"},"W-2 employee"))),
+    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"&&isUS()?"block":"none"; }},el("option",{value:"1099"},isUS()?"1099 contractor":"Contractor"),el("option",{value:"w2"},isUS()?"W-2 employee":"Employee"))),
     el("label",{class:"f"},"Pay type",el("select",{name:"payType",value:r.payType},PAY_TYPES.map(t=>el("option",{value:t.id},t.label)))),
     el("label",{class:"f"},"Rate",el("input",{name:"rate",type:"number",min:"0",step:"0.01",inputmode:"decimal",required:true,value:r.rate??""})),
     el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
@@ -4650,7 +4715,7 @@ function parseYmd(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,
 function weekStart(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; }
 function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return ymd(d); }
 function niceCeil(v){ if(v<=0) return 1; const p=10**Math.floor(Math.log10(v)); const n=v/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
-const shortMoney = n => { const a=Math.abs(n), sg=n<0?"−":""; return sg+"$"+(a>=1000?(a/1000).toFixed(a>=10000?0:1).replace(/\.0$/,"")+"k":Math.round(a)); };
+const shortMoney = n => { const a=Math.abs(n), sg=n<0?"−":""; return sg+cs()+(a>=1000?(a/1000).toFixed(a>=10000?0:1).replace(/\.0$/,"")+"k":Math.round(a)); };
 const doneJobs = () => S.jobs.filter(j=>j.status==="done" && j.date);
 const sum = (arr,f) => arr.reduce((a,x)=>a+(Number(f(x))||0),0);
 function pctChange(cur,prev){ if(!prev) return null; return (cur-prev)/Math.abs(prev)*100; }
@@ -5177,6 +5242,11 @@ function showVerify(user){
 }
 function hideVerify(){ $("#verifyEmail").classList.add("hidden"); }
 function showGate(){ hideVerify(); $("#gate").classList.remove("hidden"); $("#bizOnboard").classList.add("hidden"); $("#pendingApproval").classList.add("hidden"); $("#mainApp").hidden=true; }
+// Country list for the sign-up form, with a guess from the time zone.
+(function(){ const sel=$("#bizCountry"); if (!sel) return; const g=guessCountry();
+  Object.entries(COUNTRIES).sort((a,b)=>a[1][0].localeCompare(b[1][0])).forEach(([k,v])=>{ const o=document.createElement("option"); o.value=k; o.textContent=v[0]; if (k===g) o.selected=true; sel.append(o); });
+  const fix=()=>{ const us=sel.value==="US"; $("#bizStateLbl").textContent=us?"State":"State / region"; $("#bizState").placeholder=us?"TN":""; };
+  sel.addEventListener("change",fix); fix(); })();
 function showBizOnboard(category, bizName, email, phone){
   $("#bizWhoEmail").textContent=S.myEmail||email||"";
   if (CATEGORIES.includes(category)) $("#bizCategory").value=category;
@@ -5326,7 +5396,7 @@ function applyBusinessLists(biz){
   const cat = SERVICE_DEFAULTS[biz.category] ? biz.category : "Cleaning";
   SERVICES = Array.isArray(biz.services) && biz.services.length ? biz.services.slice() : SERVICE_DEFAULTS[cat].slice();
   EXP_CATS[0] = cat==="Cleaning" ? "Cleaning supplies" : "Supplies";
-  REWARD_TIERS = cat==="Cleaning" ? CLEAN_TIERS : GENERAL_TIERS;
+  REWARD_TIERS = cat==="Cleaning" ? CLEAN_TIERS() : GENERAL_TIERS();
   // Trade businesses also log materials, subcontractor payments, permits and rentals.
   const trade = (biz.features && typeof biz.features.projects==="boolean") ? biz.features.projects : TRADE_CATS.includes(biz.category);
   TRADE_EXP_CATS.forEach(c=>{ const i=EXP_CATS.indexOf(c); if (trade && i<0) EXP_CATS.splice(EXP_CATS.length-1,0,c); if (!trade && i>=0) EXP_CATS.splice(i,1); });
@@ -5972,6 +6042,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
   const name=$("#bizName").value.trim(), category=$("#bizCategory").value,
     phone=$("#bizPhone").value.trim(), city=$("#bizCity").value.trim(), state=$("#bizState").value.trim(),
     description=$("#bizDescription").value.trim(), email=$("#bizEmail").value.trim().toLowerCase();
+  const country=COUNTRIES[$("#bizCountry").value]?$("#bizCountry").value:"US", currency=COUNTRIES[country][1];
   if (!name) return bizMsg("Enter your business name.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bizMsg("Enter your business email, so we can reach you about your account.");
   if (!CATEGORIES.includes(category)) return bizMsg("Choose your type of business. It sets up the right tools for your work.");
@@ -5987,7 +6058,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     try { taken = (await db.doc("businesses/"+id0).get()).exists; } catch(e){ taken=true; }   // someone else's business isn't readable
     const id = taken ? (id0+"-"+Date.now().toString(36)) : id0;
     const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
-    const data={name,category,email,phone,phoneNorm:normPhone(phone),city,state,description,
+    const data={name,category,email,phone,phoneNorm:normPhone(phone),city,state,country,currency,description,
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);

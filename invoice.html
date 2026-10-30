@@ -118,7 +118,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Inter","S
 <script>
 (function(){
 const root=document.getElementById("root");
-const money=n=>{ const v=Number(n)||0; return (v<0?"−$":"$")+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+// Amounts show in the business's currency, written the local way (older invoices: US dollars).
+let fmt=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
+function setCurrency(p){ try { if (/^[A-Z]{3}$/.test(p.currency||"")) fmt=new Intl.NumberFormat("en-"+(/^[A-Z]{2}$/.test(p.country||"")?p.country:"US"),{style:"currency",currency:p.currency,minimumFractionDigits:2,maximumFractionDigits:2}); } catch(e){} }
+const money=n=>{ const v=Number(n)||0; return (v<0?"−":"")+fmt.format(Math.abs(v)); };
 const niceDate=s=>{ if(!s) return ""; const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}); };
 function el(tag,props,...kids){ const n=document.createElement(tag);
   for (const [k,v] of Object.entries(props||{})){ if(v==null||v===false) continue; if(k==="class") n.className=v; else if(k.startsWith("on")) n.addEventListener(k.slice(2),v); else n.setAttribute(k,v); }
@@ -133,7 +136,7 @@ const firebaseConfig={apiKey:"AIzaSyDYko5NB-FkjcBpc3fre-3oVbhiF6KKdiw",authDomai
 try { firebase.initializeApp(firebaseConfig); db=firebase.firestore(); } catch(e){ return show("Couldn't load the invoice. Please try again in a moment."); }
 db.doc("publicInvoices/"+key).get().then(snap=>{
   if (!snap.exists) return show("We couldn't find this invoice. It may have been replaced; contact the business for a new link.");
-  const p=snap.data(); render(p);
+  const p=snap.data(); setCurrency(p); render(p);
   // Let the business know their client opened it (once).
   if (!p.viewedAt && p.status!=="void" && !/[?&]preview\b/.test(location.search)) db.doc("publicInvoices/"+key).update({viewedAt:Date.now()}).catch(()=>{});
 }).catch(()=>show("Couldn't load the invoice. Check your connection and try again."));
@@ -186,7 +189,7 @@ function invDocBuild(p,h){
   // notes + totals
   const T=el("div",{class:"iv-tot"}); const L=(a,v,cl)=>T.append(el("div",{class:cl||""},el("span",{},a),el("b",{},v)));
   L("Subtotal",money(p.subtotal)); if (p.discount) L("Discount","−"+money(p.discount));
-  if (p.tax) L("Sales tax ("+p.taxRate+"%"+(p.taxBase!=null&&Math.abs((p.subtotal-(p.discount||0))-p.taxBase)>0.004?" on "+money(p.taxBase):"")+")",money(p.tax));
+  if (p.tax) L((p.taxName||"Sales tax")+" ("+p.taxRate+"%"+(p.taxBase!=null&&Math.abs((p.subtotal-(p.discount||0))-p.taxBase)>0.004?" on "+money(p.taxBase):"")+")",money(p.tax));
   L("Total",money(p.total),"t"); if (p.credit) L("Less deposit received","−"+money(p.credit)); if (p.held) L("Retainage held ("+p.retainagePct+"%)","−"+money(p.held));
   if (p.paid) L("Payments received","−"+money(p.paid));
   L(voided?"Amount due":paid?"Balance due":"Amount due",money(paid||voided?0:p.dueNowBal),"due");
