@@ -626,13 +626,21 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
 .sctl{flex:0 0 auto}
 </style>
-<!-- Google Tag Manager, live dayzift.com only (never the phone app or tests). Tracking is set up in tagmanager.google.com.
-     Every app screen is reported under one fixed name and address, so business names and data never go to Google. -->
+<!-- Google Tag Manager on live dayzift.com and in the Android/iPhone app (never tests). Tracking is set up in tagmanager.google.com.
+     Every app screen is reported under one fixed name and address, so business names and data never go to Google.
+     The phone app reports as dayzift.com/android-app or /ios-app, so it shows apart from the website in Google Analytics. -->
 <script>
 (function(){
   window.track=function(){};
-  if (!/(^|\.)dayzift\.com$/.test(location.hostname)) return;
+  var C=window.Capacitor, plat=(C&&C.isNativePlatform&&C.isNativePlatform()&&C.getPlatform)?C.getPlatform():'';
+  if (!plat && !/(^|\.)dayzift\.com$/.test(location.hostname)) return;
   window.dataLayer=window.dataLayer||[];
+  if (plat) {
+    dataLayer.push({dz_page_title:'DayZift '+(plat==='ios'?'iPhone':'Android')+' app',dz_page_location:'https://dayzift.com/'+plat+'-app'});
+    window.track=function(name,params){ try{ dataLayer.push(Object.assign({event:name,cta:undefined,demo_type:undefined,business_type:undefined,role:undefined,method:undefined},params||{})); }catch(e){} };
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TNF9WLR4');
+    return;
+  }
   var q=new URLSearchParams(location.search), k=new URLSearchParams();
   // Keep only the demo/register flag and campaign tags (utm_*), so ad and post links are credited correctly.
   if (q.get('demo')) k.set('demo',q.get('demo')); else if (q.has('register')) k.set('register','');
