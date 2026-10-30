@@ -155,7 +155,10 @@ function invoiceEmail(p, key, reminder) {
     : [["Invoice", p.number], ["Invoice date", niceDate(p.issueDate)], ["Due", p.terms === "Due on receipt" ? "On receipt" : niceDate(p.dueDate)], ...(Number(p.paid) ? [["Already paid", money(p.paid)]] : [])];
   const lines = (p.lines || []).slice(0, 12).map((l) => `<tr><td style="padding:7px 0;font-size:14px;color:#16202E">${esc(l.desc)}${(Number(l.qty) || 1) !== 1 ? ` <span style="color:#5E6878">× ${esc(l.qty)}</span>` : ""}</td><td style="padding:7px 0;text-align:right;font-size:14px;color:#16202E">${esc(money(l.amount))}</td></tr>`).join("");
   const btnS = (bg, fg, border) => `display:inline-block;background:${bg};color:${fg};padding:12px 22px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;margin:0 8px 8px 0;border:1px solid ${border || bg}`;
-  const pay = !paid && p.payLink && /^https:\/\//i.test(p.payLink) ? `<a href="${esc(p.payLink)}" style="${btnS(ac, "#fff")}">Pay online</a>` : "";
+  // Card payments through Stripe come first when the business has them on; its own payment link is the other option.
+  const cardUrl = !paid && p.cardPay && due > 0 ? `https://us-central1-${PROJECT}.cloudfunctions.net/stripePayInvoice?k=${encodeURIComponent(key)}` : "";
+  const pay = (cardUrl ? `<a href="${esc(cardUrl)}" style="${btnS(ac, "#fff")}">Pay by card</a>` : "")
+    + (!paid && p.payLink && /^https:\/\//i.test(p.payLink) ? `<a href="${esc(p.payLink)}" style="${btnS(cardUrl ? "#fff" : ac, cardUrl ? ac : "#fff", ac)}">${cardUrl ? "Other ways to pay" : "Pay online"}</a>` : "");
   const view = `<a href="${esc(url)}" style="${pay ? btnS("#fff", "#16202E", "#D0D5DD") : btnS(ac, "#fff")}">${paid ? "View receipt" : "View invoice"}</a>`;
   const html = `<div style="background:#EEF1F5;padding:24px 12px;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#16202E">
   <div style="max-width:580px;margin:0 auto;background:#fff;border:1px solid #E4E7EC;border-radius:10px;overflow:hidden">
@@ -185,7 +188,7 @@ function invoiceEmail(p, key, reminder) {
     </div>
     <div style="background:#F5F7FA;border-top:1px solid #E4E7EC;padding:10px;text-align:center;font-size:11px;color:#5E6878">Sent with DayZift for ${esc(b.name)} · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></div>
   </div></div>`;
-  const text = `Hi ${first},\n\n${intro}\n\n${paid ? "View receipt" : "View invoice"}: ${url}\n` + (!paid && p.payLink ? `Pay online: ${p.payLink}\n` : "") + (!paid && p.payNote ? `How to pay: ${p.payNote}\n` : "")
+  const text = `Hi ${first},\n\n${intro}\n\n${paid ? "View receipt" : "View invoice"}: ${url}\n` + (cardUrl ? `Pay by card: ${cardUrl}\n` : "") + (!paid && p.payLink ? `Pay online: ${p.payLink}\n` : "") + (!paid && p.payNote ? `How to pay: ${p.payNote}\n` : "")
     + (ask ? `\nQuestions? Please ${ask}.\n` : "") + `\n${b.name}\nSent with DayZift · A product of LIT America`;
   return { subject, html, text };
 }
@@ -719,5 +722,217 @@ exports.passwordReset = onRequest({ invoker: "public", cors: false, secrets: [SM
     logger.error("Password reset email failed", e);
     await log({ sent: false, why: "error", error: String(e && e.message || e).slice(0, 300) });
     return res.status(502).json({ ok: false, error: "send-failed" });
+  }
+});
+
+// =====================================================================================================
+// Card payments with Stripe Connect.
+//  - Each business links its own Stripe account ("Standard" account: the money and the Stripe dashboard are theirs).
+//  - The client taps "Pay by card" on the invoice → stripePayInvoice makes a Stripe Checkout page on the business's
+//    account for what's due now → Stripe tells stripeWebhook when it's paid → the payment is recorded on the
+//    invoice, the client's invoice page updates, paid-off jobs are marked paid, and the owners get an email.
+//  - Talks to Stripe's API directly (no extra package). Secrets: STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET.
+//  - PLATFORM_FEE_PCT (default 0) is DayZift's share of each payment, if LIT America ever wants one.
+// =====================================================================================================
+const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
+const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
+const PLATFORM_FEE_PCT = defineString("PLATFORM_FEE_PCT", { default: "0" });
+const PAY_URL = `https://us-central1-${PROJECT}.cloudfunctions.net/stripePayInvoice`;
+const APP_ORIGINS = ["https://dayzift.com", "https://www.dayzift.com", "https://localhost", "capacitor://localhost"];
+
+// Stripe wants form-encoded bodies with nested keys: a[b][0][c]=v.
+function stripeForm(obj, prefix, out) {
+  out = out || [];
+  for (const [k, v] of Object.entries(obj || {})) {
+    if (v == null) continue;
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (typeof v === "object") stripeForm(v, key, out);
+    else out.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(v)));
+  }
+  return out.join("&");
+}
+async function stripe(method, path, params, account) {
+  const headers = { Authorization: "Bearer " + STRIPE_SECRET_KEY.value(), "Content-Type": "application/x-www-form-urlencoded" };
+  if (account) headers["Stripe-Account"] = account;
+  const url = "https://api.stripe.com/v1/" + path + (method === "GET" && params ? "?" + stripeForm(params) : "");
+  const r = await fetch(url, { method, headers, body: method === "GET" ? undefined : stripeForm(params) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { const err = new Error((data.error && data.error.message) || ("Stripe error " + r.status)); err.code = data.error && data.error.code; throw err; }
+  return data;
+}
+// Checks the Stripe-Signature header (HMAC-SHA256 of "timestamp.body"), and that it's under 5 minutes old.
+function stripeSigOk(raw, header, secret, nowSec) {
+  const parts = {}; String(header || "").split(",").forEach((p) => { const i = p.indexOf("="); if (i > 0) (parts[p.slice(0, i)] ||= []).push(p.slice(i + 1)); });
+  const t = Number((parts.t || [])[0]); if (!t || !parts.v1) return false;
+  if (Math.abs((nowSec || Date.now() / 1000) - t) > 300) return false;
+  const want = crypto.createHmac("sha256", secret).update(t + "." + raw).digest("hex");
+  return parts.v1.some((s) => s.length === want.length && crypto.timingSafeEqual(Buffer.from(s), Buffer.from(want)));
+}
+// Same arithmetic as the app's invTotals (app.html), so the server and the app agree to the cent.
+const r2s = (n) => Math.round((Number(n) || 0) * 100) / 100;
+function invTotalsSrv(inv) {
+  const lines = inv.lines || [], amt = (l) => r2s((Number(l.qty) || 0) * (Number(l.unitPrice) || 0));
+  const subtotal = r2s(lines.reduce((n, l) => n + amt(l), 0));
+  const discount = Math.max(0, Math.min(subtotal, r2s(inv.discount)));
+  const taxable = r2s(lines.filter((l) => l.taxable).reduce((n, l) => n + amt(l), 0));
+  const tax = r2s((subtotal ? taxable * (1 - discount / subtotal) : 0) * (Number(inv.taxRate) || 0) / 100);
+  const total = r2s(subtotal - discount + tax);
+  const credit = Math.max(0, Math.min(total, r2s(inv.depositApplied)));
+  const owed = r2s(total - credit);
+  const retainage = inv.kind === "deposit" ? 0 : r2s((subtotal - discount) * (Number(inv.retainagePct) || 0) / 100);
+  const held = inv.retainageReleased ? 0 : Math.min(owed, retainage);
+  const dueNow = r2s(owed - held);
+  const paid = r2s((inv.payments || []).reduce((n, p) => n + (Number(p.amount) || 0), 0));
+  return { total, credit, held, dueNow, paid, balance: r2s(owed - paid), dueNowBal: r2s(Math.max(0, dueNow - paid)) };
+}
+// Stripe amounts are in the smallest unit (cents). Hungarian forints must be whole forints.
+const minorUnits = (amount, cur) => (String(cur).toUpperCase() === "HUF" ? Math.round(amount) * 100 : Math.round(amount * 100));
+
+// The signed-in owner of businessId (from the Firebase sign-in token the app sends), or null.
+async function ownerFromRequest(req, bizId) {
+  const m = String(req.get("Authorization") || "").match(/^Bearer (.+)$/);
+  if (!m || !bizId || !/^[A-Za-z0-9_-]{1,120}$/.test(bizId)) return null;
+  let tok; try { tok = await admin.auth().verifyIdToken(m[1]); } catch (e) { return null; }
+  const snap = await admin.firestore().doc("businesses/" + bizId).get();
+  if (!snap.exists) return null;
+  const biz = snap.data(), email = String(tok.email || "").toLowerCase();
+  const isAdmin = adminList().includes(email) && tok.email_verified;
+  if (!(biz.ownerUids || []).includes(tok.uid) && biz.ownerUid !== tok.uid && !isAdmin) return null;
+  return { tok, biz, ref: snap.ref };
+}
+const stripeState = (acct) => ({ accountId: acct.id, chargesEnabled: !!acct.charges_enabled, detailsSubmitted: !!acct.details_submitted, country: acct.country || "", updatedAt: Date.now() });
+
+// The app's "Set up card payments" / "Check status" button. POST {businessId, action: "link" | "status"}.
+exports.stripeConnect = onRequest({ invoker: "public", cors: APP_ORIGINS, secrets: [STRIPE_SECRET_KEY] }, async (req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  const body = typeof req.body === "object" && req.body ? req.body : {};
+  const who = await ownerFromRequest(req, body.businessId);
+  if (!who) return res.status(403).json({ error: "Only an owner of this business can set up card payments." });
+  if (who.biz.status === "pending") return res.status(409).json({ error: "Card payments open up once LIT America has verified your business." });
+  try {
+    let st = who.biz.stripe || {};
+    if (!st.accountId) {
+      const country = /^[A-Z]{2}$/.test(who.biz.country || "") ? who.biz.country : "US";
+      if (country === "IN") return res.status(409).json({ error: "Stripe card payments aren't available for businesses in India yet. Use the online payment link setting for now." });
+      const acct = await stripe("POST", "accounts", {
+        type: "standard", country, email: okEmail(who.tok.email) ? who.tok.email : undefined,
+        business_profile: { name: String(who.biz.name || "").slice(0, 100) || undefined },
+        metadata: { businessId: body.businessId, platform: "DayZift" },
+      });
+      st = stripeState(acct);
+      await who.ref.update({ stripe: st });
+    }
+    if (body.action === "status") {
+      const acct = await stripe("GET", "accounts/" + st.accountId);
+      st = stripeState(acct);
+      await who.ref.update({ stripe: st });
+      return res.json({ ok: true, stripe: st });
+    }
+    const back = "https://dayzift.com/app.html?stripe=";
+    const link = await stripe("POST", "account_links", { account: st.accountId, type: "account_onboarding", refresh_url: back + "retry", return_url: back + "return" });
+    return res.json({ ok: true, url: link.url, stripe: st });
+  } catch (e) {
+    logger.error("Stripe connect failed for " + body.businessId, e);
+    return res.status(502).json({ error: "Stripe said: " + String(e.message || e).slice(0, 200) });
+  }
+});
+
+// "Pay by card" on the invoice page and in the invoice email: GET ?k=<public invoice key> → Stripe Checkout.
+exports.stripePayInvoice = onRequest({ invoker: "public", cors: false, secrets: [STRIPE_SECRET_KEY] }, async (req, res) => {
+  const k = String(req.query.k || "");
+  const back = "https://dayzift.com/invoice.html?k=" + encodeURIComponent(k);
+  const fail = (msg) => res.status(400).set("Content-Type", "text/html; charset=utf-8").send(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:60px auto;padding:0 18px;color:#16202E"><h2>Card payment isn't available</h2><p>${esc(msg)}</p><p><a href="${esc(back)}">Back to the invoice</a></p></body>`);
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(k)) return fail("This payment link isn't complete. Use the link in your invoice email.");
+  try {
+    const db = admin.firestore();
+    const p = (await db.doc("publicInvoices/" + k).get()).data();
+    if (!p) return fail("We couldn't find this invoice.");
+    if (p.status !== "open") return fail(p.status === "paid" ? "This invoice is already paid. Thank you!" : "This invoice was cancelled.");
+    const due = r2s(p.dueNowBal);
+    if (!(due > 0)) return fail("Nothing is due on this invoice right now.");
+    const biz = (await db.doc("businesses/" + p.businessId).get()).data() || {};
+    const st = biz.stripe || {};
+    if (!st.accountId || !st.chargesEnabled || biz.status === "pending") return fail((biz.name || "This business") + " doesn't take card payments online yet. Please use the other payment options on the invoice.");
+    const cur = (/^[A-Z]{3}$/.test(p.currency || "") ? p.currency : "USD").toLowerCase();
+    const amount = minorUnits(due, cur);
+    const fee = Math.floor(amount * Math.max(0, Math.min(10, Number(PLATFORM_FEE_PCT.value()) || 0)) / 100);
+    const meta = { publicKey: k, invoiceId: String(p.invoiceId || ""), businessId: String(p.businessId || ""), number: String(p.number || "") };
+    const session = await stripe("POST", "checkout/sessions", {
+      mode: "payment",
+      line_items: [{ quantity: 1, price_data: { currency: cur, unit_amount: amount,
+        product_data: { name: `Invoice ${p.number || ""} from ${String(biz.name || "").slice(0, 80)}`.trim() } } }],
+      customer_email: p.client && okEmail(p.client.email) ? p.client.email : undefined,
+      payment_intent_data: { description: `Invoice ${p.number || ""}`, metadata: meta, application_fee_amount: fee > 0 ? fee : undefined },
+      metadata: meta,
+      success_url: back + "&paid=1",
+      cancel_url: back,
+    }, st.accountId);
+    return res.redirect(303, session.url);
+  } catch (e) {
+    logger.error("Stripe checkout failed for " + k, e);
+    return fail("Something went wrong starting the card payment. Please try again in a minute.");
+  }
+});
+
+// Adds a Stripe payment to the invoice once (by Checkout session id) and updates everything that depends on it.
+async function recordStripePayment(session, account) {
+  const m = session.metadata || {}, db = admin.firestore();
+  if (!m.invoiceId || !m.businessId || !m.publicKey) return "no invoice in metadata";
+  const biz = (await db.doc("businesses/" + m.businessId).get()).data() || {};
+  if (!biz.stripe || biz.stripe.accountId !== account) return "account doesn't match the business";
+  const cur = String(session.currency || "usd").toUpperCase();
+  const amount = cur === "HUF" ? Math.round(session.amount_total / 100) : r2s(session.amount_total / 100);
+  const invRef = db.doc("invoices/" + m.invoiceId);
+  const out = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(invRef);
+    if (!snap.exists) return { why: "invoice gone" };
+    const inv = snap.data();
+    if (inv.businessId !== m.businessId || inv.publicKey !== m.publicKey) return { why: "invoice doesn't match" };
+    if ((inv.payments || []).some((x) => x.stripeSession === session.id)) return { why: "already recorded" };
+    const pay = { id: "s" + Date.now().toString(36), amount, date: todayCT(), method: "Card (Stripe)", note: "Paid online", at: Date.now(), stripeSession: session.id };
+    const payments = [...(inv.payments || []), pay];
+    const t = invTotalsSrv({ ...inv, payments });
+    tx.update(invRef, { payments, total: t.total, balance: t.balance, dueNowBal: t.dueNowBal, open: inv.status === "sent" && t.balance > 0.004, updatedAt: Date.now() });
+    const pubRef = db.doc("publicInvoices/" + m.publicKey);
+    tx.set(pubRef, { payments: payments.map((x) => ({ date: x.date || "", method: x.method || "", amount: r2s(x.amount) })), paid: t.paid, balance: t.balance, dueNowBal: t.dueNowBal,
+      status: inv.status === "void" ? "void" : t.balance <= 0.004 ? "paid" : "open", updatedAt: Date.now() }, { merge: true });
+    return { inv, t, pay };
+  });
+  if (!out.inv) return out.why;
+  // Paid in full: every job on it is paid (same as recording a payment in the app).
+  if (out.t.balance <= 0.004) for (const id of out.inv.jobIds || []) { try { await db.doc("jobs/" + id).update({ paid: true }); } catch (e) { /* job deleted */ } }
+  try {
+    const to = await ownerEmailsFor(biz);
+    const money = moneyFor({ currency: cur, country: biz.country });
+    const left = out.t.balance > 0.004 ? `${money(out.t.balance)} is still open.` : "It's now paid in full.";
+    const name = (out.inv.client && out.inv.client.name) || "Your client";
+    const html = `<div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;color:#16202E"><div style="height:6px;background:#1F7A69;border-radius:6px 6px 0 0"></div>
+      <div style="border:1px solid #E4E7EC;border-top:0;border-radius:0 0 10px 10px;padding:22px"><h2 style="margin:0 0 8px">${esc(money(amount))} received by card</h2>
+      <p style="margin:0 0 14px;line-height:1.5">${esc(name)} paid invoice <b>${esc(out.inv.number || "")}</b> online. ${esc(left)} The money goes to your Stripe account and then to your bank on Stripe's usual schedule.</p>
+      <a href="${REQUESTS_URL}" style="display:inline-block;background:#1F7A69;color:#fff;padding:10px 18px;border-radius:8px;font-weight:700;text-decoration:none">Open DayZift</a>
+      <p style="margin:18px 0 0;font-size:12px;color:#5E6878">DayZift · A product of <a href="https://www.litamerica.net" style="color:#5E6878">LIT America</a></p></div></div>`;
+    if (to.length) await sendEach(transport(), { from: `DayZift <${SMTP_USER.value()}>`, subject: `${money(amount)} card payment for ${out.inv.number || "an invoice"} from ${name}`, html,
+      text: `${name} paid ${money(amount)} by card on invoice ${out.inv.number || ""}. ${left}\n\nOpen DayZift: ${REQUESTS_URL}` }, to, "Card payment email");
+  } catch (e) { logger.error("Card payment email failed", e); }
+  return "recorded";
+}
+
+// Stripe calls this for events on the businesses' connected accounts.
+exports.stripeWebhook = onRequest({ invoker: "public", cors: false, secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SMTP_PASS] }, async (req, res) => {
+  const raw = req.rawBody ? req.rawBody.toString("utf8") : "";
+  if (!stripeSigOk(raw, req.get("Stripe-Signature"), STRIPE_WEBHOOK_SECRET.value())) return res.status(400).send("bad signature");
+  let ev; try { ev = JSON.parse(raw); } catch (e) { return res.status(400).send("bad json"); }
+  try {
+    const o = ev.data && ev.data.object;
+    if ((ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") && o && o.payment_status === "paid") {
+      logger.info("Stripe payment " + o.id + ": " + await recordStripePayment(o, ev.account));
+    } else if (ev.type === "account.updated" && o && o.id) {
+      const q = await admin.firestore().collection("businesses").where("stripe.accountId", "==", o.id).limit(1).get();
+      if (!q.empty) await q.docs[0].ref.update({ stripe: stripeState(o) });
+    }
+    return res.json({ received: true });
+  } catch (e) {
+    logger.error("Stripe webhook failed (" + ev.type + ")", e);
+    return res.status(500).send("error");   // Stripe tries again later
   }
 });

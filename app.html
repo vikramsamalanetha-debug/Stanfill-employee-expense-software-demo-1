@@ -3454,7 +3454,7 @@ function publicCopy(inv){
     subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,taxBase:t.subtotal?Math.round(t.taxable*(1-t.discount/t.subtotal)*100)/100:0,total:t.total,credit:t.credit,
     retainagePct:inv.kind==="deposit"?0:Number(inv.retainagePct)||0,held:t.held,dueNow:t.dueNow,paid:t.paid,balance:t.balance,dueNowBal:t.dueNowBal,
     status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
-    country:bizCountry(),currency:bizCurrency(),taxName:taxName(),
+    country:bizCountry(),currency:bizCurrency(),taxName:taxName(),cardPay:cardPayOn(),
     viewedAt:(pubFor(inv)||{}).viewedAt||null,updatedAt:Date.now()};
 }
 async function saveInvoice(inv){
@@ -4004,7 +4004,48 @@ function settingsInvoices(){
       // Invoices already sent show the new look, contact details and payment notes too.
       if (bizVerified()) await publishSentInvoices();
       render(); },"Invoice settings saved"); };
-  return f;
+  const fr=document.createDocumentFragment(); fr.append(cardPayPanel(),f); return fr;
+}
+
+// ---- Card payments (Stripe Connect). The business links its own Stripe account; clients pay from the invoice. ----
+const STRIPE_FN="https://us-central1-stanfill-clean-pros.cloudfunctions.net/stripeConnect";
+const cardPayOn=()=>!!(S.business&&S.business.stripe&&S.business.stripe.chargesEnabled);
+async function stripeCall(action){
+  if (S.demo){ toast("In the demo nothing connects. In your business, this opens Stripe to link your account."); return null; }
+  if (!bizVerified()){ toast("Card payments open up once LIT America has verified your business."); return null; }
+  try {
+    const tok=await auth.currentUser.getIdToken();
+    const r=await fetch(STRIPE_FN,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},body:JSON.stringify({businessId:S.businessId,action})});
+    const d=await r.json().catch(()=>({}));
+    if (!r.ok){ toast(d.error||"Couldn't reach Stripe. Try again in a minute."); return null; }
+    if (d.stripe) S.business.stripe=d.stripe;
+    return d;
+  } catch(e){ console.warn(e); toast("Couldn't reach Stripe. Check your connection and try again."); return null; }
+}
+async function stripeOpen(btn){
+  btn.disabled=true; btn.textContent="Opening Stripe\u2026";
+  const d=await stripeCall("link"); btn.disabled=false; render();
+  if (d&&d.url){ if (isNative()) window.open(d.url,"_blank"); else location.href=d.url; }
+}
+async function stripeCheck(quiet){
+  const was=cardPayOn(), d=await stripeCall("status"); if (!d) return;
+  if (cardPayOn() && !was && bizVerified()) await publishSentInvoices();   // open invoices get the Pay by card button
+  if (!quiet || cardPayOn()!==was) toast(cardPayOn()?"Card payments are on. Clients can now pay invoices by card.":"Stripe still needs a few details from you.");
+  render();
+}
+function cardPayPanel(){
+  const st=(S.business&&S.business.stripe)||{};
+  const p=setPanel("Card payments","Let clients pay invoices by card, Apple Pay or Google Pay. The money goes into your own Stripe account and then to your bank. Stripe charges its usual card fee on each payment.");
+  if (cardPayOn()) p.append(
+    setRow("Status",["Clients see a ",el("b",{},"Pay by card")," button on every open invoice and in invoice emails. Card payments are recorded on the invoice automatically."],el("span",{class:"pill ok"},"\u2713 On")),
+    setRow("Your Stripe account","Payouts, refunds and card fees are managed in Stripe.",el("a",{class:"btn small ghost",href:"https://dashboard.stripe.com/",target:"_blank",rel:"noopener"},"Open Stripe")));
+  else if (st.accountId) p.append(
+    setRow("Almost there","Stripe needs a few more details (like your bank account) before you can take cards.",
+      el("div",{class:"row",style:"gap:6px"},el("button",{type:"button",class:"btn small primary",onclick:ev=>stripeOpen(ev.currentTarget)},"Finish in Stripe"),el("button",{type:"button",class:"btn small ghost",onclick:()=>stripeCheck(false)},"Check again"))));
+  else p.append(
+    setRow("Set up card payments","Create a free Stripe account, or sign in to the one you have. It takes about 10 minutes; have your bank details and tax ID handy.",
+      el("button",{type:"button",class:"btn small primary",onclick:ev=>stripeOpen(ev.currentTarget)},"Set up with Stripe")));
+  return p;
 }
 
 /* ---- payroll ----
@@ -5468,6 +5509,9 @@ function enterBusiness(biz, opts){
   Store.mode="db"; Store.db=firebase.firestore();
   subscribeAll();
   S.tab="home"; S.setTab=null; S.pr=null; S.invLook=null;   // every sign-in / client opened starts on Home
+  // Coming back from Stripe's setup pages: show the card payment settings and check what Stripe says.
+  const fromStripe=new URLSearchParams(location.search).get("stripe");
+  if (fromStripe && S.isOwner){ S.tab="settings"; S.setTab="invoices"; history.replaceState(null,"",location.pathname); setTimeout(()=>stripeCheck(false),300); }
   watchBusiness(biz.id, !!opts.adminView);
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
