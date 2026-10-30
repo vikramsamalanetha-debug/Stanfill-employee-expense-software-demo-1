@@ -65,6 +65,15 @@ a{color:var(--primary)}
   #view .sched li>.pill,#view .sched li>.btn{grid-column:2;justify-self:start}
   .toast{bottom:calc(92px + env(safe-area-inset-bottom))!important}
   #mainApp{padding-bottom:88px}
+  /* Phone: one slim line on top (business name + main button). Email and Sign out live in Settings → Account. */
+  .top{flex-wrap:nowrap;align-items:center;gap:10px;margin-bottom:12px}
+  .top .brand{min-width:0;flex:1}
+  .brand h1{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand h1 .sparkle{display:none}
+  #appTagline{display:none}
+  .whoami{flex-wrap:nowrap;gap:6px}
+  .whoami>.kv,.whoami>.btn.ghost{display:none}
+  .whoami .btn{padding:8px 14px;font-size:14px;white-space:nowrap}
 }
 /* Desktop: a sidebar with every page listed (no second row of buttons) */
 .side-group{margin:0 0 6px}
@@ -332,7 +341,30 @@ textarea{resize:vertical;min-height:70px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px}
 .panel h2{font:600 20px/1.2 var(--display);margin:0 0 12px}
 
+/* Invoice list on phones: a card per invoice (client and balance, then number, due date and status). */
+@media (max-width:620px){
+  table.invtable thead{display:none}
+  table.invtable tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  table.invtable td{padding:0;border:0;background:none!important}
+  .ptable .pill{white-space:nowrap}
+  table.invtable td:nth-child(2){grid-row:1;grid-column:1;font-weight:700}
+  table.invtable td:nth-child(6){grid-row:1;grid-column:2;font-weight:800}
+  table.invtable td:nth-child(1){grid-row:2;grid-column:1;color:var(--muted);font-size:14px}
+  table.invtable td:nth-child(1) b{font-weight:600}
+  table.invtable td:nth-child(7){grid-row:2;grid-column:2;justify-self:end}
+  table.invtable td:nth-child(4){grid-row:3;grid-column:1;color:var(--muted);font-size:14px}
+  table.invtable td:nth-child(4)::before{content:attr(data-l)}
+  table.invtable td:nth-child(3),table.invtable td:nth-child(5){display:none}
+}
 /* books */
+.txlist{list-style:none;margin:0;padding:0}
+.txlist li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.txlist li:first-child{border-top:0}
+.txlist .txm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.txlist .txm b{font-weight:700;overflow-wrap:anywhere}
+.txlist .txr{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.txlist .amt{font-variant-numeric:tabular-nums;white-space:nowrap}
+.txlist li.inc .amt{color:var(--ok)}
 .sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
 @media (max-width:760px){.sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px}
@@ -1361,7 +1393,8 @@ function viewHomeOwner(){
     if (next.length){ sched.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
       sched.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,true); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
   }
-  if (!S.viewOnly) sched.append(el("div",{class:"acts",style:"margin-top:12px"},el("button",{type:"button",class:"btn primary",onclick:()=>openJob()},"New job")));
+  // Owners have "New job" at the top of every page; only add one here when that one isn't shown.
+  if (!S.viewOnly && !S.isOwner) sched.append(el("div",{class:"acts",style:"margin-top:12px"},el("button",{type:"button",class:"btn primary",onclick:()=>openJob()},"New job")));
   cols.append(sched);
   // Booking requests waiting for an answer
   const req=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Waiting for you"),el("span",{class:"grow"}),
@@ -1391,7 +1424,7 @@ function homeWeekAndMoney(){
   const t=today(), cal=bookingCal(), wrap=el("div",{class:"home-cols",style:"margin-top:16px"});
   const days=[...Array(7)].map((_,i)=>{ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+i); return d; });
   const wk=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Next 7 days"),el("span",{class:"grow"}),
-    el("button",{type:"button",class:"btn small",onclick:()=>{S.range="week";goTab("board");}},"Job board")));
+    el("button",{type:"button",class:"btn small",onclick:()=>{S.range="week";goTab("board");}},"Week view")));
   wk.append(el("div",{class:"week"},...days.map(d=>{
     const key=ymd(d), js=S.jobs.filter(j=>j.date===key), amt=js.reduce((n,j)=>n+(Number(j.price)||0),0), why=closedReason(d,cal);
     return el("button",{type:"button",class:(key===t?"today":"")+(why?" closed":""),title:why||"",onclick:()=>{S.range="week";goTab("board");}},
@@ -3032,8 +3065,8 @@ function viewBooks(){
 
   const left=el("div",{});
   const f=el("form",{class:"panel"});
-  f.append(el("h2",{},"Log an expense"),
-    el("div",{class:"expform"},
+  // The form stays folded until it's needed, so the totals and transactions come first.
+  const formBody=el("div",{class:"expform"+(S.expOpen?"":" hidden")},
       el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
       el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
       el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
@@ -3047,7 +3080,12 @@ function viewBooks(){
       el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
         el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
         "Save photo as a PDF receipt"),
-      el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Add expense"))));
+      el("div",{class:"full row",style:"gap:8px"},el("button",{type:"submit",class:"btn primary"},"Save expense"),
+        el("button",{type:"button",class:"btn ghost",onclick:()=>{ S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden"); }},"Cancel")));
+  const openBtn=el("button",{type:"button",class:"btn primary"+(S.expOpen?" hidden":""),onclick:()=>{ S.expOpen=true; formBody.classList.remove("hidden"); openBtn.classList.add("hidden"); const a=f.querySelector("[name=amount]"); if (a) a.focus(); }},"+ Add expense");
+  f.append(el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px"},el("h2",{style:"margin:0"},"Expenses"),openBtn),
+    el("p",{class:"kv",style:"margin:6px 0 0"},"Log gas, supplies and other costs, with a receipt photo if you have one."),
+    formBody);
   f.onsubmit=async e=>{
     if (viewOnlyBlocked()) { e.preventDefault(); return; }
     e.preventDefault();
@@ -3081,6 +3119,7 @@ function viewBooks(){
     $("#receiptPreview").classList.add("hidden");
     capturedReceiptFile = null;
     submitBtn.disabled=false;
+    S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden");
   };
   left.append(f);
 
@@ -3092,23 +3131,25 @@ function viewBooks(){
     el("div",{class:"track"},el("div",{class:"fill",style:"width:"+Math.max(3,v/max*100).toFixed(1)+"%"})),el("b",{},money(v)))));
   left.append(catPanel);
 
-  const rows=[...income,...exp].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-  const tp=el("div",{class:"panel"},el("h2",{},"Transactions"));
-  if (!rows.length) tp.append(el("div",{class:"empty"},"No money in or out in this period. Finished jobs show up here automatically."));
+  const all=[...income,...exp].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const kind=S.txKind||"all", rows=kind==="all"?all:all.filter(r=>r.kind===kind);
+  const tp=el("div",{class:"panel"},el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"},el("h2",{style:"margin:0"},"Transactions"),
+    el("div",{class:"chips"},...[["all","All"],["income","Money in"],["expense","Money out"]].map(([k,l])=>el("button",{class:"chip","aria-pressed":String(kind===k),onclick:()=>{S.txKind=k;S.txAll=false;render();}},l)))));
+  if (!rows.length) tp.append(el("div",{class:"empty"},all.length?"Nothing here in this period.":"No money in or out in this period. Finished jobs show up here automatically."));
   else {
-    const tbody=el("tbody");
-    rows.forEach(r=>tbody.append(el("tr",{class:r.kind==="income"?"inc":""},
-      el("td",{},niceDate(r.date)),
-      el("td",{},r.cat),
-      el("td",{},r.desc||"—", r.receiptUrl ? el("a",{href:r.receiptUrl,target:"_blank",rel:"noopener",class:"kv",style:"display:block;margin-top:2px;"},"📎 Receipt") : null),
-      el("td",{class:"num"},(r.kind==="income"?"+":"−")+money(r.amount)),
-      el("td",{}, r.kind==="expense"
+    // A short list first (drawing hundreds of rows at once is slow on phones); "Show all" for the rest.
+    const SHOW=25, list=el("ul",{class:"txlist"});
+    (S.txAll?rows:rows.slice(0,SHOW)).forEach(r=>list.append(el("li",{class:r.kind==="income"?"inc":""},
+      el("div",{class:"txm"},el("b",{},r.desc||r.cat),
+        el("span",{class:"kv"},niceDate(r.date)+" · "+r.cat, r.receiptUrl ? [" · ",el("a",{href:r.receiptUrl,target:"_blank",rel:"noopener"},"📎 Receipt")] : null)),
+      el("div",{class:"txr"},el("b",{class:"amt"},(r.kind==="income"?"+":"−")+money(r.amount)),
+      r.kind==="expense"
         ? (r.fromJob ? el("button",{class:"btn small ghost",onclick:()=>{ const j=S.jobs.find(x=>x.id===r.fromJob); if(j) openCosts(j); }},"On job")
           : el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete"))
         : r.invRow ? el("button",{class:"btn small ghost",onclick:()=>openInvoice(r.invRow)},r.paid?"Paid":"Open")
         : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
-    tp.append(el("div",{class:"tablewrap"},el("table",{},
-      el("thead",{},el("tr",{},el("th",{},"Date"),el("th",{},"Category"),el("th",{},"Details"),el("th",{class:"num"},"Amount"),el("th",{}))),tbody)));
+    tp.append(list);
+    if (rows.length>SHOW) tp.append(el("button",{class:"btn small ghost",style:"margin-top:10px",onclick:()=>{S.txAll=!S.txAll;render();}},S.txAll?"Show fewer":"Show all "+rows.length));
   }
   frag.append(el("div",{class:"books"},left,tp));
   return frag;
@@ -3511,7 +3552,7 @@ function viewInvoices(){
       el("td",{},el("b",{},i.number||"Draft"),i.kind==="deposit"?el("div",{class:"kv"},"Deposit"):null),
       el("td",{},(i.client||{}).name||"—",i.projectId?el("div",{class:"kv"},(S.projects.find(p=>p.id===i.projectId)||{}).name||""):null),
       el("td",{},niceDate(i.issueDate)),
-      el("td",{},i.status==="sent"?niceDate(i.dueDate):"—"),
+      el("td",{"data-l":"Due "},i.status==="sent"?niceDate(i.dueDate):"—"),
       el("td",{class:"num"},money(t.total)),
       el("td",{class:"num"},i.status==="sent"?money(t.balance):"—"),
       el("td",{},el("span",{class:"pill "+s.cls},s.label)))));
@@ -4337,30 +4378,31 @@ function prStep1(st){
   const box=document.createDocumentFragment(), {rows,paidIds}=st;
   const ww=workweekDow(), ps=paySched();
   if (!isUS()) box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Pay in "+COUNTRIES[bizCountry()][0]+": "),"DayZift adds up hours and pay. It doesn't add overtime or work out taxes outside the US, so enter overtime as a bonus and tax as a deduction, using your accountant's figures."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Pay schedule")));
-  else box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek. Your workweek runs "+DOW_SHORT[ww]+" to "+DOW_SHORT[(ww+6)%7]+
-    (ww!==ps.startDow?" (your pay period starts "+DOW_SHORT[ps.startDow]+", so a workweek can cross two pay periods; overtime is counted on the whole workweek)":"")+
-    ". Some states add daily overtime; DayZift doesn't, so adjust Overtime hours if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+  else box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek ("+DOW_SHORT[ww]+"–"+DOW_SHORT[(ww+6)%7]+
+    (ww!==ps.startDow?"; it can cross two pay periods and is counted on the whole week":"")+
+    "). Some states add daily overtime; adjust it if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
   const tbl=el("table",{class:"ptable"});
   tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{},"Hours / work"),el("th",{},"Status"),el("th",{}))));
   const tb=el("tbody");
   rows.forEach(x=>{
     const e=x.e, isOpen=!!(S.pr.open||{})[e.id], toggle=()=>{ (S.pr.open ||= {})[e.id]=!isOpen; render(); };
     const paid=paidIds.has(e.id);
-    const status = paid ? el("span",{class:"pill ok"},"Paid") : x.blocked ? el("span",{class:"pill bad"},"⚠ Needs attention") : x.hoursOk ? el("span",{class:"pill ok"},"✓ Approved") : el("span",{class:"pill warn"},"To review");
+    const nFix=x.issues.filter(i=>i.blocking).length;
+    const status = paid ? el("span",{class:"pill ok"},"Paid") : x.blocked ? el("span",{class:"pill bad"},"⚠ "+(nFix>1?nFix+" to fix":"1 to fix")) : x.hoursOk ? el("span",{class:"pill ok"},"✓ Approved") : el("span",{class:"pill warn"},"To review");
     tb.append(el("tr",{class:"prow"+(isOpen?" open":""),onclick:toggle},
       el("td",{},el("div",{class:"row",style:"gap:8px;flex-wrap:nowrap"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),
         el("div",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},x.r?payRuleText(x.r):"No pay rate yet")))),
       el("td",{},payWorkText(x)||"—"),
       el("td",{},status),
       el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
-    if (isOpen || x.blocked) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"4"},prHoursDetail(x,paid))));
+    if (isOpen) tb.append(el("tr",{class:"pdetail"},el("td",{colspan:"4"},prHoursDetail(x,paid))));
   });
   tbl.append(tb);
   box.append(el("div",{class:"panel",style:"padding:8px 12px"},tbl));
   const ready=rows.filter(x=>!paidIds.has(x.e.id) && !x.blocked && !x.hoursOk && x.r && x.cost>0);
   const blocked=rows.filter(x=>!paidIds.has(x.e.id) && x.blocked);
   box.append(el("div",{class:"acts",style:"margin-top:10px"},
-    blocked.length?el("span",{class:"kv grow"},blocked.length+" can't be approved yet: "+blocked.map(x=>x.e.name.split(" ")[0]).join(", ")+". Fix or review what's flagged."):el("span",{class:"grow"}),
+    blocked.length?el("span",{class:"kv grow"},blocked.length+" can't be approved yet: "+blocked.map(x=>x.e.name.split(" ")[0]).join(", ")+". Tap a name to see what to fix."):el("span",{class:"grow"}),
     ready.length?el("button",{class:"btn",onclick:()=>{ const hoursOk={...(prRun().hoursOk||{})}; ready.forEach(x=>{ hoursOk[x.e.id]={by:prBy(),at:Date.now()}; });
       write(()=>runSave({hoursOk,approval:null},{action:"approve-hours",detail:"Hours approved: "+ready.map(x=>x.e.name.split(" ")[0]).join(", ")}),"Hours approved"); }},"Approve all ready ("+ready.length+")"):null,
     nextBtn(1,"Next: estimate pay",!rows.some(x=>x.hoursOk && !paidIds.has(x.e.id)))));
@@ -4406,9 +4448,17 @@ function prHoursDetail(x,paid){
     const inputs=el("div",{class:"expform"});
     if (t.unit) inputs.append(prNum(t.unit+(ed.qty!=null&&ed.qty!==""?" (changed from "+x.auto+")":""),ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>prSet(e.id,"qty",v===""?null:v,t.unit)));
     if (x.cls==="w2"&&isUS()&&t.id==="hourly") inputs.append(prNum("Overtime hours"+(ed.ot!=null&&ed.ot!==""?" (changed from "+x.autoOt+")":""),ed.ot!=null&&ed.ot!==""?ed.ot:x.autoOt,v=>prSet(e.id,"ot",v===""?null:v,"Overtime hours")));
-    inputs.append(prNum("Tips "+cs(),ed.tips,v=>prSet(e.id,"tips",v,"Tips")), prNum("Bonus "+cs(),ed.bonus,v=>prSet(e.id,"bonus",v,"Bonus")),
+    // Tips, bonus, mileage and deductions stay folded until one is used.
+    const used=["tips","bonus","miles","deduct"].some(k=>ed[k]!=null&&ed[k]!==""&&Number(ed[k])!==0);
+    const extras=el("div",{class:"expform"+(used||(S.pr.extras||{})[e.id]?"":" hidden")},
+      prNum("Tips "+cs(),ed.tips,v=>prSet(e.id,"tips",v,"Tips")), prNum("Bonus "+cs(),ed.bonus,v=>prSet(e.id,"bonus",v,"Bonus")),
       prNum(distUnit()==="mi"?"Miles driven":"Kilometres driven",ed.miles,v=>prSet(e.id,"miles",v,"Distance")), prNum("Advances / deductions "+cs(),ed.deduct,v=>prSet(e.id,"deduct",v,"Deductions")));
     box.append(inputs);
+    if (extras.classList.contains("hidden")){
+      const more=el("button",{type:"button",class:"btn small ghost",onclick:()=>{ (S.pr.extras ||= {})[e.id]=true; extras.classList.remove("hidden"); more.remove(); }},"+ Tips, bonus, mileage or deductions");
+      box.append(el("div",{},more));
+    }
+    box.append(extras);
     box.append(el("div",{class:"acts"},el("span",{class:"kv grow"},x.hoursOk?"Approved by "+x.hoursOk.by+" "+ago(x.hoursOk.at)+". Changing anything above un-approves it.":""),
       el("button",{class:"btn small ghost",onclick:()=>goTab("timesheet")},"Timesheet"),
       x.hoursOk ? el("button",{class:"btn small ghost",onclick:()=>{ const hoursOk={...(prRun().hoursOk||{})}; delete hoursOk[e.id];
