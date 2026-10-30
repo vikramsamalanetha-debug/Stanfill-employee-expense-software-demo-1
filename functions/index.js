@@ -115,7 +115,12 @@ exports.notifyBusinessPending = onDocumentCreated({ document: "businesses/{id}",
 // DayZift never takes payments: "Pay online" is the business's own payment link.
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const INVOICE_BASE = "https://dayzift.com/invoice.html?k=";
-const money = (n) => "$" + (Number(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Amounts in the invoice's currency, written the local way (older invoices: US dollars).
+const moneyFor = (p) => {
+  let f = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+  try { if (/^[A-Z]{3}$/.test(p.currency || "")) f = new Intl.NumberFormat("en-" + (/^[A-Z]{2}$/.test(p.country || "") ? p.country : "US"), { style: "currency", currency: p.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { /* keep US dollars */ }
+  return (n) => { const v = Number(n) || 0; return (v < 0 ? "-" : "") + f.format(Math.abs(v)); };
+};
 const niceDate = (s) => { if (!s) return ""; const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }); };
 const todayCT = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
 const okEmail = (s) => typeof s === "string" && /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(s) && s.length < 200;
@@ -126,6 +131,7 @@ function transport() {
 }
 
 function invoiceEmail(p, key, reminder) {
+  const money = moneyFor(p);
   const b = p.biz || {}, url = INVOICE_BASE + key, due = Number(p.dueNowBal) || 0;
   const first = firstName(p.client && p.client.name);
   const ask = [b.phone ? "call " + nicePhone(b.phone) : "", okEmail(b.email) ? "email " + b.email : ""].filter(Boolean).join(" or ");
