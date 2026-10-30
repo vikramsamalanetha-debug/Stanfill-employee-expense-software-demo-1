@@ -74,6 +74,9 @@ jobs:
           grep -n -E "versionCode|versionName" android/app/build.gradle
           # Google Play's automatic protection needs Android 7.0 (API 24) or newer
           sed -i -E "s/minSdkVersion *= *[0-9]+/minSdkVersion = 24/" android/variables.gradle
+          # Google Play requires apps to target the latest Android (API 36, Android 16)
+          sed -i -E "s/compileSdkVersion *= *[0-9]+/compileSdkVersion = 36/; s/targetSdkVersion *= *[0-9]+/targetSdkVersion = 36/" android/variables.gradle
+          grep -q "suppressUnsupportedCompileSdk" android/gradle.properties || echo "android.suppressUnsupportedCompileSdk=36" >> android/gradle.properties
           grep -n -E "minSdkVersion|targetSdkVersion|compileSdkVersion" android/variables.gradle
 
       - name: Firebase file for push notifications
