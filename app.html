@@ -1592,6 +1592,8 @@ function settingsAccount(){
   const m=me();
   frag.append(setPanel("Account","",
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
+    S.demo?null:setRow("Delete my account","Ask us to delete your sign-in and personal details. Owners can also have the whole business deleted.",
+      el("a",{class:"btn small ghost",href:"https://dayzift.com/delete-account.html?email="+encodeURIComponent(S.myEmail||""),target:"_blank",rel:"noopener"},"Delete my account")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isPlatformAdmin?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
   frag.append(el("p",{class:"kv",style:"margin-top:16px"},"DayZift \u00b7 A product of ",

@@ -67,7 +67,7 @@ jobs:
       - name: Location permissions and version number
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
-          PERMS='    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />'
+          PERMS='    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />'
           sed -i "s#<uses-permission android:name=\"android.permission.INTERNET\" />#&\n$PERMS#" "$MANIFEST"
           grep -n "permission" "$MANIFEST"
           sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]+\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
@@ -100,6 +100,35 @@ jobs:
         with:
           name: Dayzift-apk
           path: Dayzift.apk
+
+      # ---------- Google Play: a signed App Bundle (.aab), built when the upload key is in the repository secrets ----------
+      - name: Check for the Google Play upload key
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+        run: |
+          if [ -n "$KS" ]; then echo "PLAY=yes" >> "$GITHUB_ENV"; else echo "::notice::No ANDROID_UPLOAD_KEYSTORE secret yet - skipping the Google Play bundle"; fi
+
+      - name: Build Google Play bundle (DayZift.aab)
+        if: env.PLAY == 'yes'
+        env:
+          KS: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+          KS_PASS: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          echo "$KS" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          cd android
+          ./gradlew bundleRelease --no-daemon
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass "$KS_PASS" -keypass "$KS_PASS" \
+            -sigalg SHA256withRSA -digestalg SHA-256 -signedjar ../DayZift.aab "$AAB" "${KS_ALIAS:-upload}"
+          jarsigner -verify ../DayZift.aab | tail -1
+          rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@v4
+        if: env.PLAY == 'yes'
+        with:
+          name: DayZift-google-play-aab
+          path: DayZift.aab
 
       - name: Publish as latest release
         env:
