@@ -128,6 +128,8 @@ function el(tag,props,...kids){ const n=document.createElement(tag);
   kids.flat().forEach(c=>{ if(c!=null&&c!==false) n.append(c instanceof Node?c:document.createTextNode(String(c))); }); return n; }
 function show(msg){ root.replaceChildren(el("div",{class:"msg"},msg)); }
 const key=new URLSearchParams(location.search).get("k");
+const justPaid=/[?&]paid=1\b/.test(location.search);
+const PAY_URL="https://us-central1-stanfill-clean-pros.cloudfunctions.net/stripePayInvoice";
 if (!key || !/^[A-Za-z0-9_-]{6,64}$/.test(key)) return show("This invoice link isn't complete. Check the link you were sent, or contact the business.");
 let db;
 // Same project settings as firebase-config.js (that file also starts sign-in, which this page doesn't need).
@@ -137,6 +139,8 @@ try { firebase.initializeApp(firebaseConfig); db=firebase.firestore(); } catch(e
 db.doc("publicInvoices/"+key).get().then(snap=>{
   if (!snap.exists) return show("We couldn't find this invoice. It may have been replaced; contact the business for a new link.");
   const p=snap.data(); setCurrency(p); render(p);
+  // Back from paying by card: Stripe tells us within a few seconds, so look again until it shows as paid.
+  if (justPaid && p.status==="open") [4000,10000,20000].forEach(ms=>setTimeout(()=>db.doc("publicInvoices/"+key).get().then(x=>{ if (x.exists){ const q=x.data(); setCurrency(q); render(q); } }).catch(()=>{}),ms));
   // Let the business know their client opened it (once).
   if (!p.viewedAt && p.status!=="void" && !/[?&]preview\b/.test(location.search)) db.doc("publicInvoices/"+key).update({viewedAt:Date.now()}).catch(()=>{});
 }).catch(()=>show("Couldn't load the invoice. Check your connection and try again."));
@@ -211,10 +215,13 @@ function render(p){
   const bar=el("div",{class:"bar",style:"--ac:"+color},
     el("div",{class:"due"},p.status==="paid"?["Paid in full. ",el("b",{},"Thank you!")]:p.status==="void"?"This invoice was cancelled.":["Amount due ",el("b",{},money(amt)),p.dueDate&&p.terms!=="Due on receipt"?" by "+niceDate(p.dueDate):""]),
     el("div",{class:"btns"},
-      open&&amt>0&&p.payLink&&/^https:\/\//i.test(p.payLink)?el("a",{class:"btn pay",href:p.payLink,rel:"noopener nofollow"},"Pay online"):null,
+      open&&amt>0&&p.cardPay&&!justPaid?el("a",{class:"btn pay",href:PAY_URL+"?k="+encodeURIComponent(key),rel:"nofollow"},"Pay by card"):null,
+      open&&amt>0&&p.payLink&&/^https:\/\//i.test(p.payLink)?el("a",{class:p.cardPay?"btn":"btn pay",href:p.payLink,rel:"noopener nofollow"},p.cardPay?"Other ways to pay":"Pay online"):null,
       el("button",{class:"btn",onclick:()=>window.print()},p.status==="paid"?"Print or save receipt":"Print or save PDF")));
   const t=new Date(), todayYmd=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
-  root.replaceChildren(bar,invDocBuild(p,{el,money,niceDate,todayYmd}),
+  const thanks=justPaid?el("div",{class:"bar noprint",style:"background:#E8F5EE;border-color:#B7DEC6"},el("div",{},el("b",{},"Thank you! Your card payment went through."),
+    p.status==="paid"?" This invoice is now paid.":" It can take a minute to show on the invoice. Your card receipt comes from Stripe by email.")):null;
+  root.replaceChildren(...[thanks,bar].filter(Boolean),invDocBuild(p,{el,money,niceDate,todayYmd}),
     el("p",{class:"help noprint"},"Questions about this "+(p.status==="paid"?"receipt":"invoice")+"? Contact "+(b.name||"the business")+(b.phone?" at "+b.phone:"")+(b.email?" or "+b.email:"")+"."));
 }
 })();
