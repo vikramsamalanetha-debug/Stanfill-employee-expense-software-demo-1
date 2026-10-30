@@ -5605,7 +5605,7 @@ function demoSeed(type){
     ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
     ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],
     ["Hall family","225 Southern Ave, Lexington, TN"],["Davis duplex","402 Poplar St, Lexington, TN"]];
-  const business={id:BID,name:P.name,category:type,city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dazift.com"],
+  const business={id:BID,name:P.name,category:type,city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dayzift.com"],
     services:P.kind==="trade"?P.services.slice():P.services.map(x=>x[0]),sutaRate:2.7,
     features:{projects:P.kind==="trade",rewards:P.kind==="visits"}};
   if (P.rewardsName) business.rewardsName=P.rewardsName;
@@ -5700,7 +5700,7 @@ function demoSeed(type){
    ["Carter home","731-555-0172",[[640,"Paid job"],[300,"Paid job"],[50,"Bonus points: referral"]]],
    ["Owens home","731-555-0164",[[85,"Paid job"]]]].forEach(([name,phone,log],i)=>{
     const cid="demo-c"+(10+i); put("customers",{name,phone,email:"",rewardsMember:true},cid);
-    log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dazift.com",createdAt:at(-60+k*14+i,12)}));
+    log.forEach(([delta,reason],k)=>put("pointsLedger",{uid:cid,customerName:name,delta,type:delta<0?"redeem":"earn",reason,by:"owner@demo.dayzift.com",createdAt:at(-60+k*14+i,12)}));
   });
 
   // Shift log: the last three weeks, one shift per person per working day, built from their finished jobs
@@ -5830,7 +5830,7 @@ function startDemo(type){
   const biz=seed.business;
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
-  S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
+  S.myUserId="demo-owner"; S.myEmail="owner@demo.dayzift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
   if (!["home","board","projects","team","timesheet","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=true;
   if (!switching && !/[?&]tour=0\b/.test(location.search)) setTimeout(demoWelcome,350);
@@ -5847,7 +5847,7 @@ function demoViewAs(role){
     S.isOwner=false; S.myUserId=e?e.userId:"demo-u2"; S.myEmail=null;
     toast("Now seeing what "+(e?e.name.split(" ")[0]:"a crew member")+" sees on her phone");
   } else {
-    S.isOwner=true; S.myUserId="demo-owner"; S.myEmail="owner@demo.dazift.com";
+    S.isOwner=true; S.myUserId="demo-owner"; S.myEmail="owner@demo.dayzift.com";
     toast("Back to the owner view");
   }
   S.who="all"; pendingPopupShown=true;
