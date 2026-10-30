@@ -4004,11 +4004,13 @@ function settingsInvoices(){
       // Invoices already sent show the new look, contact details and payment notes too.
       if (bizVerified()) await publishSentInvoices();
       render(); },"Invoice settings saved"); };
-  const fr=document.createDocumentFragment(); fr.append(cardPayPanel(),f); return fr;
+  const fr=document.createDocumentFragment(); fr.append(CARD_PAY_READY||S.isPlatformAdmin?cardPayPanel():null,f); return fr;
 }
 
 // ---- Card payments (Stripe Connect). The business links its own Stripe account; clients pay from the invoice. ----
 const STRIPE_FN="https://us-central1-stanfill-clean-pros.cloudfunctions.net/stripeConnect";
+// Off until the Stripe account, webhook and functions are set up (planned for the next update). Platform admins see it already.
+const CARD_PAY_READY=false;
 const cardPayOn=()=>!!(S.business&&S.business.stripe&&S.business.stripe.chargesEnabled);
 async function stripeCall(action){
   if (S.demo){ toast("In the demo nothing connects. In your business, this opens Stripe to link your account."); return null; }
