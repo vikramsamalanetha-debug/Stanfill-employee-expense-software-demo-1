@@ -92,6 +92,39 @@ jobs:
           printf '%s\n' "$P8" > "$RUNNER_TEMP/keys/AuthKey_$KID.p8"
           echo "ASC_KEY_PATH=$RUNNER_TEMP/keys/AuthKey_$KID.p8" >> "$GITHUB_ENV"
 
+      - name: Test the Apple API key
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KID: ${{ secrets.ASC_KEY_ID }}
+          ISS: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography 2>/dev/null || python3 -m pip install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import os, re, time, json, urllib.request, urllib.error
+          kid, iss, team = os.environ["KID"].strip(), os.environ["ISS"].strip(), os.environ["TEAM"].strip()
+          p8 = open(os.environ["ASC_KEY_PATH"]).read()
+          problems = []
+          if not re.fullmatch(r"[A-Z0-9]{10}", team): problems.append(f"APPLE_TEAM_ID should be 10 capital letters/numbers (it has {len(team)} characters)")
+          if not re.fullmatch(r"[A-Z0-9]{10}", kid): problems.append(f"ASC_KEY_ID should be 10 capital letters/numbers (it has {len(kid)} characters)")
+          if not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", iss): problems.append(f"ASC_ISSUER_ID should look like xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (it has {len(iss)} characters)")
+          if "-----BEGIN PRIVATE KEY-----" not in p8 or "-----END PRIVATE KEY-----" not in p8: problems.append("ASC_KEY_P8 is missing the BEGIN PRIVATE KEY / END PRIVATE KEY lines")
+          for x in problems: print("::error::" + x)
+          import jwt
+          try:
+              tok = jwt.encode({"iss": iss, "iat": int(time.time()), "exp": int(time.time()) + 600, "aud": "appstoreconnect-v1"}, p8, algorithm="ES256", headers={"kid": kid, "typ": "JWT"})
+          except Exception as e:
+              print("::error::ASC_KEY_P8 couldn't be read as an Apple private key: " + type(e).__name__); raise SystemExit(1)
+          req = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/apps?limit=5", headers={"Authorization": "Bearer " + tok})
+          try:
+              apps = json.load(urllib.request.urlopen(req))
+              names = [a["attributes"]["bundleId"] for a in apps.get("data", [])]
+              print("::notice::Apple accepted the API key. Apps it can see: " + (", ".join(names) or "none"))
+          except urllib.error.HTTPError as e:
+              print(f"::error::Apple rejected the API key ({e.code}). Check that ASC_KEY_ID matches the key and ASC_ISSUER_ID is the Issuer ID shown above the keys list, and that it's a Team key.")
+              raise SystemExit(1)
+          if problems: raise SystemExit(1)
+          PY
+
       - name: Build and sign
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
