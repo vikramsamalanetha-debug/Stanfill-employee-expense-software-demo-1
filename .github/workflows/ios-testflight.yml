@@ -71,19 +71,26 @@ jobs:
         continue-on-error: true
         run: npx capacitor-assets generate --ios --iconBackgroundColor '#F2C230' --splashBackgroundColor '#1F7A69' --splashBackgroundColorDark '#0F2A25'
 
-      - name: Permissions, name and settings (Info.plist)
+      - name: Permissions, name and settings (Info.plist), iOS 15 minimum
         run: |
           P=ios/App/App/Info.plist
-          pb(){ /usr/libexec/PlistBuddy -c "$1" "$P" 2>/dev/null || true; }
-          set_str(){ pb "Delete :$1"; /usr/libexec/PlistBuddy -c "Add :$1 string $2" "$P"; }
+          # plutil takes each value as its own argument, so apostrophes and spaces are safe.
+          set_str(){ plutil -replace "$1" -string "$2" "$P"; }
           set_str CFBundleDisplayName "DayZift"
           set_str NSLocationWhenInUseUsageDescription "DayZift shares your location with your business owner only while you're on shift."
           set_str NSLocationAlwaysAndWhenInUseUsageDescription "DayZift keeps sharing your location with your business owner while you're on shift, even if the app is in the background. It stops when you end your shift."
+          set_str NSLocationAlwaysUsageDescription "DayZift keeps sharing your location with your business owner while you're on shift, even if the app is in the background. It stops when you end your shift."
           set_str NSCameraUsageDescription "DayZift uses the camera to photograph receipts for your expenses."
           set_str NSPhotoLibraryUsageDescription "DayZift lets you attach receipt photos from your library to expenses."
-          pb "Delete :ITSAppUsesNonExemptEncryption"; /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$P"
-          pb "Delete :UIBackgroundModes"; /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" -c "Add :UIBackgroundModes:0 string location" "$P"
-          plutil -p "$P"
+          plutil -replace ITSAppUsesNonExemptEncryption -bool NO "$P"
+          plutil -replace UIBackgroundModes -json '["location"]' "$P"
+          # Fail the build if any of them didn't stick.
+          for k in NSLocationWhenInUseUsageDescription NSLocationAlwaysAndWhenInUseUsageDescription NSCameraUsageDescription NSPhotoLibraryUsageDescription; do
+            v=$(plutil -extract "$k" raw -o - "$P") || { echo "::error::$k missing from Info.plist"; exit 1; }; echo "$k: $v"; done
+          # Apple will require iOS 15 or newer from April 2027.
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.[0-9]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' ios/App/App.xcodeproj/project.pbxproj
+          [ -f ios/App/Podfile ] && sed -i '' "s/platform :ios, '1[0-4]\.[0-9]*'/platform :ios, '15.0'/" ios/App/Podfile
+          grep -h "IPHONEOS_DEPLOYMENT_TARGET\|platform :ios" ios/App/App.xcodeproj/project.pbxproj ios/App/Podfile 2>/dev/null | sort -u
 
       - name: Sync web app into iPhone project
         run: npx cap sync ios
