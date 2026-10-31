@@ -72,7 +72,7 @@ a{color:var(--primary)}
   .brand h1 .sparkle{display:none}
   #appTagline{display:none}
   .whoami{flex-wrap:nowrap;gap:6px}
-  .whoami>.kv,.whoami>.btn.ghost{display:none}
+  .whoami>.kv,.whoami>.btn.ghost:not(.keep){display:none}
   .whoami .btn{padding:8px 14px;font-size:14px;white-space:nowrap}
 }
 /* Desktop: a sidebar with every page listed (no second row of buttons) */
@@ -1155,7 +1155,8 @@ function drawWho(){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
   if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
-  if (!S.demo) w.append(el("button",{class:"btn ghost",onclick:signOutApp},"Sign out"));   // the demo banner has its own
+  // On phones, Sign out moves to Settings → Account; the platform admin's client list has no Settings, so it stays up top there.
+  if (!S.demo) w.append(el("button",{class:"btn ghost"+(S.console?" keep":""),onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
 
 // A new business uses DayZift right away (its trial starts at sign-up). Until LIT America verifies it,
