@@ -28,6 +28,8 @@
 details *,details *::before,details *::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{margin:0}
+/* In the phone apps the page doesn't stretch and bounce past its ends, so the bottom menu stays put. */
+html.native,html.native body{overscroll-behavior:none}
 body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--primary)}
@@ -663,6 +665,7 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
      The phone app reports as dayzift.com/android-app or /ios-app, so it shows apart from the website in Google Analytics. -->
 <script>
 (function(){
+  try { var C0=window.Capacitor; if (C0&&C0.isNativePlatform&&C0.isNativePlatform()) document.documentElement.classList.add("native","native-"+C0.getPlatform()); } catch(e){}
   window.track=function(){};
   var C=window.Capacitor, plat=(C&&C.isNativePlatform&&C.isNativePlatform()&&C.getPlatform)?C.getPlatform():'';
   if (!plat && !/(^|\.)dayzift\.com$/.test(location.hostname)) return;
