@@ -87,6 +87,9 @@ jobs:
           # Fail the build if any of them didn't stick.
           for k in NSLocationWhenInUseUsageDescription NSLocationAlwaysAndWhenInUseUsageDescription NSCameraUsageDescription NSPhotoLibraryUsageDescription; do
             v=$(plutil -extract "$k" raw -o - "$P") || { echo "::error::$k missing from Info.plist"; exit 1; }; echo "$k: $v"; done
+          # iPhone only (no iPad version, so the App Store doesn't need iPad screenshots).
+          sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/g' ios/App/App.xcodeproj/project.pbxproj
+          grep -h "TARGETED_DEVICE_FAMILY" ios/App/App.xcodeproj/project.pbxproj | sort -u
           # Apple will require iOS 15 or newer from April 2027.
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.[0-9]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' ios/App/App.xcodeproj/project.pbxproj
           [ -f ios/App/Podfile ] && sed -i '' "s/platform :ios, '1[0-4]\.[0-9]*'/platform :ios, '15.0'/" ios/App/Podfile
