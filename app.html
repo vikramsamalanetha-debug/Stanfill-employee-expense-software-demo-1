@@ -30,6 +30,8 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{margin:0}
 /* In the phone apps the page doesn't stretch and bounce past its ends, so the bottom menu stays put. */
 html.native,html.native body{overscroll-behavior:none}
+html.native:has(#mainApp:not([hidden])),html.native:has(#mainApp:not([hidden])) body{height:100%;overflow:hidden}
+html.native #mainApp:not([hidden]){height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--primary)}
@@ -66,6 +68,17 @@ a{color:var(--primary)}
   #view .sched .what b{white-space:normal}
   #view .sched li>.pill,#view .sched li>.btn{grid-column:2;justify-self:start}
   .toast{bottom:calc(92px + env(safe-area-inset-bottom))!important}
+  .hide-phone{display:none}
+  /* Banners: words on top, buttons in a row underneath */
+  .banner{padding:10px 12px;gap:8px;font-size:14px}
+  .banner>.grow{flex:1 1 100%}
+  /* Books: the month list already has quarters, whole year and Pick dates, so the shortcut chips and "Showing" go */
+  .periodbar{padding:12px;gap:10px}
+  .periodbar .ptop>div:first-child,.periodbar>.chips{display:none}
+  .periodbar .pnav{width:100%;flex-wrap:nowrap}
+  .periodbar .pnav select{flex:1}
+  .periodbar .pexport{padding-top:10px}
+  .periodbar .pexport .btn{flex:1;justify-content:center}
   #mainApp{padding-bottom:88px}
   /* Phone: one slim line on top (business name + main button). Email and Sign out live in Settings → Account. */
   .top{flex-wrap:nowrap;align-items:center;gap:10px;margin-bottom:12px}
@@ -1175,7 +1188,7 @@ function drawBanners(){
   if (S.adminView){
     b.append(el("div",{class:"banner "+(S.viewOnly?"info":"warn")},
       el("span",{class:"grow"}, S.viewOnly
-        ? ["Platform admin · viewing ",el("b",{},S.business.name)," · view only. Nothing you click here changes their business."]
+        ? ["Platform admin · viewing ",el("b",{},S.business.name)," · view only",el("span",{class:"hide-phone"},". Nothing you click here changes their business."),"."]
         : ["Platform admin · ",el("b",{},"editing is on")," for ",el("b",{},S.business.name),". Changes go live in their business right away."]),
       el("button",{class:"btn small "+(S.viewOnly?"":"lemon"),onclick:adminToggleEditing},S.viewOnly?"Turn on editing":"Back to view only"),
       el("button",{class:"btn small",onclick:adminBackHome},"\u2190 All clients")));
@@ -1186,7 +1199,7 @@ function drawBanners(){
       el("span",{class:"grow"},el("b",{},"You're in the demo account."),
         " Every name and number is made up. Try anything; it resets when you sign out."),
       el("label",{class:"demo-type"},"Business type",
-        el("select",{id:"demoTypeSel","aria-label":"Show the demo as this type of business",onchange:ev=>{ startDemo(ev.target.value); toast("Now showing "+S.business.name+" ("+ev.target.value+")"); window.scrollTo(0,0); }},
+        el("select",{id:"demoTypeSel","aria-label":"Show the demo as this type of business",onchange:ev=>{ startDemo(ev.target.value); toast("Now showing "+S.business.name+" ("+ev.target.value+")"); toTop(); }},
           DEMO_TYPES.map(t=>el("option",{value:t,selected:t===S.demoKind},t)))),
       el("div",{class:"seg","aria-label":"View the demo as"},
         el("button",{type:"button","aria-pressed":String(!asCrew),onclick:()=>demoViewAs("owner")},"Owner view"),
@@ -1328,9 +1341,11 @@ const lastInGroup={};
 const desktopMQ = window.matchMedia ? window.matchMedia("(min-width:1000px)") : null;
 const isDesktop = () => !!(desktopMQ && desktopMQ.matches);
 if (desktopMQ && desktopMQ.addEventListener) desktopMQ.addEventListener("change",()=>render());
+// Back to the top of the page (in the phone apps the app area scrolls, not the page).
+function toTop(){ window.scrollTo(0,0); const m=document.getElementById("mainApp"); if (m) m.scrollTop=0; }
 function goTab(tab){
   if (tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
-  S.tab=tab; render(); window.scrollTo(0,0);
+  S.tab=tab; render(); toTop();
 }
 function drawNav(){
   const groups=navGroups();
@@ -1349,7 +1364,7 @@ function drawNav(){
     return;
   }
   gn.className="groups";
-  gn.replaceChildren(...groups.map(g=>el("button",{type:"button","data-group":g.id,"aria-current":g===cur?"page":"false",
+  gn.replaceChildren(...groups.filter(g=>g.id!=="console").map(g=>el("button",{type:"button","data-group":g.id,"aria-current":g===cur?"page":"false",
     onclick:()=>{ const keep=lastInGroup[g.id]; goTab(g.tabs.some(t=>t[0]===keep)?keep:g.tabs[0][0]); }},
     navIcon(g.icon), el("span",{},g.label), g.badge?el("span",{class:"dot","aria-label":g.badge+" waiting"},String(g.badge)):null)));
   sn.replaceChildren(...(cur.tabs.length>1 ? cur.tabs.map(([id,label])=>
@@ -3009,10 +3024,11 @@ function booksPeriodBar(){
   const nav=el("div",{class:"pnav"});
   if (b.mode!=="range"){
     const ySel=el("select",{"aria-label":"Year",onchange:e=>setBooks({...b,y:Number(e.target.value)})},...years.map(y=>el("option",{value:String(y),selected:y===b.y},String(y))));
-    const mSel=el("select",{"aria-label":"Month",onchange:e=>{ const v=e.target.value; if (v==="year") setBooks({mode:"year",y:b.y,m:b.m}); else if (v[0]==="q") setBooks({mode:"quarter",y:b.y,m:(Number(v[1])-1)*3+1}); else setBooks({mode:"month",y:b.y,m:Number(v)}); }},
+    const mSel=el("select",{"aria-label":"Month",onchange:e=>{ const v=e.target.value; if (v==="range") setBooks({mode:"range",from:P.from,to:P.to,y:b.y,m:b.m}); else if (v==="year") setBooks({mode:"year",y:b.y,m:b.m}); else if (v[0]==="q") setBooks({mode:"quarter",y:b.y,m:(Number(v[1])-1)*3+1}); else setBooks({mode:"month",y:b.y,m:Number(v)}); }},
       el("option",{value:"year",selected:b.mode==="year"},"Whole year"),
       ...[1,2,3,4].map(q=>el("option",{value:"q"+q,selected:b.mode==="quarter"&&Math.ceil(b.m/3)===q},"Quarter "+q)),
-      ...MONTHS.map((n,i)=>el("option",{value:String(i+1),selected:b.mode==="month"&&b.m===i+1},n)));
+      ...MONTHS.map((n,i)=>el("option",{value:String(i+1),selected:b.mode==="month"&&b.m===i+1},n)),
+      el("option",{value:"range"},"Pick dates\u2026"));
     nav.append(el("button",{type:"button",class:"btn small ghost parrow","aria-label":"Previous",onclick:()=>shiftBooks(-1)},"←"),
       mSel, ySel,
       el("button",{type:"button",class:"btn small ghost parrow","aria-label":"Next",onclick:()=>shiftBooks(1)},"→"));
@@ -3020,7 +3036,8 @@ function booksPeriodBar(){
     const from=el("input",{type:"date",value:b.from,max:b.to,"aria-label":"From"}), to=el("input",{type:"date",value:b.to,min:b.from,"aria-label":"To"});
     const apply=()=>{ if(!from.value||!to.value) return toast("Pick both dates."); if(to.value<from.value) return toast("The To date is before the From date."); setBooks({...b,from:from.value,to:to.value}); };
     from.onchange=apply; to.onchange=apply;
-    nav.append(el("label",{class:"f"},"From",from),el("label",{class:"f"},"To",to));
+    nav.append(el("label",{class:"f"},"From",from),el("label",{class:"f"},"To",to),
+      el("button",{type:"button",class:"btn small ghost",onclick:()=>setBooks({mode:"month",y:ty,m:tm})},"Back to months"));
   }
   bar.append(el("div",{class:"ptop"},el("div",{},el("div",{class:"kv"},"Showing"),el("b",{class:"plabel"},P.label)),nav),
     el("div",{class:"chips"},
@@ -4418,7 +4435,7 @@ function viewPayroll(){
   frag.append(prHistory(st.run), yearEndPanel(S.pr.start));
   return frag;
 }
-const nextBtn=(i,label,dis)=>el("button",{class:"btn primary",disabled:!!dis,onclick:()=>{ S.pr.step=i; render(); window.scrollTo(0,0); }},label);
+const nextBtn=(i,label,dis)=>el("button",{class:"btn primary",disabled:!!dis,onclick:()=>{ S.pr.step=i; render(); toTop(); }},label);
 
 // STEP 1 — hours and job earnings, missing clock-outs, adjustments; approve each person's hours.
 function prStep1(st){
@@ -5225,7 +5242,7 @@ function resetToSignedOut(){
     adminView:false,viewOnly:false,tab:"home",who:"all",projFilter:null,pr:null,dutyErr:null,invLook:null});
   pendingPopupShown=false; booted=false; clearTimeout(crewSyncT);
   document.title="DayZift";
-  showGate(); window.scrollTo(0,0);
+  showGate(); toTop();
 }
 window.signOutApp = signOutApp;
 let booted=false;
@@ -5545,7 +5562,7 @@ function adminOpenBusiness(b){
   pendingPopupShown=true;
   S.who="all";
   enterBusiness(b,{adminView:true});
-  window.scrollTo(0,0);
+  toTop();
   toast("Viewing "+(b.name||"this business")+" (view only)");
 }
 function adminBackHome(){
@@ -6029,7 +6046,7 @@ function demoViewAs(role){
     toast("Back to the owner view");
   }
   S.who="all"; pendingPopupShown=true;
-  subscribeAll(); render(); window.scrollTo(0,0);
+  subscribeAll(); render(); toTop();
 }
 /* ---- Demo welcome and guided tour ----
    The welcome asks what kind of business the visitor runs and reloads the demo as that business.
@@ -6117,7 +6134,7 @@ function demoTour(i){
     card.style.left=Math.round(x)+"px"; card.style.top=Math.round(y)+"px";
   };
   const t0=target(); if (t0 && st.focus){ const r=t0.getBoundingClientRect(); if (r.top<70||r.bottom>window.innerHeight-20) t0.scrollIntoView({block:"center"}); }
-  else window.scrollTo(0,0);
+  else toTop();
   setTimeout(()=>{ place(); card.focus(); },60);
   const tick=setInterval(place,400);          // the page redraws now and then; keep the highlight in place
   window.addEventListener("resize",place); window.addEventListener("scroll",place,{passive:true});
