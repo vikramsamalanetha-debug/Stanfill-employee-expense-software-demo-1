@@ -278,7 +278,17 @@ service cloud.firestore {
     // ---------- accounts and phones ----------
     match /crewAccounts/{u} {
       allow get, create, update: if signedIn() && u == uid();
-      allow list, delete: if isPlatformAdmin();
+      allow list: if isPlatformAdmin();
+      // people can delete their own account record when they delete their account in the app
+      allow delete: if isPlatformAdmin() || (signedIn() && u == uid());
+    }
+
+    // "Delete my account" in the app leaves a note here for LIT America to remove the rest within 30 days.
+    match /accountDeletions/{u} {
+      allow create: if signedIn() && u == uid()
+        && request.resource.data.get('uid', '') == uid()
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'businessId', 'businessName', 'role', 'deleteBusiness', 'platform', 'requestedAt']);
+      allow read, delete: if isPlatformAdmin();
     }
 
     match /devices/{token} {

@@ -1182,7 +1182,7 @@ function drawBanners(){
   const b=$("#banners"); b.replaceChildren();
   if (!S.demo && !S.adminView && S.isOwner && !bizVerified()){
     b.append(el("div",{class:"banner info"},
-      el("span",{class:"grow"},el("b",{},"Your 30-day free trial has started."),
+      el("span",{class:"grow"},el("b",{},isNative()?"Welcome to DayZift.":"Your 30-day free trial has started."),
         " We're verifying "+(S.business.name||"your business")+", usually the same day. Until then, emailing invoices, invoice links and website booking requests are switched off. Everything else is ready to use.")));
   }
   if (S.adminView){
@@ -1694,8 +1694,8 @@ function settingsAccount(){
   const m=me();
   frag.append(setPanel("Account","",
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
-    S.demo?null:setRow("Delete my account","Ask us to delete your sign-in and personal details. Owners can also have the whole business deleted.",
-      el("a",{class:"btn small ghost",href:"https://dayzift.com/delete-account.html?email="+encodeURIComponent(S.myEmail||""),target:"_blank",rel:"noopener"},"Delete my account")),
+    S.demo||S.isPlatformAdmin?null:setRow("Delete my account","Permanently delete your sign-in and personal details."+(S.isOwner?" If you're the only owner, your business and its records are deleted too.":""),
+      el("button",{type:"button",class:"btn small ghost danger",onclick:openDeleteAccount},"Delete my account")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isPlatformAdmin?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
   frag.append(el("p",{class:"kv",style:"margin-top:16px"},"DayZift \u00b7 A product of ",
@@ -1708,6 +1708,48 @@ function countrySelect(sel,onchange){
 function currencyLabel(c){
   let sym=c; try { const p=new Intl.NumberFormat("en",{style:"currency",currency:c,currencyDisplay:"narrowSymbol"}).formatToParts(1).find(x=>x.type==="currency"); if (p) sym=p.value; } catch(e){}
   return c+(sym!==c?" ("+sym+")":"");
+}
+// Apple and Google both want people to be able to delete their account from inside the app.
+// The sign-in is deleted right away; a deletion record tells LIT America to remove the rest within 30 days
+// (the business and its records too when they were its only owner), as the privacy policy says.
+function openDeleteAccount(){
+  let d=$("#delDlg"); if (!d){ d=el("dialog",{id:"delDlg"}); document.body.append(d); }
+  const owners=S.business?(S.business.ownerUids||(S.business.ownerUid?[S.business.ownerUid]:[])):[];
+  const sole=S.isOwner && S.business && owners.length<=1;
+  const pw=el("input",{type:"password",autocomplete:"current-password",required:true});
+  const ok=el("input",{type:"checkbox",style:"width:auto;margin:0"});
+  const msg=el("p",{class:"kv",style:"margin:0;color:var(--danger)"});
+  const go=el("button",{type:"submit",class:"btn primary",style:"background:var(--danger);border-color:var(--danger)"},"Delete my account");
+  const f=el("form",{style:"padding:20px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;max-width:440px"},
+    el("h2",{style:"margin:0"},"Delete your account?"),
+    el("p",{style:"margin:0"},"This permanently deletes your DayZift sign-in ("+(S.myEmail||"")+") and your personal details."+
+      (sole?" You're the only owner of "+S.business.name+", so the business, its jobs, crew, invoices and books are deleted too, within 30 days.":
+       S.isOwner?" The business stays with its other owners.":" Your employer keeps the work records of the jobs and shifts you did for them.")),
+    el("p",{class:"kv",style:"margin:0"},"Records we must keep by law, like past billing, are kept for as long as required. This can't be undone."),
+    el("label",{class:"f"},"Enter your password to confirm",pw),
+    el("label",{class:"row",style:"gap:8px;font-weight:400"},ok,"I understand this can't be undone."),
+    msg,
+    el("div",{class:"row",style:"gap:8px;justify-content:flex-end"},el("button",{type:"button",class:"btn",onclick:()=>d.close()},"Cancel"),go));
+  f.onsubmit=async ev=>{ ev.preventDefault(); msg.textContent="";
+    if (!ok.checked) return msg.textContent="Tick the box to confirm.";
+    const user=auth.currentUser; if (!user) return msg.textContent="You're signed out. Sign in and try again.";
+    go.disabled=true; go.textContent="Deleting\u2026";
+    try {
+      await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email,pw.value));
+      const db=firebase.firestore();
+      await db.doc("accountDeletions/"+user.uid).set({uid:user.uid,email:user.email||"",name:(me()||{}).name||"",businessId:S.businessId||"",businessName:(S.business&&S.business.name)||"",
+        role:S.isOwner?"owner":"crew",deleteBusiness:!!sole,platform:isNative()?window.Capacitor.getPlatform():"web",requestedAt:Date.now()});
+      try { await db.doc("crewAccounts/"+user.uid).delete(); } catch(e){ console.warn(e); }
+      try { await signOutCleanup(); } catch(e){ console.warn(e); }
+      await user.delete();
+      d.close(); resetToSignedOut(); gateMsg("Your account was deleted. Thank you for using DayZift.");
+    } catch(e){
+      console.warn(e); go.disabled=false; go.textContent="Delete my account";
+      const c=e&&e.code||"";
+      msg.textContent=/wrong-password|invalid-credential|invalid-login/.test(c)?"That password isn't right.":c==="auth/too-many-requests"?"Too many tries. Wait a few minutes and try again."
+        :"Couldn't delete the account. Check your connection and try again, or email support@dayzift.com.";
+    } };
+  d.replaceChildren(f); d.showModal(); setTimeout(()=>pw.focus(),50);
 }
 function settingsBusiness(){
   const b=S.business;
@@ -2110,6 +2152,16 @@ function platformAddForm(){
   return f;
 }
 function platformApprovals(frag){
+  const dels=S.deletions||[];
+  if (dels.length){
+    const p=el("div",{class:"panel"},el("h2",{},"Deleted accounts to clean up ("+dels.length+")"),
+      el("p",{class:"kv",style:"margin:-6px 0 12px"},"These people deleted their account in the app; their sign-in is already gone. Remove the rest within 30 days (the privacy policy promises it), then tap Done."));
+    dels.forEach(x=>p.append(el("div",{class:"srow"},
+      el("div",{class:"sinfo"},el("b",{},(x.name?x.name+" \u00b7 ":"")+(x.email||x.uid)),
+        el("span",{class:"kv"},(x.role==="owner"?"Owner":"Crew")+(x.businessName?" of "+x.businessName:"")+(x.deleteBusiness?" \u00b7 delete the whole business":" \u00b7 remove their personal details")+" \u00b7 asked "+niceDate(ymd(new Date(x.requestedAt||Date.now()))))),
+      el("button",{class:"btn small",onclick:()=>{ if (confirm("Mark "+(x.email||"this")+" as cleaned up?")) write(()=>firebase.firestore().doc("accountDeletions/"+x.id).delete(),"Done"); }},"Done"))));
+    frag.append(p);
+  }
   const pending = S.allBusinesses.filter(b=>b.status==="pending");
   if (pending.length){
     const p=el("div",{class:"panel"},el("h2",{},"Pending approval"),el("p",{class:"kv",style:"margin:-6px 0 12px;"},pending.length+" business(es) waiting for review"));
@@ -5213,7 +5265,16 @@ async function signOutApp(){
   if (signingOut) return;
   signingOut=true;
   toast("Signing out…");
-  // End a running shift so location sharing stops with the session.
+  await signOutCleanup();
+  resetToSignedOut();
+  try { $("#gateLoginPassword").value=""; } catch(e){}
+  try { await withinMs(auth.signOut(),4000); } catch(e){ console.warn(e); }
+  // On a bad connection, keep trying quietly; the sign-in page is already showing.
+  if (auth.currentUser) setTimeout(()=>{ auth.signOut().catch(e=>console.warn(e)); },3000);
+  signingOut=false;
+}
+// Ends a running shift (so location sharing stops) and stops this phone getting the business's alerts.
+async function signOutCleanup(){
   try {
     const m=me(); const loc=m&&locFor(m.id);
     if (bgWatcherId){ const BG=window.Capacitor&&Capacitor.Plugins.BackgroundGeolocation; if (BG) await withinMs(BG.removeWatcher({id:bgWatcherId}),1500); bgWatcherId=null; }
@@ -5227,12 +5288,6 @@ async function signOutApp(){
   if (pushToken) await withinMs(firebase.firestore().doc("devices/"+pushToken).delete(),2500);
   if (isNative() && window.Capacitor.Plugins.PushNotifications) await withinMs(window.Capacitor.Plugins.PushNotifications.unregister(),2000);
   pushToken=null;
-  resetToSignedOut();
-  try { $("#gateLoginPassword").value=""; } catch(e){}
-  try { await withinMs(auth.signOut(),4000); } catch(e){ console.warn(e); }
-  // On a bad connection, keep trying quietly; the sign-in page is already showing.
-  if (auth.currentUser) setTimeout(()=>{ auth.signOut().catch(e=>console.warn(e)); },3000);
-  signingOut=false;
 }
 function resetToSignedOut(){
   unsubs.forEach(f=>{ try{ f(); }catch(e){} }); unsubs=[];
@@ -6085,7 +6140,7 @@ function tourSteps(){
     {tab:"invoices",nav:"invoices",title:"Invoices",text:"Turn finished jobs into invoices with your logo. See when the client opens one, and let DayZift send the overdue reminders."},
     {tab:"books",nav:"books",title:"The books",text:"Money in, money out and profit for any month, quarter or year. Snap receipts and download an expense report as a PDF."},
     {tab:"home",focus:".banner.demo .seg",title:"See what your crew see",text:"Switch to Crew view to see the app on a crew member's phone. You can also change the type of business here."},
-    {end:true,title:"That's the tour!",text:"Keep exploring the demo, or start your own business free for 30 days. No credit card needed."}
+    {end:true,title:"That's the tour!",text:isNative()?"Keep exploring the demo, or set up your own business.":"Keep exploring the demo, or start your own business free for 30 days. No credit card needed."}
   ].filter(Boolean);
 }
 let tourState=null;
@@ -6105,7 +6160,7 @@ function demoTour(i){
     el("h3",{id:"tourT"},st.title),el("p",{},st.text),prog,
     st.end ? el("div",{class:"acts"},
         el("button",{type:"button",class:"btn",onclick:()=>endTour()},"Keep exploring"),el("span",{class:"grow"}),
-        el("a",{class:"btn primary",href:location.pathname+"?register",onclick:()=>{ track("demo_trial_click",{demo_type:S.demoKind||""}); endTour(); }},"Start free 30-day trial"))
+        el("a",{class:"btn primary",href:location.pathname+"?register",onclick:()=>{ track("demo_trial_click",{demo_type:S.demoKind||""}); endTour(); }},isNative()?"Set up my business":"Start free 30-day trial"))
       : el("div",{class:"acts"},
         el("button",{type:"button",class:"btn ghost",onclick:()=>endTour()},"Skip"),el("span",{class:"grow"}),
         i>0?el("button",{type:"button",class:"btn",onclick:()=>demoTour(i-1)},"Back"):null,
@@ -6181,7 +6236,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     await db.doc("businesses/"+id).set(data);
     if (!isPlatformAdmin) track("trial_start",{business_type:category});
     if (isPlatformAdmin){ toast("Business registered!"); enterBusiness({id,...data}); }
-    else { toast("You're all set. Your 30-day free trial starts today."); enterBusiness({id,...data}); }
+    else { toast(isNative()?"You're all set.":"You're all set. Your 30-day free trial starts today."); enterBusiness({id,...data}); }
   } catch(e){ bizMsg(e.message); }
 });
 
@@ -6198,6 +6253,7 @@ async function routeUser(user){
         render();
       });
       S.usersLoaded = true;
+      firebase.firestore().collection("accountDeletions").onSnapshot(snap=>{ S.deletions=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.requestedAt||0)-(a.requestedAt||0)); render(); }, e=>console.warn("accountDeletions",e));
       firebase.firestore().collection("crewAccounts").limit(1000).onSnapshot(snap=>{
         S.allUsers = snap.docs.map(d=>({id:d.id, ...d.data()}));
         adminWatchNew("acct", S.allUsers.filter(u=>u.role==="owner"), u=>"New sign-up: "+(u.name||u.email||"someone")+(u.plannedBusinessName?" \u00b7 "+u.plannedBusinessName:""));
