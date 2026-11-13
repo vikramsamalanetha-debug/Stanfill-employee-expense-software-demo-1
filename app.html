@@ -188,7 +188,7 @@ dialog.welcome select{width:100%;font-size:16px}
 .prsteps .n{width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-size:12px;flex:none}
 .prsteps li.done .n{background:var(--ok);color:#fff}
 .prsteps li.cur .n{background:var(--primary);color:#fff}
-@media (max-width:700px){ .prsteps{grid-template-columns:1fr 1fr} }
+@media (max-width:700px){ .prsteps{display:flex} .prsteps li{flex:none} .prsteps li.cur{flex:1} .prsteps li:not(.cur) .l{display:none} .prsteps li:not(.cur) button{padding:10px} }
 .issue{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-radius:var(--radius-sm);padding:8px 10px;font-size:14px}
 .issue.bad{background:var(--danger-soft)} .issue.ok{background:#E3F2E8} .issue.info{background:var(--sky-soft)}
 .confirmbox{display:grid;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
@@ -699,6 +699,25 @@ h2.sect{font-size:17px;font-weight:600;margin:4px 4px 8px}
 .rowi .rm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .rowi .rm b{font-weight:600;font-size:15px}
 .rowi .rm>span{font-size:13px;color:var(--muted)}
+.rowi .rm>span.unas{color:#8A5A00}
+.invsum{background:var(--surface);border-radius:16px;margin:0 0 14px;overflow:hidden}
+.invsum button{border:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:14px 16px;width:100%}
+.invsum .big b{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.invsum .od{color:var(--danger);font-weight:600;font-size:14px}
+.invsum .minis{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.invsum .minis button+button{border-left:1px solid var(--line)}
+.invsum .minis b{font-size:17px}
+.btn.plus{width:44px;height:44px;min-height:44px;padding:0;border-radius:22px;font-size:26px;font-weight:400;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:999px){ header.top #bizNameHeader{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 110px)} header.top{align-items:center} }
+.rowi .rp{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.rowi .rw b.neg{color:var(--danger)}
+.rowi .chev{width:16px;height:16px;color:#9AA39F;flex:none}
+.stseg{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));background:#E9ECE8;border-radius:10px;padding:3px;margin:0 0 12px}
+.stseg button{border:0;border-radius:8px;background:transparent;font:500 14px Inter,system-ui,sans-serif;color:#4B5753;padding:8px 0;display:flex;align-items:center;justify-content:center;gap:6px}
+.stseg button[aria-selected=true]{background:#fff;box-shadow:0 1px 2px rgba(20,32,29,.12);font-weight:600;color:var(--ink)}
+.stseg .n{font-size:12px;background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:1px 7px}
+.whopick{max-width:180px}
+#assignDlg .card{box-shadow:none;border:0;padding:0}
 .rowi .rm .live{color:#1F6B4C;font-weight:500}
 .rowi .rm .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .rowi .rv{font-variant-numeric:tabular-nums;font-weight:600}
@@ -1269,6 +1288,7 @@ function draw(){
   drawNav();
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
+  if (S.sheetDraw && $("#assignDlg").open) S.sheetDraw();
   if (S.tab==="home") v.append(viewHome());
   else if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="projects") v.append(viewProjects());
@@ -1286,6 +1306,15 @@ function draw(){
   else { S.tab="home"; v.append(viewHome()); }   // anything unknown goes Home, never Books
 }
 
+function plusAction(){
+  const t=S.tab;
+  if (["home","board","requests"].includes(t)) return ["New job",()=>openJob()];
+  if (t==="projects") return ["New project",()=>openProject()];
+  if (t==="team") return ["Add team member",()=>openEmp()];
+  if (t==="invoices") return ["New invoice",()=>openInvoice(draftInvoice({}))];
+  if (t==="books") return ["Add expense",()=>{ S.expOpen=true; S.expEdit=null; S.expDraft=null; render(); setTimeout(()=>{ const x=$("#expForm"); if(x){ x.scrollIntoView({behavior:"smooth",block:"start"}); const a=x.querySelector("[name=amount]"); if(a) a.focus(); } },60); }];
+  return null;
+}
 function drawWho(){
   const w=$("#whoami"); w.replaceChildren();
   const m=me();
@@ -1298,7 +1327,10 @@ function drawWho(){
   } else if (S.myEmail){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
-  if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  if (S.isOwner && isDesktop()) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  else if (S.isOwner){   // phones: one round + that adds whatever this page is about
+    const act=plusAction(); if (act) w.append(el("button",{class:"btn primary plus","aria-label":act[0],title:act[0],onclick:act[1]},"+"));
+  }
   // On phones, Sign out moves to Settings → Account; the platform admin's client list has no Settings, so it stays up top there.
   if (!S.demo) w.append(el("button",{class:"btn ghost"+(S.console?" keep":""),onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
@@ -1474,6 +1506,7 @@ if (desktopMQ && desktopMQ.addEventListener) desktopMQ.addEventListener("change"
 function toTop(){ window.scrollTo(0,0); const m=document.getElementById("mainApp"); if (m) m.scrollTop=0; }
 function goTab(tab){
   if (tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
+  if (tab==="settings" && S.tab!=="settings") S.setOpen=false;   // phones: arriving at Settings shows the list
   S.tab=tab; render(); toTop();
 }
 function drawNav(){
@@ -2048,9 +2081,21 @@ function viewSettings(){
     ?[["business","Business"],["calendar","Booking calendar"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
+  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  if (!isDesktop() && secs.length>1){   // phones: a plain list of settings, one page each
+    const hint={business:"Name, services, country and currency",calendar:"Your public booking page",invoices:"Numbers, terms, tax and payment info",notify:"Who gets texts and emails",
+      access:"Other owners and crew invites",rewards:"Points for repeat clients",account:"Password, sign out, delete account"};
+    if (!S.setOpen){
+      frag.append(el("div",{class:"rows"},secs.map(([id,label])=>el("button",{type:"button",class:"rowi",onclick:()=>{S.setTab=id;S.setOpen=true;render();toTop();}},
+        el("span",{class:"rm"},el("b",{},label),el("span",{},hint[id]||"")),chevron()))));
+      return frag;
+    }
+    frag.append(el("button",{type:"button",class:"btn small ghost",style:"margin:0 0 10px",onclick:()=>{S.setOpen=false;render();toTop();}},"\u2190 Settings"));
+    frag.append(body());
+    return frag;
+  }
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
     ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
-  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
   frag.append(body());
   return frag;
 }
@@ -2073,7 +2118,7 @@ function viewRequests(){
     const em=S.business.notifyEmails||[];
     frag.append(el("p",{class:"kv",style:"margin:-6px 0 14px;"},
       "Alerts go to ",el("b",{},em.length?em.join(", "):"every owner")," \u00b7 ",
-      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";render();}},"Change alert settings")));
+      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";S.setOpen=true;render();}},"Change alert settings")));
   }
 
   if (!list.length){
@@ -2511,6 +2556,7 @@ function viewBoard(){
       el("button",{class:"btn small",onclick:()=>{S.projFilter=null;render();}},"Show all jobs")));
   }
 
+  if (!isDesktop()) return boardRows(frag);
   const board=el("div",{class:"board"});
   const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
   // Unassigned jobs are the owner's to hand out, so crew don't see that column.
@@ -2527,6 +2573,51 @@ function viewBoard(){
   }
   frag.append(board);
   return frag;
+}
+// Phones: one status at a time as a short list of rows. Tap a row to see the whole job and act on it.
+function boardRows(frag){
+  const tb=frag.querySelector(".toolbar");
+  if (tb && S.isOwner){   // the long row of people chips becomes one picker
+    const who=tb.querySelector('[aria-label="Show jobs for"]');
+    const opts=[...who.querySelectorAll("button")].map(b=>[b.textContent,b.getAttribute("aria-pressed")==="true"]);
+    const ids=[["all"]].concat(me()?[["mine"]]:[]).concat(S.employees.filter(e=>e.active!==false&&(!me()||e.id!==me().id)).map(e=>[e.id]));
+    who.replaceWith(el("select",{class:"whopick","aria-label":"Show jobs for",onchange:e=>{S.who=e.target.value;render();}},
+      opts.map(([l,on],i)=>el("option",{value:ids[i][0],selected:on},l))));
+  }
+  const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
+  const cols=S.isOwner?STATUSES:STATUSES.filter(x=>x.id!=="new");
+  const count=id=>jobs.filter(j=>(j.status||"new")===id).length;
+  if (!S.boardSt || !cols.some(c=>c.id===S.boardSt)) S.boardSt=(cols.find(c=>c.id!=="done"&&count(c.id))||cols[0]).id;
+  const short={new:"New",assigned:"Assigned",in_progress:"Working",done:"Done"};
+  frag.append(el("div",{class:"seg stseg",role:"tablist"},cols.map(c=>el("button",{type:"button",role:"tab","aria-selected":String(S.boardSt===c.id),onclick:()=>{S.boardSt=c.id;render();}},
+    short[c.id]||c.label, count(c.id)?el("span",{class:"n"},String(count(c.id))):null))));
+  const list=jobs.filter(j=>(j.status||"new")===S.boardSt); if (S.boardSt==="done") list.reverse();
+  const box=el("div",{class:"rows"}), t=today();
+  if (!list.length) box.append(el("div",{class:"empty",style:"padding:18px"},S.boardSt==="new"?"No unassigned jobs. Tap + to add one.":"Nothing here."));
+  list.forEach(j=>{
+    const overdue=(j.status||"new")!=="done"&&j.date&&j.date<t;
+    const crew=jobCrew(j).map(empById).filter(Boolean);
+    box.append(el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
+      el("span",{class:"rw"},el("b",{class:overdue?"neg":""},j.date===t?"Today":niceDate(j.date).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),el("span",{},jobWhen(j)||"Any time")),
+      el("span",{class:"rm"},el("b",{},j.client||"Untitled job"),
+        el("span",{},[j.service,shortAddr(j.address)].filter(Boolean).join(" \u00b7 ")),
+        el("span",{class:crew.length?"":"unas"},crew.length?crew.map(e=>e.name.split(" ")[0]).join(", "):(S.isOwner?"Not assigned yet":""))),
+      S.isOwner?el("span",{class:"rp"},money(j.price)):null, chevron()));
+  });
+  frag.append(box);
+  return frag;
+}
+function openJobSheet(j){
+  if (!S.isOwner) return openCrewJob(j);
+  const d=$("#assignDlg"), body=$("#assignDlgBody");
+  S.sheetJob=j.id;
+  const draw=()=>{ const cur=S.jobs.find(x=>x.id===S.sheetJob); if (!cur){ d.close(); return; }
+    body.replaceChildren(el("div",{class:"row",style:"margin-bottom:6px"},el("span",{class:"grow kv"},(STATUSES.find(x=>x.id===(cur.status||"new"))||{}).label||""),
+      el("button",{type:"button",class:"btn small",onclick:()=>d.close()},"Close")), jobCard(cur));
+    body.querySelectorAll(".card button").forEach(b=>{ if (/^(Edit|Costs)/.test(b.textContent)) b.addEventListener("click",()=>d.close()); }); };
+  S.sheetDraw=draw; draw();
+  d.onclose=()=>{ S.sheetJob=null; S.sheetDraw=null; };
+  if (!d.open) d.showModal();
 }
 function jobCard(j){
   const st=j.status||"new"; const t=today();
@@ -2735,12 +2826,12 @@ function openJob(j, preset){
     const cntF=el("label",{class:"f"},"Put on the board",cntSel);
     const repF=el("label",{class:"f"},"Repeats",repSel);
     const memo=el("div",{class:"full memo",hidden:true});
-    const more=el("details",{class:"full morebox"},el("summary",{},"Job details",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, service, price, crew, notes")),
-      el("div",{class:"expform",style:"margin-top:10px"},addrF,svcField,priceF,phoneF,leadF,crewF,notesF));
+    const more=el("details",{class:"full morebox"},el("summary",{},"Address and notes",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, phone, more crew, notes")),
+      el("div",{class:"expform",style:"margin-top:10px"},addrF,phoneF,crewF,notesF));
     const setV=(n,v)=>{ const x=f.querySelector("[name="+n+"]"); if (x) x.value=v==null?"":v; };
     const summary=()=>{ const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
       const names=[...new Set(crew)].map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
-      $("#jobSum").textContent=" \u00b7 "+[d.service,d.price?money(d.price):"",names.join(" + ")||"no crew yet",d.address].filter(Boolean).join(" \u00b7 "); };
+      $("#jobSum").textContent=" \u00b7 "+([d.address,names.length>1?names.join(" + "):"",d.notes?"notes":""].filter(Boolean).join(" \u00b7 ")||"none yet"); };
     let filledFor=null;
     const fill=(pr)=>{
       if (!pr){ filledFor=null; memo.hidden=true; more.open=true; return; }
@@ -2754,13 +2845,13 @@ function openJob(j, preset){
       memo.hidden=false;
       memo.replaceChildren(el("b",{},"\u21bb Repeat client"),
         " \u00b7 "+pr.visits+" visit"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+(pr.repeat?" \u00b7 "+repeatText(pr.repeat).toLowerCase():"")+(pr.nextBooked?" \u00b7 booked through "+niceDate(pr.lastJob.date):""),
-        el("div",{class:"kv"},"Their usual details are filled in below. Change anything under Job details."));
+        el("div",{class:"kv"},"Their usual service, price, crew and address are filled in. Change anything below."));
       more.open=false; summary();
     };
     cIn.addEventListener("change",()=>fill(clientProfile(cIn.value)));
     cIn.addEventListener("input",()=>{ const pr=clientProfile(cIn.value); if (pr && profs.some(p=>p.name===cIn.value)) fill(pr); });
     f.addEventListener("change",ev=>{ if (ev.target!==cIn) summary(); });
-    parts0=[title, clientF, memo, dateF, timeF, repF, cntF, more, acts];
+    parts0=[title, clientF, memo, svcField, priceF, dateF, timeF, leadF, repF, cntF, more, acts];
     setTimeout(()=>{ if (j.client) fill(clientProfile(j.client)); else { more.open=false; summary(); } cIn.focus(); },0);
   }
   const parts = parts0 ? parts0 : phase ? [
@@ -3909,15 +4000,21 @@ function viewInvoices(){
     el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["paid30","Paid (30 days)"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
       el("button",{class:"chip","aria-pressed":String(f===id),onclick:()=>{S.invFilter=id;render();}},l))),
     el("span",{class:"grow"}),
-    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:"max-width:220px",
+    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:isDesktop()?"max-width:220px":"width:100%",
       oninput:ev=>{ S.invSearch=ev.target.value; clearTimeout(S.invSearchT); S.invSearchT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=document.querySelector('input[aria-label="Search invoices"]'); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }}),
-    el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice")));
+    isDesktop()?el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice"):null));
   // Each total opens its list: the invoices behind it, or the jobs waiting to be billed.
   const jump=(filter,target)=>{ if(filter){ S.invFilter=filter; S.invSearch=""; } if(target==="ready") S.invReadyAll=true; render();
     setTimeout(()=>{ const n=document.getElementById(target==="ready"?"invReady":"invList"); if(n) n.scrollIntoView({behavior:"smooth",block:"start"}); },60); };
   const card=(label,val,filter,target,extra)=>el("button",{type:"button",class:"stat statbtn"+(extra||"")+((filter&&f===filter)?" on":""),onclick:()=>jump(filter,target)},
     el("div",{class:"l"},label),el("div",{class:"v"},money(val)),el("div",{class:"go"},"View \u2192"));
-  frag.append(el("div",{class:"sum"},
+  if (!isDesktop()) frag.append(el("div",{class:"invsum"},   // phones: one calm summary instead of four boxes
+    el("button",{type:"button",class:"big",onclick:()=>jump("open")},el("span",{class:"kv"},"Clients owe you"),el("b",{},money(outstanding)),
+      overdue?el("span",{class:"od"},money(overdue)+" overdue"):el("span",{class:"kv"},"Nothing overdue")),
+    el("div",{class:"minis"},
+      el("button",{type:"button",onclick:()=>jump("paid30")},el("span",{class:"kv"},"Paid, last 30 days"),el("b",{},money(paid30))),
+      el("button",{type:"button",onclick:()=>jump(null,"ready")},el("span",{class:"kv"},"Finished, not billed"),el("b",{},money(readyAmt))))));
+  else frag.append(el("div",{class:"sum"},
     card("Outstanding",outstanding,"open"),
     card("Overdue",overdue,"overdue",null,overdue?" neg net":""),
     card("Paid in the last 30 days",paid30,"paid30"),
@@ -4866,11 +4963,11 @@ function viewPayroll(){
   const done1=unpaid.length>0 && unpaid.every(x=>x.hoursOk||x.blocked) && unpaid.some(x=>x.hoursOk);
   const auto = !unpaid.length ? 3 : apOk ? 3 : done1 ? 1 : 0;
   const step = S.pr.step!=null ? S.pr.step : auto;
-  frag.append(el("div",{class:"row",style:"margin:0 0 8px"},el("h2",{class:"grow",style:"margin:0"},"Crew pay & estimates")));
+  frag.append(el("div",{class:"row",style:"margin:0 0 8px"},el("h2",{class:"grow",style:"margin:0"},"Crew pay")));
   frag.append(periodBar([el("button",{class:"btn small ghost",onclick:openPaySched},"Payroll settings")]));
   const marks=[unpaid.length?(done1?"done":""):"done", ap&&apOk?"done":"", ap&&apOk?"done":"", !unpaid.length&&rows.length?"done":""];
   frag.append(el("ol",{class:"prsteps"},...PR_STEPS.map((l,i)=>el("li",{class:(i===step?"cur ":"")+marks[i]},
-    el("button",{type:"button",onclick:()=>{ S.pr.step=i; render(); }},el("span",{class:"n"},marks[i]==="done"?"✓":String(i+1)),l)))));
+    el("button",{type:"button",onclick:()=>{ S.pr.step=i; render(); }},el("span",{class:"n"},marks[i]==="done"?"✓":String(i+1)),el("span",{class:"l"},l))))));
   frag.append([prStep1,prStep2,prStep3,prStep4][step](st));
   const subs=S.employees.filter(e=>e.active!==false && e.companyId);
   if (subs.length) frag.append(el("p",{class:"kv"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
@@ -4884,9 +4981,9 @@ function prStep1(st){
   const box=document.createDocumentFragment(), {rows,paidIds}=st;
   const ww=workweekDow(), ps=paySched();
   if (!isUS()) box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Pay in "+COUNTRIES[bizCountry()][0]+": "),"DayZift adds up hours and pay. It doesn't add overtime or work out taxes outside the US, so enter overtime as a bonus and tax as a deduction, using your accountant's figures."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Pay schedule")));
-  else box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for hourly employees past 40 hours in a workweek ("+DOW_SHORT[ww]+"–"+DOW_SHORT[(ww+6)%7]+
-    (ww!==ps.startDow?"; it can cross two pay periods and is counted on the whole week":"")+
-    "). Some states add daily overtime; adjust it if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+  else box.append(el("p",{class:"kv",style:"margin:0 4px 12px",title:"Some states add daily overtime; adjust it if yours does."+(ww!==ps.startDow?" A workweek can cross two pay periods; overtime is counted on the whole week.":"")},
+    "Overtime: time and a half for hourly employees after 40 hours a week ("+DOW_SHORT[ww]+"–"+DOW_SHORT[(ww+6)%7]+"). ",
+    el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
   const tbl=el("table",{class:"ptable"});
   tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{},"Hours / work"),el("th",{},"Status"),el("th",{}))));
   const tb=el("tbody");
@@ -5993,7 +6090,7 @@ function enterBusiness(biz, opts){
   S.tab="home"; S.setTab=null; S.pr=null; S.invLook=null;   // every sign-in / client opened starts on Home
   // Coming back from Stripe's setup pages: show the card payment settings and check what Stripe says.
   const fromStripe=new URLSearchParams(location.search).get("stripe");
-  if (fromStripe && S.isOwner){ S.tab="settings"; S.setTab="invoices"; history.replaceState(null,"",location.pathname); setTimeout(()=>stripeCheck(false),300); }
+  if (fromStripe && S.isOwner){ S.tab="settings"; S.setTab="invoices"; S.setOpen=true; history.replaceState(null,"",location.pathname); setTimeout(()=>stripeCheck(false),300); }
   watchBusiness(biz.id, !!opts.adminView);
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
