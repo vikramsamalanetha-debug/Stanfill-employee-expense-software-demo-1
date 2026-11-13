@@ -10,7 +10,7 @@
 <meta name="author" content="LIT America">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,750&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   color-scheme:light;
@@ -188,7 +188,7 @@ dialog.welcome select{width:100%;font-size:16px}
 .prsteps .n{width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-size:12px;flex:none}
 .prsteps li.done .n{background:var(--ok);color:#fff}
 .prsteps li.cur .n{background:var(--primary);color:#fff}
-@media (max-width:700px){ .prsteps{grid-template-columns:1fr 1fr} }
+@media (max-width:700px){ .prsteps{display:flex} .prsteps li{flex:none} .prsteps li.cur{flex:1} .prsteps li:not(.cur) .l{display:none} .prsteps li:not(.cur) button{padding:10px} }
 .issue{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-radius:var(--radius-sm);padding:8px 10px;font-size:14px}
 .issue.bad{background:var(--danger-soft)} .issue.ok{background:#E3F2E8} .issue.info{background:var(--sky-soft)}
 .confirmbox{display:grid;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
@@ -672,6 +672,133 @@ dialog .acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;marg
 .srow:first-of-type{border-top:0}
 .sinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 220px}
 .sctl{flex:0 0 auto}
+/* Crew Today and My hours */
+.clock{background:var(--surface);border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 0 18px;text-align:center}
+.clock .cs{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--muted)}
+.clock.on .cs{color:#1F6B4C}
+.clock .dotlive{width:8px;height:8px;border-radius:4px;background:#2E9E6B;box-shadow:0 0 0 4px rgba(46,158,107,.15)}
+.clock .ct{font-size:44px;line-height:1.1;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.clock .cm{font-size:14px;color:var(--muted)}
+.clock .cbtn{margin-top:12px;width:100%;justify-content:center;height:50px;border-radius:14px;font-size:16px}
+.clock .cbtn.out{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink)}
+.clock .cn{font-size:12px;color:var(--muted);margin-top:6px}
+h2.sect{font-size:17px;font-weight:600;margin:4px 4px 8px}
+.jobnow{background:var(--surface);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:2px;margin:0 0 18px}
+.jobnow .jt{font-size:17px;font-weight:600}
+.jobnow .jm{font-size:14px;color:var(--muted)}
+.jobnow .jn{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px;white-space:pre-wrap}
+.jobnow .ja{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px;margin-top:12px}
+.jobnow .ja .btn{justify-content:center;height:46px;border-radius:12px;font-size:15px}
+.rows{background:var(--surface);border-radius:16px;display:flex;flex-direction:column;margin:0 0 14px;overflow:hidden}
+.rowi{display:flex;align-items:center;gap:14px;padding:13px 16px;border:0;border-top:1px solid #ECEEEB;background:transparent;text-align:left;width:100%;font:inherit;color:inherit;cursor:pointer}
+.rows>.rowi:first-child,.rows>.empty+.rowi{border-top:0}
+.rowi:hover{background:#FAFBFA}
+.rowi .rw{width:72px;flex:none;display:flex;flex-direction:column;font-size:13px}
+.rowi .rw b{font-weight:600}
+.rowi .rw span{color:var(--muted)}
+.rowi .rm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rowi .rm b{font-weight:600;font-size:15px}
+.rowi .rm>span{font-size:13px;color:var(--muted)}
+.rowi .rm>span.unas{color:#8A5A00}
+.invsum{background:var(--surface);border-radius:16px;margin:0 0 14px;overflow:hidden}
+.invsum button{border:0;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:14px 16px;width:100%}
+.invsum .big b{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.invsum .od{color:var(--danger);font-weight:600;font-size:14px}
+.invsum .minis{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.invsum .minis button+button{border-left:1px solid var(--line)}
+.invsum .minis b{font-size:17px}
+.btn.plus{width:44px;height:44px;min-height:44px;padding:0;border-radius:22px;font-size:26px;font-weight:400;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:999px){ header.top #bizNameHeader{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 110px)} header.top{align-items:center} }
+.rowi .rp{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.rowi .rw b.neg{color:var(--danger)}
+.rowi .chev{width:16px;height:16px;color:#9AA39F;flex:none}
+.stseg{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));background:#E9ECE8;border-radius:10px;padding:3px;margin:0 0 12px}
+.stseg button{border:0;border-radius:8px;background:transparent;font:500 14px Inter,system-ui,sans-serif;color:#4B5753;padding:8px 0;display:flex;align-items:center;justify-content:center;gap:6px}
+.stseg button[aria-selected=true]{background:#fff;box-shadow:0 1px 2px rgba(20,32,29,.12);font-weight:600;color:var(--ink)}
+.stseg .n{font-size:12px;background:var(--primary-soft);color:var(--primary);border-radius:999px;padding:1px 7px}
+.whopick{max-width:180px}
+#assignDlg .card{box-shadow:none;border:0;padding:0}
+.rowi .rm .live{color:#1F6B4C;font-weight:500}
+.rowi .rm .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.rowi .rv{font-variant-numeric:tabular-nums;font-weight:600}
+.rowi .chev{width:16px;height:16px;color:#9AA39F;flex:none}
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+.weeknav .btn{font-size:22px;padding:2px 12px}
+.weeknav b{font-weight:600;font-size:15px;text-align:center}
+.duo{background:var(--surface);border-radius:16px;display:grid;grid-template-columns:1fr 1fr;padding:14px 0;margin:0 0 14px}
+.duo>div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.duo>div+div{border-left:1px solid #ECEEEB}
+.duo b{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.duo span{font-size:13px;color:var(--muted)}
+.btn.wide{width:100%;justify-content:center;height:48px;border-radius:14px;font-size:15px}
+.kv.center{text-align:center}
+.sheetform{display:flex;flex-direction:column;gap:12px}
+.sheetform .big{font-size:20px;font-weight:600;margin:0}
+.sheetform h3{margin:6px 0 0;font-size:16px}
+.sheetform .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.clockbar{padding:8px 12px}
+.sum .stat .s{font-size:12px;color:var(--muted);margin-top:2px}
+.owedline{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:12px 14px;margin:0 0 16px;font-size:14px}
+.asks{padding:4px 0}
+.askhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px 4px}
+.askhead span{font-size:13px;color:var(--muted)}
+.ask{display:flex;gap:12px;padding:12px 16px;border-top:1px solid #ECEEEB}
+.ask .rm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.ask .rm>span{color:#33403C}
+.fixline{display:flex;align-items:center;gap:10px;justify-content:space-between;background:#FFF8E6;margin:0 12px 12px;border-radius:12px;padding:10px 12px;font-size:14px}
+.daylist{display:flex;flex-direction:column;padding:0 12px 12px}
+.dayi{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;align-items:center;border:0;background:var(--bg);border-radius:10px;padding:9px 12px;margin-top:6px;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.dayi .kv{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rowi .avatar{flex:none}
+/* ===== DayZift 1.1 look: calm white and grey, DayZift green for the main action, yellow only as a highlight ===== */
+:root{--bg:#F5F6F4;--surface:#FFFFFF;--surface-2:#E9ECE8;--ink:#15201D;--muted:#5F6B67;--line:#E6E9E6;
+  --primary:#145848;--primary-ink:#FFFFFF;--primary-soft:#E7F1EE;--lemon:#F2C230;--lemon-soft:#FFF4D6;--sky:#3A5F8C;--sky-soft:#EAF0F7;--ok:#1F6B4C;
+  --display:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;--radius-lg:16px;--radius:12px}
+body{font:400 15px/1.5 var(--body)}
+:focus-visible{outline-color:#2E9E6B}
+.brand h1,.hello,.panel h2,dialog h2,dialog.welcome h2{font-weight:700;letter-spacing:-.02em}
+.panel h2{font-size:18px}
+.panel{border:0}
+.stat{border:0}
+.stat b{font-weight:700;font-size:26px}
+.stat .l{font-weight:600}
+.stat:hover{border:0;box-shadow:inset 0 0 0 1.5px var(--line)}
+.stat.hot{background:var(--surface);border:0;box-shadow:inset 0 0 0 1.5px var(--lemon)}
+.btn{font-weight:600;border-color:#DADFDB}
+.btn:hover{border-color:#B9C2BE}
+.btn.primary:hover{background:#0E3F33;border-color:#0E3F33}
+.btn.lemon{background:var(--lemon-soft);border-color:var(--lemon-soft);color:#5C4300}
+/* Tabs and sub-pages: a quiet grey switch, the chosen one white */
+.tabs,.subtabs{background:var(--surface-2);padding:3px;border-radius:10px;gap:2px;width:max-content;max-width:100%;overflow-x:auto;flex-wrap:nowrap}
+.tabs button,.subtabs .chip{border:0;background:transparent;border-radius:8px;padding:7px 14px;font-weight:500;color:#4B5753;font-size:14px;white-space:nowrap}
+.tabs button[aria-selected="true"],.subtabs .chip[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(20,32,29,.12)}
+/* Filters: outlined; the chosen one dark (not the brand color, which is kept for actions) */
+.chip{font-weight:500;border-color:#DADFDB;color:#4B5753}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.pill{font-weight:600}
+.card{border:0;box-shadow:0 1px 2px rgba(20,32,29,.07)}
+.card .svc{color:var(--muted);font-weight:600}
+.card h3{font-weight:600}
+label.f,div.f{font-weight:600}
+input,select,textarea{border-color:#DADFDB;border-radius:10px}
+.banner{border-radius:12px}
+.banner.demo{background:#22302C}
+.groups button{font-weight:500}
+.groups button[aria-current="page"]{font-weight:600}
+.side-item{font-weight:500}
+.side-item.sub{font-weight:500}
+@media (max-width:700px){
+  .groups{box-shadow:none}
+  .groups button[aria-current="page"]{background:transparent;color:var(--primary)}
+  /* The demo bar: one slim strip */
+  .banner.demo{padding:8px 10px;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .banner.demo>.grow{display:none}
+  .banner.demo .demo-short{display:inline!important;font-weight:700;font-size:13px;margin-right:2px}
+  .banner.demo .demo-type{font-size:0;gap:0}
+  .banner.demo .demo-type select{font-size:13px;padding:5px 8px}
+  .banner.demo .seg button{font-size:13px;padding:5px 10px}
+  .banner.demo .btn.small{padding:5px 10px;font-size:12px}
+}
 </style>
 <!-- Google Tag Manager on live dayzift.com and in the Android/iPhone app (never tests). Tracking is set up in tagmanager.google.com.
      Every app screen is reported under one fixed name and address, so business names and data never go to Google.
@@ -972,6 +1099,10 @@ const CURRENCIES=["USD","CAD","GBP","EUR","AUD","NZD","INR","CHF","CZK","DKK","H
 const bizCountry=()=>{ const c=S.business&&S.business.country; return COUNTRIES[c]?c:"US"; };
 const bizCurrency=()=>{ const c=S.business&&S.business.currency; return CURRENCIES.includes(c)?c:COUNTRIES[bizCountry()][1]; };
 const isUS=()=>bizCountry()==="US";
+// US payroll tax estimates (W-2/W-4 withholding, FICA, 1099 tracking) are opt-in. Businesses that already use them
+// (a W-2 worker with a W-4 entered) keep them on; everyone else sees plain pay, before taxes.
+const taxOn=()=>{ if (!isUS()) return false; const b=S.business||{}; if (b.taxEstimates===true) return true; if (b.taxEstimates===false) return false;
+  return (S.payRates||[]).some(r=>r.cls==="w2" && r.w4 && r.w4.status); };
 const distUnit=()=>COUNTRIES[bizCountry()][2];
 // US: "Sales tax". India, Australia, New Zealand, Canada: "GST". UK and Europe: "VAT".
 const taxName=()=>{ const c=bizCountry(); return c==="US"?"Sales tax":["IN","AU","NZ","CA"].includes(c)?"GST":"VAT"; };
@@ -1102,15 +1233,30 @@ function viewOnlyBlocked(){
   return true;
 }
 async function write(fn, okMsg){
-  if (viewOnlyBlocked()) return;
-  try { await fn(); if(okMsg) toast(okMsg); }
+  if (viewOnlyBlocked()) return false;
+  try { await fn(); if(okMsg) toast(okMsg); return true; }
   catch(e){
     console.warn(e);
     const code = e && e.code;
     if (code==="invalid_argument") toast("You can view this board but not change it. Ask the owner for “Can interact” access.");
     else if (code==="quota_exceeded") toast("The board is full. Delete old expenses or finished jobs to make room.");
-    else toast("That didn’t save. Check your connection and try again.");
+    else toast(e&&e.code==="permission-denied" ? "You don’t have permission to change that. Ask the owner." : "That didn’t save. Check your connection and try again.");
+    return false;
   }
+}
+// Save from a form without losing what was typed: the button shows "Saving…", the form closes only once
+// the save goes through, and stays open with everything still filled in if it fails.
+// With no signal the database holds the change until it's back online, so after a few seconds we close and say so.
+async function saveForm(dlg, fn, okMsg){
+  if (viewOnlyBlocked()) return false;
+  const btn=dlg&&dlg.querySelector("button[type=submit],form .btn.primary");
+  const was=btn&&btn.textContent; if (btn){ btn.disabled=true; btn.textContent="Saving\u2026"; }
+  let slow=false; const t=setTimeout(()=>{ slow=true; if (dlg&&dlg.open) dlg.close(); toast("No connection right now. It will save when you're back online — keep DayZift open."); },8000);
+  const ok=await write(fn, null);
+  clearTimeout(t);
+  if (btn){ btn.disabled=false; btn.textContent=was; }
+  if (ok){ if (dlg&&dlg.open) dlg.close(); if (okMsg && !slow) toast(okMsg); }
+  return ok;
 }
 
 /* ---------- state ---------- */
@@ -1142,6 +1288,7 @@ function draw(){
   drawNav();
   drawWho(); drawBanners();
   const v=$("#view"); v.replaceChildren();
+  if (S.sheetDraw && $("#assignDlg").open) S.sheetDraw();
   if (S.tab==="home") v.append(viewHome());
   else if (S.tab==="platform" && S.isPlatformAdmin) v.append(viewPlatformAdmin());
   else if (S.tab==="projects") v.append(viewProjects());
@@ -1152,25 +1299,38 @@ function draw(){
   else if (S.tab==="rewards") v.append(viewRewards());
   else if (S.tab==="board") v.append(viewBoard());
   else if (S.tab==="team") v.append(viewTeam());
+  else if (S.tab==="hours") v.append(viewMyHours());
   else if (S.tab==="insights") v.append(viewInsights());
   else if (S.tab==="settings") v.append(viewSettings());
   else if (S.tab==="books") v.append(viewBooks());
   else { S.tab="home"; v.append(viewHome()); }   // anything unknown goes Home, never Books
 }
 
+function plusAction(){
+  const t=S.tab;
+  if (["home","board","requests"].includes(t)) return ["New job",()=>openJob()];
+  if (t==="projects") return ["New project",()=>openProject()];
+  if (t==="team") return ["Add team member",()=>openEmp()];
+  if (t==="invoices") return ["New invoice",()=>openInvoice(draftInvoice({}))];
+  if (t==="books") return ["Add expense",()=>{ S.expOpen=true; S.expEdit=null; S.expDraft=null; render(); setTimeout(()=>{ const x=$("#expForm"); if(x){ x.scrollIntoView({behavior:"smooth",block:"start"}); const a=x.querySelector("[name=amount]"); if(a) a.focus(); } },60); }];
+  return null;
+}
 function drawWho(){
   const w=$("#whoami"); w.replaceChildren();
   const m=me();
   if (m){
     const loc=locFor(m.id); const on = loc && loc.onDuty;
     w.append(el("span",{class:"kv"},"Signed in as ", el("b",{},m.name)));
-    if (!(S.tab==="home" && !S.isOwner))     // crew get a big shift button on their Today page instead
-      w.append(on ? el("button",{class:"btn",onclick:stopDuty},"End shift")
-                  : el("button",{class:"btn lemon",onclick:startDuty},"Start shift"));
+    if (S.isOwner)     // crew clock in and out on their Today page (and the slim bar while on the clock)
+      w.append(on ? el("button",{class:"btn",onclick:stopDuty},"Clock out")
+                  : el("button",{class:"btn",onclick:startDuty},"Clock in"));
   } else if (S.myEmail){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
-  if (S.isOwner) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  if (S.isOwner && isDesktop()) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
+  else if (S.isOwner){   // phones: one round + that adds whatever this page is about
+    const act=plusAction(); if (act) w.append(el("button",{class:"btn primary plus","aria-label":act[0],title:act[0],onclick:act[1]},"+"));
+  }
   // On phones, Sign out moves to Settings → Account; the platform admin's client list has no Settings, so it stays up top there.
   if (!S.demo) w.append(el("button",{class:"btn ghost"+(S.console?" keep":""),onclick:signOutApp},"Sign out"));   // the demo banner has its own
 }
@@ -1196,6 +1356,7 @@ function drawBanners(){
   if (S.demo){
     const asCrew = !S.isOwner;
     b.append(el("div",{class:"banner demo"},
+      el("span",{class:"demo-short",style:"display:none"},"Demo"),
       el("span",{class:"grow"},el("b",{},"You're in the demo account."),
         " Every name and number is made up. Try anything; it resets when you sign out."),
       el("label",{class:"demo-type"},"Business type",
@@ -1212,14 +1373,14 @@ function drawBanners(){
   if (m){
     const loc=locFor(m.id);
     if (loc && loc.onDuty && S.watching){
-      b.append(el("div",{class:"banner duty"}, el("span",{class:"pulse","aria-hidden":"true"}),
-        el("span",{class:"grow"}, "You’re on shift and sharing your location with the office. Keep this page open; sharing stops when you end your shift."),
-        el("button",{class:"btn small",onclick:stopDuty},"End shift")));
+      if (!(S.tab==="home" && !S.isOwner)) b.append(el("div",{class:"banner duty clockbar"}, el("span",{class:"pulse","aria-hidden":"true"}),
+        el("span",{class:"grow"}, el("b",{},"On the clock"), " \u00b7 "+hrs((Date.now()-(loc.since||Date.now()))/36e5)+(isNative()?"":" \u00b7 keep DayZift open while you work")),
+        el("button",{class:"btn small",onclick:stopDuty},"Clock out")));
     } else if (loc && loc.onDuty && !S.watching){
       b.append(el("div",{class:"banner warn"},
-        el("span",{class:"grow"},"You’re marked on shift, but this page isn’t sharing your location right now."),
-        el("button",{class:"btn small lemon",onclick:startDuty},"Resume sharing"),
-        el("button",{class:"btn small",onclick:stopDuty},"End shift")));
+        el("span",{class:"grow"},"You’re clocked in, but your location isn’t being shared right now."),
+        el("button",{class:"btn small primary",onclick:startDuty},"Resume"),
+        el("button",{class:"btn small",onclick:stopDuty},"Clock out")));
     }
     if (S.dutyErr) b.append(el("div",{class:"banner warn"}, S.dutyErr));
   } else if (S.myUserId && S.employees.some(e=>!e.userId) && !S.isOwner){
@@ -1322,9 +1483,9 @@ function navGroups(){
   }
   if (!S.isOwner) return [
     {id:"home",label:"Today",icon:"home",tabs:[["home","Today"]]},
-    {id:"jobs",label:"My jobs",icon:"jobs",tabs:[["board","My jobs"]]},
-    {id:"shift",label:"My shift",icon:"shift",tabs:[["team","My shift"]]},
-    {id:"more",label:"Account",icon:"account",tabs:[["settings","Account"]]}];
+    {id:"jobs",label:"Jobs",icon:"jobs",tabs:[["board","My jobs"]]},
+    {id:"shift",label:"Hours",icon:"shift",tabs:[[me()?"hours":"team","My hours"]]},
+    {id:"more",label:"Me",icon:"account",tabs:[["settings","Me"]]}];
   const nReq=pendingBookings().length;
   const nAdmin=S.isPlatformAdmin ? S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length : 0;
   return [
@@ -1345,6 +1506,7 @@ if (desktopMQ && desktopMQ.addEventListener) desktopMQ.addEventListener("change"
 function toTop(){ window.scrollTo(0,0); const m=document.getElementById("mainApp"); if (m) m.scrollTop=0; }
 function goTab(tab){
   if (tab==="platform" && S.adminView) return adminBackHome();   // the admin tools live in your own business
+  if (tab==="settings" && S.tab!=="settings") S.setOpen=false;   // phones: arriving at Settings shows the list
   S.tab=tab; render(); toTop();
 }
 function drawNav(){
@@ -1412,12 +1574,13 @@ function viewHomeOwner(){
     if (next.length){ sched.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
       sched.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,true); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
   }
-  // Owners have "New job" at the top of every page; only add one here when that one isn't shown.
-  if (!S.viewOnly && !S.isOwner) sched.append(el("div",{class:"acts",style:"margin-top:12px"},el("button",{type:"button",class:"btn primary",onclick:()=>openJob()},"New job")));
   cols.append(sched);
   // Booking requests waiting for an answer
   const req=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Waiting for you"),el("span",{class:"grow"}),
     el("button",{type:"button",class:"btn small",onclick:()=>goTab("requests")},"All requests")));
+  const asks=pendingTimeAsks();
+  if (asks.length) req.append(el("button",{type:"button",class:"rowi",style:"padding:10px 0",onclick:()=>goTab("timesheet")},
+    el("span",{class:"rm"},el("b",{},asks.length+" time "+(asks.length===1?"change":"changes")+" from your crew"),el("span",{},"Check and accept or decline")),chevron()));
   if (!pend.length) req.append(el("div",{class:"empty"},"No booking requests waiting. New ones from your website show up here."));
   else req.append(el("ul",{class:"sched"},...pend.slice().sort((a,b)=>(a.requestedDate||"").localeCompare(b.requestedDate||"")).slice(0,5).map(b=>
     el("li",{},el("span",{class:"tm"},niceDate((b.requestedDate||"").slice(0,10)).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),
@@ -1481,20 +1644,147 @@ function viewHomeCrew(){
     return frag;
   }
   const loc=locFor(m.id), on=loc&&loc.onDuty;
-  frag.append(on ? el("button",{type:"button",class:"btn shift-big",onclick:stopDuty},"End shift")
-                 : el("button",{type:"button",class:"btn lemon shift-big",onclick:startDuty},"Start shift"));
+  frag.append(clockCard(m,loc,on));
   if (S.dutyErr) frag.append(el("div",{class:"banner warn"},S.dutyErr));
   const mine=S.jobs.filter(j=>jobCrew(j).includes(m.id)&&j.status!=="done");
-  const todays=mine.filter(j=>j.date===t).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
-  const p=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"My jobs today"),el("span",{class:"grow"}),
-    el("button",{type:"button",class:"btn small",onclick:()=>goTab("board")},"All my jobs")));
-  if (todays.length) p.append(el("ul",{class:"sched"},...todays.map(j=>schedRow(j,false))));
-  else p.append(el("div",{class:"empty"},"No jobs for you today."));
-  const next=mine.filter(j=>j.date>t).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||""))).slice(0,3);
-  if (next.length){ p.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
-    p.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,false); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
-  frag.append(p);
+  const byTime=(a,b)=>(a.date+(a.time||"99")).localeCompare(b.date+(b.time||"99"));
+  const nowJob=mine.filter(j=>j.status==="in_progress").sort(byTime)[0];
+  const todays=mine.filter(j=>j.date===t && j!==nowJob).sort(byTime);
+  if (nowJob){ frag.append(el("h2",{class:"sect"},"Now")); frag.append(crewJobCard(nowJob,true)); }
+  else if (todays.length){ frag.append(el("h2",{class:"sect"},"Next")); frag.append(crewJobCard(todays.shift(),false)); }
+  const later=[...todays,...mine.filter(j=>j.date>t).sort(byTime).slice(0,4)];
+  frag.append(el("h2",{class:"sect"},later.length?"Coming up":"That's everything for today"));
+  if (later.length) frag.append(el("div",{class:"rows"},...later.map(j=>el("button",{type:"button",class:"rowi",onclick:()=>openCrewJob(j)},
+    el("span",{class:"rw"},el("b",{},j.date===t?"Today":niceDate(j.date).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),el("span",{},j.time?fmtTime(j.time):"Any time")),
+    el("span",{class:"rm"},el("b",{},j.client||"Job"),el("span",{},[j.service,shortAddr(j.address)].filter(Boolean).join(" \u00b7 "))),
+    chevron()))));
+  else if (!nowJob) frag.append(el("div",{class:"empty"},"No more jobs on your list. Enjoy the rest of the day."));
+  frag.append(el("button",{type:"button",class:"btn small ghost",style:"margin-top:10px",onclick:()=>goTab("board")},"See all my jobs"));
   return frag;
+}
+// The crew's clock: one clear status, a running time and one button.
+// ---- My hours (crew): each day's times in plain hours, a way to ask for a fix, and time they forgot to clock ----
+function viewMyHours(){
+  const m=me(); if (!m) return viewTeam();
+  const off=S.mhOff||0, ws=weekStart(new Date()); ws.setDate(ws.getDate()+7*off);
+  const we=new Date(ws); we.setDate(we.getDate()+6);
+  const a=ymd(ws), z=ymd(we);
+  const list=S.shifts.filter(x=>x.empId===m.id && x.start && ymd(new Date(x.start))>=a && ymd(new Date(x.start))<=z).sort((p,q)=>q.start-p.start);
+  const worked=list.filter(x=>!x.requested).reduce((n,x)=>n+shiftHours(x),0);
+  const done=S.jobs.filter(j=>j.status==="done"&&jobCrew(j).includes(m.id)&&j.date>=a&&j.date<=z).length;
+  const frag=document.createDocumentFragment(), boss=bossName();
+  frag.append(el("div",{class:"weeknav"},
+    el("button",{type:"button",class:"btn ghost","aria-label":"Previous week",onclick:()=>{S.mhOff=off-1;render();}},"\u2039"),
+    el("b",{},(off===0?"This week":off===-1?"Last week":"Week of "+niceDate(a).replace(/,? \d{4}$/,""))+" \u00b7 "+niceDate(a).replace(/^\w+, /,"").replace(/,? \d{4}$/,"")+" \u2013 "+niceDate(z).replace(/^\w+, /,"").replace(/,? \d{4}$/,"")),
+    el("button",{type:"button",class:"btn ghost","aria-label":"Next week",disabled:off>=0,onclick:()=>{S.mhOff=off+1;render();}},"\u203a")));
+  frag.append(el("div",{class:"duo"},el("div",{},el("b",{},hrs(worked)),el("span",{},"Worked")),el("div",{},el("b",{},String(done)),el("span",{},done===1?"Job done":"Jobs done"))));
+  const rows=el("div",{class:"rows"});
+  if (!list.length) rows.append(el("div",{class:"empty"},off===0?"No hours yet this week. Clock in on the Today page when you start work.":"No hours this week."));
+  list.forEach(sh=>{
+    const open=!sh.end && Date.now()-sh.start<=SHIFT_FORGOT_H*36e5, k=ymd(new Date(sh.start));
+    const dayName=k===today()?"Today":new Date(sh.start).toLocaleDateString("en-US",{weekday:"long"});
+    const nJobs=(sh.events||[]).filter(e=>e.type==="job_done").length;
+    const tags=[];
+    if (sh.requested) tags.push(el("span",{class:"pill warn"},"You added this \u00b7 waiting for "+boss));
+    else if (sh.changeRequest&&sh.changeRequest.status==="pending") tags.push(el("span",{class:"pill warn"},"You asked to change this \u00b7 waiting for "+boss));
+    else if (sh.changeRequest&&sh.changeRequest.status==="declined") tags.push(el("span",{class:"pill"},boss+" kept the original times"));
+    else if (sh.edited) tags.push(el("span",{class:"pill"},"Changed by "+boss));
+    if (!sh.end && !open) tags.push(el("span",{class:"pill bad"},"No clock-out \u00b7 tap to fix"));
+    rows.append(el("button",{type:"button",class:"rowi",onclick:()=>openMyDay(sh)},
+      el("span",{class:"rm"},el("b",{},dayName),
+        el("span",{class:open?"live":""},hhmm(sh.start)+" \u2013 "+(sh.end?hhmm(sh.end):open?"now \u00b7 on the clock":"?")+(nJobs?" \u00b7 "+nJobs+(nJobs===1?" job":" jobs"):"")),
+        tags.length?el("span",{class:"tags"},...tags):null),
+      el("b",{class:"rv"},sh.end||open?hrs(shiftHours(sh)):"\u2014")));
+  });
+  frag.append(rows);
+  frag.append(el("button",{type:"button",class:"btn wide",onclick:openForgotTime},"+ Add time I forgot to clock"));
+  frag.append(el("p",{class:"kv center"},"Wrong time? Tap the day and tell "+boss+" what to change."));
+  return frag;
+}
+// One day: the times, and a short form to ask the owner to change them.
+function openMyDay(sh){
+  const d=$("#assignDlg"), body=$("#assignDlgBody"), boss=bossName();
+  const t=v=>{ const x=new Date(v); return pad(x.getHours())+":"+pad(x.getMinutes()); };
+  const day=ymd(new Date(sh.start)), open=!sh.end && Date.now()-sh.start<=SHIFT_FORGOT_H*36e5;
+  const f=el("form",{class:"sheetform"});
+  f.append(el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},niceDate(day)),el("button",{type:"button",class:"btn small",onclick:()=>d.close()},"Close")),
+    el("p",{class:"big"},hhmm(sh.start)+" \u2013 "+(sh.end?hhmm(sh.end):open?"now":"no clock-out")+(sh.end||open?" \u00b7 "+hrs(shiftHours(sh)):"")));
+  if (open){ f.append(el("p",{class:"kv"},"You're on the clock now. Clock out on the Today page when you finish.")); body.replaceChildren(f); d.showModal(); return; }
+  if (sh.requested){ f.append(el("p",{class:"kv"},"You added this time. It counts once "+boss+" accepts it.")); body.replaceChildren(f); d.showModal(); return; }
+  f.append(el("h3",{},"Ask "+boss+" to change it"),
+    el("div",{class:"two"},el("label",{class:"f"},"Started",el("input",{type:"time",name:"s",required:true,value:t(sh.start)})),
+      el("label",{class:"f"},"Finished",el("input",{type:"time",name:"e",required:true,value:sh.end?t(sh.end):""}))),
+    el("label",{class:"f"},"What happened? (optional)",el("input",{name:"n",maxlength:"120",placeholder:sh.end?"Forgot to clock in when I got there":"Forgot to clock out, left at 4:30"})),
+    el("button",{class:"btn primary wide"},"Send to "+boss));
+  f.onsubmit=ev=>{ ev.preventDefault(); const v=Object.fromEntries(new FormData(f));
+    const toMs=hm=>{ const [h,mi]=hm.split(":").map(Number); const x=parseYmd(day); x.setHours(h,mi,0,0); return x.getTime(); };
+    let s0=toMs(v.s), e0=toMs(v.e); if (e0<=s0) e0+=864e5;
+    write(()=>Store.update("shifts",sh.id,{changeRequest:{start:s0,end:e0,note:(v.n||"").trim().slice(0,120),at:Date.now(),status:"pending"}}),"Sent to "+boss).then(()=>d.close()); };
+  body.replaceChildren(f); d.showModal();
+}
+// "I forgot to clock": the crew member adds the time; it counts once the owner accepts it.
+function openForgotTime(){
+  const m=me(); if (!m) return;
+  const d=$("#assignDlg"), body=$("#assignDlgBody"), boss=bossName();
+  const f=el("form",{class:"sheetform"});
+  f.append(el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},"Add time I forgot"),el("button",{type:"button",class:"btn small",onclick:()=>d.close()},"Close")),
+    el("label",{class:"f"},"Day",el("input",{type:"date",name:"d",required:true,value:today(),max:today()})),
+    el("div",{class:"two"},el("label",{class:"f"},"Started",el("input",{type:"time",name:"s",required:true})),el("label",{class:"f"},"Finished",el("input",{type:"time",name:"e",required:true}))),
+    el("label",{class:"f"},"What happened? (optional)",el("input",{name:"n",maxlength:"120",placeholder:"Phone was dead"})),
+    el("p",{class:"kv"},cap1(boss)+" gets a note to check it. It counts toward your hours once it's accepted."),
+    el("button",{class:"btn primary wide"},"Send to "+boss));
+  f.onsubmit=ev=>{ ev.preventDefault(); const v=Object.fromEntries(new FormData(f));
+    const toMs=hm=>{ const [h,mi]=hm.split(":").map(Number); const x=parseYmd(v.d); x.setHours(h,mi,0,0); return x.getTime(); };
+    let s0=toMs(v.s), e0=toMs(v.e); if (e0<=s0) e0+=864e5;
+    if (e0>Date.now()+12e4) return toast("That time hasn't happened yet.");
+    write(()=>Store.set("shifts",newId(),{businessId:S.businessId,empId:m.id,userId:S.myUserId,name:m.name,start:s0,end:e0,points:[],events:[],
+      requested:{note:(v.n||"").trim().slice(0,120),at:Date.now()},createdAt:Date.now()}),"Sent to "+boss).then(()=>d.close()); };
+  body.replaceChildren(f); d.showModal();
+}
+function clockCard(m,loc,on){
+  const wk=shiftsFor(m.id,ymd(weekStart(new Date())),today()).reduce((n,x)=>n+shiftHours(x),0);
+  const c=el("section",{class:"clock "+(on?"on":"off")});
+  if (on){
+    c.append(el("span",{class:"cs"},el("span",{class:"dotlive"}),"On the clock"),
+      el("b",{class:"ct",id:"clockTime"},hrs((Date.now()-(loc.since||Date.now()))/36e5)),
+      el("span",{class:"cm"},"Since "+hhmm(loc.since||Date.now())+" \u00b7 This week "+hrs(wk)),
+      el("button",{type:"button",class:"btn cbtn out",onclick:stopDuty},"Clock out"),
+      el("span",{class:"cn"},"Your location is shared with "+bossName()+" only while you're on the clock."));
+  } else {
+    c.append(el("span",{class:"cs"},"Off the clock"),
+      el("b",{class:"ct"},hrs(wk)),
+      el("span",{class:"cm"},"Worked this week"),
+      el("button",{type:"button",class:"btn primary cbtn",onclick:startDuty},"Clock in"),
+      el("span",{class:"cn"},"Starting your first job clocks you in too."));
+  }
+  return c;
+}
+function bossName(){ const o=S.employees.find(e=>e.role&&/owner/i.test(e.role)); return o?o.name.split(" ")[0]:"the owner"; }
+const cap1=t=>t.charAt(0).toUpperCase()+t.slice(1);
+function shortAddr(a){ return (a||"").split(",")[0]; }
+function fmtTime(t){ const [h,mi]=String(t).split(":").map(Number); if (isNaN(h)) return t; const d=new Date(); d.setHours(h,mi||0,0,0); return hhmm(d.getTime()); }
+function chevron(){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("class","chev"); s.setAttribute("aria-hidden","true"); s.innerHTML='<path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'; return s; }
+// A job, the way the crew needs it: where, what to know, how to get there, and the one next step.
+function crewJobCard(j,isNow){
+  const st=j.status||"assigned";
+  const card=el("section",{class:"jobnow"},
+    el("b",{class:"jt"},j.client||"Job"),
+    el("span",{class:"jm"},[j.service,st==="in_progress"&&j.startedAt?"started "+hhmm(j.startedAt):j.time?(j.date===today()?"today ":niceDate(j.date)+" ")+fmtTime(j.time):""].filter(Boolean).join(" \u00b7 ")),
+    j.address?el("span",{class:"jm"},j.address):null,
+    j.notes?el("div",{class:"jn"},j.notes):null);
+  const acts=el("div",{class:"ja"});
+  if (j.address) acts.append(el("a",{class:"btn",href:"https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},"Directions"));
+  if (st==="in_progress") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"done")},"Finish job"));
+  else if (st!=="done") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
+  card.append(acts);
+  return card;
+}
+function openCrewJob(j){
+  const d=$("#assignDlg"), body=$("#assignDlgBody");
+  body.replaceChildren(el("div",{class:"row",style:"margin-bottom:10px"},el("h2",{class:"grow",style:"margin:0"},niceDate(j.date)),el("button",{type:"button",class:"btn small",onclick:()=>d.close()},"Close")),
+    crewJobCard(j,false));
+  body.querySelectorAll(".ja button").forEach(b=>b.addEventListener("click",()=>d.close()));
+  d.showModal();
 }
 
 /* ---- Booking calendar: which days customers can request on the website ---- */
@@ -1694,7 +1984,7 @@ function settingsAccount(){
   const m=me();
   frag.append(setPanel("Account","",
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
-    S.demo||S.isPlatformAdmin?null:setRow("Delete my account","Permanently delete your sign-in and personal details."+(S.isOwner?" If you're the only owner, your business and its records are deleted too.":""),
+    S.demo||S.isPlatformAdmin?null:setRow("Delete my account","Permanently delete your sign-in and personal details."+(S.isOwner?" If you're the only owner, your business and its records are deleted too.":" Your shift and location history go too."),
       el("button",{type:"button",class:"btn small ghost danger",onclick:openDeleteAccount},"Delete my account")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isPlatformAdmin?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
@@ -1724,7 +2014,7 @@ function openDeleteAccount(){
     el("h2",{style:"margin:0"},"Delete your account?"),
     el("p",{style:"margin:0"},"This permanently deletes your DayZift sign-in ("+(S.myEmail||"")+") and your personal details."+
       (sole?" You're the only owner of "+S.business.name+", so the business, its jobs, crew, invoices and books are deleted too, within 30 days.":
-       S.isOwner?" The business stays with its other owners.":" Your employer keeps the work records of the jobs and shifts you did for them.")),
+       S.isOwner?" The business stays with its other owners.":" Your shift log and location history are removed within 30 days. Job and pay records the business needs for its taxes stay with the business, without your sign-in.")),
     el("p",{class:"kv",style:"margin:0"},"Records we must keep by law, like past billing, are kept for as long as required. This can't be undone."),
     el("label",{class:"f"},"Enter your password to confirm",pw),
     el("label",{class:"row",style:"gap:8px;font-weight:400"},ok,"I understand this can't be undone."),
@@ -1791,9 +2081,21 @@ function viewSettings(){
     ?[["business","Business"],["calendar","Booking calendar"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
+  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  if (!isDesktop() && secs.length>1){   // phones: a plain list of settings, one page each
+    const hint={business:"Name, services, country and currency",calendar:"Your public booking page",invoices:"Numbers, terms, tax and payment info",notify:"Who gets texts and emails",
+      access:"Other owners and crew invites",rewards:"Points for repeat clients",account:"Password, sign out, delete account"};
+    if (!S.setOpen){
+      frag.append(el("div",{class:"rows"},secs.map(([id,label])=>el("button",{type:"button",class:"rowi",onclick:()=>{S.setTab=id;S.setOpen=true;render();toTop();}},
+        el("span",{class:"rm"},el("b",{},label),el("span",{},hint[id]||"")),chevron()))));
+      return frag;
+    }
+    frag.append(el("button",{type:"button",class:"btn small ghost",style:"margin:0 0 10px",onclick:()=>{S.setOpen=false;render();toTop();}},"\u2190 Settings"));
+    frag.append(body());
+    return frag;
+  }
   frag.append(el("div",{class:"toolbar"},el("div",{class:"chips"},
     ...secs.map(([id,label])=>el("button",{class:"chip","aria-pressed":String(S.setTab===id),onclick:()=>{S.setTab=id;render();}},label)))));
-  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
   frag.append(body());
   return frag;
 }
@@ -1816,7 +2118,7 @@ function viewRequests(){
     const em=S.business.notifyEmails||[];
     frag.append(el("p",{class:"kv",style:"margin:-6px 0 14px;"},
       "Alerts go to ",el("b",{},em.length?em.join(", "):"every owner")," \u00b7 ",
-      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";render();}},"Change alert settings")));
+      el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.tab="settings";S.setTab="notify";S.setOpen=true;render();}},"Change alert settings")));
   }
 
   if (!list.length){
@@ -1897,13 +2199,12 @@ function resetAlerts(){
 }
 function convertBookingToJob(b){
   const dateStr = (b.requestedDate||"").slice(0,10);
-  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], price:0, date:dateStr, time:"",
+  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], date:dateStr, time:"",
     phone:b.phone||"", notes:[b.size,b.details].filter(Boolean).join(" \u00b7 "), window:WIN_SHORT[b.timeWindow]?b.timeWindow:"",
-    assigneeId:null, status:"new", paid:false, createdAt:Date.now(), fromBookingId:b.id, businessId:S.businessId };
-  write(async()=>{
-    await Store.set("jobs",newId(),jobData);
-    await Store.update("bookings",b.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  }, "Added to the job board");
+    assigneeId:null, status:"new", fromBookingId:b.id, address:b.address||"" };
+  // Open the job form filled in from the request, so price, crew and time get set before it lands on the board.
+  // The request is only marked confirmed once the job is saved.
+  openJob(null, jobData);
 }
 
 /* ---- platform admin ---- */
@@ -2255,6 +2556,7 @@ function viewBoard(){
       el("button",{class:"btn small",onclick:()=>{S.projFilter=null;render();}},"Show all jobs")));
   }
 
+  if (!isDesktop()) return boardRows(frag);
   const board=el("div",{class:"board"});
   const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
   // Unassigned jobs are the owner's to hand out, so crew don't see that column.
@@ -2271,6 +2573,51 @@ function viewBoard(){
   }
   frag.append(board);
   return frag;
+}
+// Phones: one status at a time as a short list of rows. Tap a row to see the whole job and act on it.
+function boardRows(frag){
+  const tb=frag.querySelector(".toolbar");
+  if (tb && S.isOwner){   // the long row of people chips becomes one picker
+    const who=tb.querySelector('[aria-label="Show jobs for"]');
+    const opts=[...who.querySelectorAll("button")].map(b=>[b.textContent,b.getAttribute("aria-pressed")==="true"]);
+    const ids=[["all"]].concat(me()?[["mine"]]:[]).concat(S.employees.filter(e=>e.active!==false&&(!me()||e.id!==me().id)).map(e=>[e.id]));
+    who.replaceWith(el("select",{class:"whopick","aria-label":"Show jobs for",onchange:e=>{S.who=e.target.value;render();}},
+      opts.map(([l,on],i)=>el("option",{value:ids[i][0],selected:on},l))));
+  }
+  const jobs=S.jobs.filter(jobVisible).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9")||(a.time||"").localeCompare(b.time||""));
+  const cols=S.isOwner?STATUSES:STATUSES.filter(x=>x.id!=="new");
+  const count=id=>jobs.filter(j=>(j.status||"new")===id).length;
+  if (!S.boardSt || !cols.some(c=>c.id===S.boardSt)) S.boardSt=(cols.find(c=>c.id!=="done"&&count(c.id))||cols[0]).id;
+  const short={new:"New",assigned:"Assigned",in_progress:"Working",done:"Done"};
+  frag.append(el("div",{class:"seg stseg",role:"tablist"},cols.map(c=>el("button",{type:"button",role:"tab","aria-selected":String(S.boardSt===c.id),onclick:()=>{S.boardSt=c.id;render();}},
+    short[c.id]||c.label, count(c.id)?el("span",{class:"n"},String(count(c.id))):null))));
+  const list=jobs.filter(j=>(j.status||"new")===S.boardSt); if (S.boardSt==="done") list.reverse();
+  const box=el("div",{class:"rows"}), t=today();
+  if (!list.length) box.append(el("div",{class:"empty",style:"padding:18px"},S.boardSt==="new"?"No unassigned jobs. Tap + to add one.":"Nothing here."));
+  list.forEach(j=>{
+    const overdue=(j.status||"new")!=="done"&&j.date&&j.date<t;
+    const crew=jobCrew(j).map(empById).filter(Boolean);
+    box.append(el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
+      el("span",{class:"rw"},el("b",{class:overdue?"neg":""},j.date===t?"Today":niceDate(j.date).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),el("span",{},jobWhen(j)||"Any time")),
+      el("span",{class:"rm"},el("b",{},j.client||"Untitled job"),
+        el("span",{},[j.service,shortAddr(j.address)].filter(Boolean).join(" \u00b7 ")),
+        el("span",{class:crew.length?"":"unas"},crew.length?crew.map(e=>e.name.split(" ")[0]).join(", "):(S.isOwner?"Not assigned yet":""))),
+      S.isOwner?el("span",{class:"rp"},money(j.price)):null, chevron()));
+  });
+  frag.append(box);
+  return frag;
+}
+function openJobSheet(j){
+  if (!S.isOwner) return openCrewJob(j);
+  const d=$("#assignDlg"), body=$("#assignDlgBody");
+  S.sheetJob=j.id;
+  const draw=()=>{ const cur=S.jobs.find(x=>x.id===S.sheetJob); if (!cur){ d.close(); return; }
+    body.replaceChildren(el("div",{class:"row",style:"margin-bottom:6px"},el("span",{class:"grow kv"},(STATUSES.find(x=>x.id===(cur.status||"new"))||{}).label||""),
+      el("button",{type:"button",class:"btn small",onclick:()=>d.close()},"Close")), jobCard(cur));
+    body.querySelectorAll(".card button").forEach(b=>{ if (/^(Edit|Costs)/.test(b.textContent)) b.addEventListener("click",()=>d.close()); }); };
+  S.sheetDraw=draw; draw();
+  d.onclose=()=>{ S.sheetJob=null; S.sheetDraw=null; };
+  if (!d.open) d.showModal();
 }
 function jobCard(j){
   const st=j.status||"new"; const t=today();
@@ -2331,7 +2678,7 @@ function jobCard(j){
     const inv=invoiceFor(j.id);
     if (!inv && !j.paid && (Number(j.price)||0)>0) acts.append(el("button",{class:"btn small primary",onclick:()=>openInvoice(invoiceFromJobs([j]))},"Invoice"));
     if (inv && inv.status==="sent" && invTotals(inv).balance>0.004) acts.append(el("button",{class:"btn small",onclick:()=>openPayment(JSON.parse(JSON.stringify(inv)))},"Record payment"));
-    else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
+    else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,j.paid?{paid:false,paidDate:null}:{paid:true,paidDate:ymd(new Date())}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
     acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
   }
   if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"+ Materials"));
@@ -2363,6 +2710,21 @@ function removeFromJob(j, empId){
   write(()=>Store.update("jobs",j.id,patch), (who?who.name:"They")+" taken off this job");
 }
 function setStatus(j,status){
+  const m=!S.isOwner&&me(), loc=m&&locFor(m.id);
+  // One job at a time: starting a new one while another is still running would leave the first one open forever.
+  if (m && status==="in_progress"){
+    const open=S.jobs.find(x=>x.id!==j.id&&x.status==="in_progress"&&jobCrew(x).includes(m.id));
+    if (open){
+      if (!confirm("You haven't finished "+(open.client||"your last job")+" yet. Mark it done and start this one?")) return;
+      const p={status:"done",completedAt:Date.now()}; logShiftJob(open,"job_done");
+      write(()=>Store.update("jobs",open.id,p),null);
+    }
+  }
+  if (m && status==="in_progress" && !(loc&&loc.onDuty) && jobCrew(j).includes(m.id)) startDuty();   // the first job clocks you in
+  if (m && status==="done" && loc&&loc.onDuty){
+    const left=S.jobs.filter(x=>x.id!==j.id&&x.date===today()&&jobCrew(x).includes(m.id)&&x.status!=="done");
+    if (!left.length) setTimeout(()=>{ if (confirm("That was your last job today. Clock out now?")) stopDuty(); },400);
+  }
   const patch={status};
   if (status==="in_progress") patch.startedAt=Date.now();
   if (status==="done") patch.completedAt=Date.now();
@@ -2377,7 +2739,9 @@ function setStatus(j,status){
 const REPEATS=[["","One-time"],["7","Every week"],["14","Every 2 weeks"],["21","Every 3 weeks"],["28","Every 4 weeks"],["month","Every month"]];
 function addRepeat(ymdStr, rep, times){
   const d=parseYmd(ymdStr); if (times==null) times=1;
-  if (rep==="month") d.setMonth(d.getMonth()+times); else d.setDate(d.getDate()+Number(rep)*times);
+  // Monthly on the 31st lands on the last day of shorter months (Jan 31 → Feb 28 → Mar 31), never spills into the next month.
+  if (rep==="month"){ const day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+times); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); }
+  else d.setDate(d.getDate()+Number(rep)*times);
   return ymd(d);
 }
 const repeatText=r=>(REPEATS.find(x=>x[0]===String(r||""))||REPEATS[0])[1];
@@ -2433,7 +2797,9 @@ function openJob(j, preset){
   const addrF=el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"}));
   const priceF=el("label",{class:"f"},phase?"Phase price":"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??"",placeholder:phase?"0.00":""}));
   const dateF=el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""}));
-  const timeF=el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""}));
+  const fromBk=isNew&&j.fromBookingId?S.bookings.find(b=>b.id===j.fromBookingId):null;
+  const timeF=el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""}),
+    isNew&&WIN_SHORT[j.window]?el("span",{class:"kv",style:"font-weight:400"},"Client asked for "+WIN_SHORT[j.window].toLowerCase()):null);
   const phoneF=el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""}));
   const leadF=el("label",{class:"f"},phase?"Crew lead":"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name))));
   const projF=hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||"",onchange:()=>{ const ph=isPhase(); svcLabel.textContent=ph?"Phase name":"Service"; $("#svcField").className=ph?"f full":"f";
@@ -2447,7 +2813,7 @@ function openJob(j, preset){
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":"Add job"):"Save changes"));
-  const title=el("h2",{},isNew?(phase?"New phase":"New job"):(phase?"Edit phase":"Edit job"));
+  const title=el("h2",{},isNew?(phase?"New phase":fromBk?"Confirm request as a job":"New job"):(phase?"Edit phase":"Edit job"));
   // Cleaning and other non-project businesses: a new job leads with the client. A known client fills in everything else.
   const fast = !phase && isNew && !hasProjects();
   let parts0=null;
@@ -2460,12 +2826,12 @@ function openJob(j, preset){
     const cntF=el("label",{class:"f"},"Put on the board",cntSel);
     const repF=el("label",{class:"f"},"Repeats",repSel);
     const memo=el("div",{class:"full memo",hidden:true});
-    const more=el("details",{class:"full morebox"},el("summary",{},"Job details",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, service, price, crew, notes")),
-      el("div",{class:"expform",style:"margin-top:10px"},addrF,svcField,priceF,phoneF,leadF,crewF,notesF));
+    const more=el("details",{class:"full morebox"},el("summary",{},"Address and notes",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, phone, more crew, notes")),
+      el("div",{class:"expform",style:"margin-top:10px"},addrF,phoneF,crewF,notesF));
     const setV=(n,v)=>{ const x=f.querySelector("[name="+n+"]"); if (x) x.value=v==null?"":v; };
     const summary=()=>{ const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
       const names=[...new Set(crew)].map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
-      $("#jobSum").textContent=" \u00b7 "+[d.service,d.price?money(d.price):"",names.join(" + ")||"no crew yet",d.address].filter(Boolean).join(" \u00b7 "); };
+      $("#jobSum").textContent=" \u00b7 "+([d.address,names.length>1?names.join(" + "):"",d.notes?"notes":""].filter(Boolean).join(" \u00b7 ")||"none yet"); };
     let filledFor=null;
     const fill=(pr)=>{
       if (!pr){ filledFor=null; memo.hidden=true; more.open=true; return; }
@@ -2479,13 +2845,13 @@ function openJob(j, preset){
       memo.hidden=false;
       memo.replaceChildren(el("b",{},"\u21bb Repeat client"),
         " \u00b7 "+pr.visits+" visit"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+(pr.repeat?" \u00b7 "+repeatText(pr.repeat).toLowerCase():"")+(pr.nextBooked?" \u00b7 booked through "+niceDate(pr.lastJob.date):""),
-        el("div",{class:"kv"},"Their usual details are filled in below. Change anything under Job details."));
+        el("div",{class:"kv"},"Their usual service, price, crew and address are filled in. Change anything below."));
       more.open=false; summary();
     };
     cIn.addEventListener("change",()=>fill(clientProfile(cIn.value)));
     cIn.addEventListener("input",()=>{ const pr=clientProfile(cIn.value); if (pr && profs.some(p=>p.name===cIn.value)) fill(pr); });
     f.addEventListener("change",ev=>{ if (ev.target!==cIn) summary(); });
-    parts0=[title, clientF, memo, dateF, timeF, repF, cntF, more, acts];
+    parts0=[title, clientF, memo, svcField, priceF, dateF, timeF, leadF, repF, cntF, more, acts];
     setTimeout(()=>{ if (j.client) fill(clientProfile(j.client)); else { more.open=false; summary(); } cIn.focus(); },0);
   }
   const parts = parts0 ? parts0 : phase ? [
@@ -2514,16 +2880,21 @@ function openJob(j, preset){
     if (!data.assigneeId && status!=="done") status="new";
     else if (data.assigneeId && status==="new") status="assigned";
     data.status=status;
-    $("#jobDlg").close();
+    if (isNew && j.window && !data.time) data.window=j.window;   // the client asked for a morning/afternoon slot
+    if (fromBk) data.fromBookingId=fromBk.id;
+    const dlg=$("#jobDlg");
     if (d.repeat!==undefined) data.repeat=d.repeat||"";
     const count=Math.max(1,Math.min(12,Number(d.count)||1));
     if (isNew && count>1 && data.repeat && data.date){
       data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId;
-      write(async()=>{ for (let i=0;i<count;i++) await Store.set("jobs",newId(),{...data,date:addRepeat(data.date,data.repeat,i),createdAt:Date.now()+i}); },
+      saveForm(dlg,async()=>{ for (let i=0;i<count;i++) await Store.set("jobs",newId(),{...data,date:addRepeat(data.date,data.repeat,i),createdAt:Date.now()+i}); },
         count+" visits added for "+data.client+", "+repeatText(data.repeat).toLowerCase());
     }
-    else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),pj?"Phase added":"Job added"); }
-    else write(()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
+    else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; const id=newId();
+      saveForm(dlg,async()=>{ await Store.set("jobs",id,data);
+        if (fromBk) await Store.update("bookings",fromBk.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()}); },
+        fromBk?"Request confirmed and added to the job board":pj?"Phase added":"Job added"); }
+    else saveForm(dlg,()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
   };
   $("#jobDlg").showModal();
 }
@@ -2788,9 +3159,11 @@ function shiftFlags(sh){
   if (sh.edited) f.push(["","Times fixed by owner"]);
   return f;
 }
+// Time a crew member added themselves ("I forgot to clock in") doesn't count until the owner accepts it.
 function shiftsFor(empId,startYmd,endYmd){
-  return S.shifts.filter(x=>x.empId===empId && x.start && ymd(new Date(x.start))>=startYmd && ymd(new Date(x.start))<=endYmd);
+  return S.shifts.filter(x=>x.empId===empId && x.start && !x.requested && ymd(new Date(x.start))>=startYmd && ymd(new Date(x.start))<=endYmd);
 }
+const pendingTimeAsks=()=>S.shifts.filter(x=>x.requested || (x.changeRequest&&x.changeRequest.status==="pending"));
 function appendToShift(id, field, item){
   if (Store.mode==="db") return Store.update("shifts",id,{[field]:firebase.firestore.FieldValue.arrayUnion(item)});
   const sh=S.shifts.find(x=>x.id===id); return Store.update("shifts",id,{[field]:[...((sh&&sh[field])||[]),item]});
@@ -2823,7 +3196,7 @@ function mapsRoute(points){
   return "https://www.google.com/maps/dir/"+pts.slice(0,11).map(p=>p.lat+","+p.lng).join("/");
 }
 const hhmm=t=>new Date(t).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-const hrs=h=>(Math.round(h*100)/100).toFixed(2).replace(/\.?0+$/,"")+" h";
+const hrs=h=>{ const m=Math.round((Number(h)||0)*60), H=Math.floor(m/60), M=m%60; return H?H+"h "+String(M).padStart(2,"0")+"m":M+"m"; };   // hours always read like 4h 31m
 function openShiftLog(e){
   const body=$("#shiftDlgBody"); const canFix=S.isOwner;
   const draw=()=>{
@@ -2834,7 +3207,7 @@ function openShiftLog(e){
     body.append(el("div",{class:"row",style:"margin-bottom:6px"},el("h2",{class:"grow",style:"margin:0;font:600 22px var(--display)"},"Shift log \u00b7 "+e.name),
       el("button",{class:"btn small",type:"button",onclick:()=>$("#shiftDlg").close()},"Close")));
     body.append(el("p",{class:"kv",style:"margin:0 0 12px"},"This week: ",el("b",{},hrs(week))," clocked. Location points are saved only while on shift."));
-    if (!list.length){ body.append(el("div",{class:"empty"},"No shifts logged yet. Shifts appear here once "+e.name.split(" ")[0]+" taps Start shift.")); return; }
+    if (!list.length){ body.append(el("div",{class:"empty"},"No shifts logged yet. Shifts appear here once "+e.name.split(" ")[0]+" clocks in.")); return; }
     list.slice(0,40).forEach(sh=>{
       const ev=sh.events||[], pts=sh.points||[], route=mapsRoute(pts);
       const open=!sh.end && Date.now()-sh.start<=SHIFT_FORGOT_H*36e5;
@@ -2909,7 +3282,7 @@ async function startDuty(){
     const shiftId=beginShift(m,now);
     await Store.set("locations",m.id,{onDuty:true,since:now,at:now,lat,lng,acc:12,shiftId,businessId:S.businessId});
     logShiftPoint({lat,lng},12,true);
-    S.watching=true; render(); toast("Shift started. In the demo your location is made up.");
+    S.watching=true; render(); toast("Clocked in. In the demo your location is made up.");
     return;
   }
   const existing=locFor(m.id);
@@ -2938,7 +3311,7 @@ async function startDuty(){
         }
         onNativePos(location);
       });
-      S.watching=true; render(); toast("Shift started — location will keep sharing in the background");
+      S.watching=true; render(); toast("Clocked in");
       syncRunnerContext(true);
     } catch(e){
       S.dutyErr="Couldn't start background location. "+(e&&e.message||"");
@@ -2952,7 +3325,7 @@ async function startDuty(){
   if (watchId!=null) navigator.geolocation.clearWatch(watchId);
   lastWrite=0; lastSent=null;
   watchId=navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:30000,timeout:60000});
-  S.watching=true; render(); toast("Shift started");
+  S.watching=true; render(); toast("Clocked in");
 }
 function onNativePos(location){
   const m=me(); if(!m) return;
@@ -2992,7 +3365,7 @@ async function stopDuty(){
   watchId=null; S.watching=false; S.dutyErr=null;
   queue(()=>Store.update("locations",m.id,{onDuty:false,endedAt:Date.now()}).catch(()=>Store.set("locations",m.id,{onDuty:false,endedAt:Date.now(),businessId:S.businessId})));
   syncRunnerContext(false);
-  render(); toast("Shift ended. Location sharing stopped.");
+  render(); toast("Clocked out. Location sharing stopped.");
 }
 
 /* ---- books ---- */
@@ -3111,15 +3484,32 @@ function monthRows(){
     income.push({kind:"income",id:i.id,date:i.issueDate,cat:"Invoice extras",desc:(i.number||"")+" · "+((i.client||{}).name||"")+" · billed materials and fees"+(t.balance>0.004?" (unpaid)":""),amount:t.extras,paid:t.balance<=0.004,invRow:i}); });
   const pName=id=>{ const p=id&&S.projects.find(x=>x.id===id); return p?" · "+p.name:""; };
   const exp=allExpenses().filter(x=>inPeriod(x.date,P)).map(x=>({
-    kind:"expense", id:x.id, fromJob:x.fromJob||null, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
+    kind:"expense", id:x.id, fromJob:x.fromJob||null, payroll:!!x.payrollRun, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
     receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
+}
+// Three different numbers, kept apart so they always add up:
+//  earned    = work finished in the period (job prices + billed materials and fees), paid or not
+//  collected = money actually received in the period (invoice payments and deposits, plus jobs paid off-invoice)
+//  owed      = what clients owe right now: open invoice balances (after deposits, partial payments and retainage)
+//              plus finished work that hasn't been invoiced or paid yet
+function collectedIn(P){
+  let n=0;
+  S.invoices.filter(i=>i.status!=="void").forEach(i=>(i.payments||[]).forEach(p=>{ if (p.date&&inPeriod(p.date,P)) n+=Number(p.amount)||0; }));
+  S.jobs.filter(j=>j.status==="done"&&j.paid&&!invoiceFor(j.id)&&inPeriod(j.paidDate||j.date,P)).forEach(j=>{ n+=Number(j.price)||0; });
+  return r2(n);
+}
+function owedNow(){
+  let n=0;
+  S.invoices.filter(i=>i.status==="sent").forEach(i=>{ const t=invTotals(i); if (t.balance>0.004) n+=t.balance; });
+  S.jobs.filter(j=>j.status==="done"&&!j.paid).forEach(j=>{ const inv=invoiceFor(j.id); if (!inv||inv.status!=="sent") n+=Number(j.price)||0; });
+  return r2(n);
 }
 function viewBooks(){
   const frag=document.createDocumentFragment();
   const {income,exp}=monthRows();
   const inc=income.reduce((a,r)=>a+r.amount,0), out=exp.reduce((a,r)=>a+r.amount,0), net=inc-out;
-  const unpaid=income.filter(r=>!r.paid).reduce((a,r)=>a+r.amount,0);
+  const unpaid=owedNow(), got=collectedIn(booksPeriod());
 
   const P=booksPeriod();
   const bar=booksPeriodBar();
@@ -3131,32 +3521,45 @@ function viewBooks(){
   const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&inPeriod(i.issueDate,P)).reduce((n,i)=>n+invTotals(i).tax,0));
   if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},taxName()+" on invoices in this period: ",el("b",{},money(salesTax)),". It isn't counted as income. "+(isUS()?"Set it aside for the state.":"Set it aside for the tax office."))));
   frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Money in (jobs and invoices)"),el("div",{class:"v"},money(inc))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
-    el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Still owed by clients"),el("div",{class:"v"},money(unpaid)))));
+    el("div",{class:"stat"},el("div",{class:"l"},"Earned"),el("div",{class:"v"},money(inc)),el("div",{class:"s"},"Work finished, paid or not")),
+    el("div",{class:"stat"},el("div",{class:"l"},"Spent"),el("div",{class:"v"},money(out)),el("div",{class:"s"},"Expenses")),
+    el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net)),el("div",{class:"s"},"Earned minus spent")),
+    el("div",{class:"stat"},el("div",{class:"l"},"Collected"),el("div",{class:"v"},money(got)),el("div",{class:"s"},"Payments received"))));
+  frag.append(el("div",{class:"owedline"},el("span",{},"Clients owe you right now: ",el("b",{},money(unpaid))),
+    el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.invFilter="open";goTab("invoices");}},"See who owes")));
 
   const left=el("div",{});
-  const f=el("form",{class:"panel"});
+  const f=el("form",{class:"panel",id:"expForm"});
+  // Editing an expense, or a half-typed new one: what's typed survives a refresh of the screen and a failed save.
+  const editing=S.expEdit?S.expenses.find(x=>x.id===S.expEdit):null;
+  if (S.expEdit && !editing){ S.expEdit=null; S.expDraft=null; }
+  const dv=S.expDraft||(editing?{date:editing.date,amount:String(editing.amount),category:editing.category,vendor:editing.vendor||"",projectId:editing.projectId||"",companyId:editing.companyId||""}:{date:today()});
+  const catList=dv.category&&!EXP_CATS.includes(dv.category)?[...EXP_CATS,dv.category]:EXP_CATS;
+  const closeForm=()=>{ S.expOpen=false; S.expEdit=null; S.expDraft=null; capturedReceiptFile=null; render(); };
   // The form stays folded until it's needed, so the totals and transactions come first.
   const formBody=el("div",{class:"expform"+(S.expOpen?"":" hidden")},
-      el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
-      el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
-      el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
-      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:hasProjects()?"Lowe's, 2x4s and screws":"Walmart, mop heads and bleach",autocomplete:"off"})),
-      hasProjects() ? el("label",{class:"f"},"Project",el("select",{name:"projectId"},el("option",{value:""},"None"),S.projects.filter(p=>p.status!=="done").map(p=>el("option",{value:p.id},p.name)))) : null,
-      hasProjects() ? el("label",{class:"f"},"Subcontractor",el("select",{name:"companyId"},el("option",{value:""},"None"),S.companies.map(c=>el("option",{value:c.id},c.name)))) : null,
-      el("label",{class:"f full"},"Receipt photo or PDF (optional)",
+      el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:dv.date||today()})),
+      el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00",value:dv.amount||""})),
+      el("label",{class:"f full"},"Category",el("select",{name:"category"},catList.map(c=>el("option",{selected:c===dv.category},c)))),
+      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:hasProjects()?"Lowe's, 2x4s and screws":"Walmart, mop heads and bleach",autocomplete:"off",value:dv.vendor||""})),
+      hasProjects() ? el("label",{class:"f"},"Project",el("select",{name:"projectId"},el("option",{value:""},"None"),S.projects.filter(p=>p.status!=="done"||p.id===dv.projectId).map(p=>el("option",{value:p.id,selected:p.id===dv.projectId},p.name)))) : null,
+      hasProjects() ? el("label",{class:"f"},"Subcontractor",el("select",{name:"companyId"},el("option",{value:""},"None"),S.companies.map(c=>el("option",{value:c.id,selected:c.id===dv.companyId},c.name)))) : null,
+      editing&&editing.receiptUrl ? el("div",{class:"f full kv"},"Receipt on file: ",el("a",{href:editing.receiptUrl,target:"_blank",rel:"noopener"},editing.receiptName||"Open"),
+        el("label",{class:"row",style:"align-items:center;gap:8px;font-weight:400;margin-top:6px"},el("input",{type:"checkbox",name:"dropReceipt",style:"width:auto;margin:0"}),"Remove this receipt")) : null,
+      el("label",{class:"f full"},editing&&editing.receiptUrl?"Replace the receipt (optional)":"Receipt photo or PDF (optional)",
         el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
       isNative() ? el("div",{class:"full",style:"margin-top:-6px;"},el("button",{type:"button",class:"btn small",onclick:captureReceiptPhoto},"📷 Take Photo")) : null,
       el("img",{id:"receiptPreview",class:"hidden",style:"max-width:110px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-top:2px;object-fit:cover;"}),
       el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
         el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
         "Save photo as a PDF receipt"),
-      el("div",{class:"full row",style:"gap:8px"},el("button",{type:"submit",class:"btn primary"},"Save expense"),
-        el("button",{type:"button",class:"btn ghost",onclick:()=>{ S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden"); }},"Cancel")));
+      el("div",{class:"full row",style:"gap:8px"},el("button",{type:"submit",class:"btn primary"},editing?"Save changes":"Save expense"),
+        el("button",{type:"button",class:"btn ghost",onclick:closeForm},"Cancel"),
+        editing?el("span",{class:"grow"}):null,
+        editing?el("button",{type:"button",class:"btn ghost danger",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",editing.id),"Expense deleted").then(ok=>{ if(ok) closeForm(); }); }},"Delete"):null));
+  f.oninput=f.onchange=ev=>{ if (ev.target.type==="file"||ev.target.name==="asPdf"||ev.target.name==="dropReceipt") return; const d=Object.fromEntries(new FormData(f)); delete d.receipt; S.expDraft=d; };
   const openBtn=el("button",{type:"button",class:"btn primary"+(S.expOpen?" hidden":""),onclick:()=>{ S.expOpen=true; formBody.classList.remove("hidden"); openBtn.classList.add("hidden"); const a=f.querySelector("[name=amount]"); if (a) a.focus(); }},"+ Add expense");
-  f.append(el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px"},el("h2",{style:"margin:0"},"Expenses"),openBtn),
+  f.append(el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px"},el("h2",{style:"margin:0"},editing?"Edit expense":"Expenses"),openBtn),
     el("p",{class:"kv",style:"margin:6px 0 0"},"Log gas, supplies and other costs, with a receipt photo if you have one."),
     formBody);
   f.onsubmit=async e=>{
@@ -3186,13 +3589,20 @@ function viewBooks(){
       console.warn(err);
       toast("Couldn't upload the receipt, but saving the expense anyway.");
     }
-    const links={}; if (d.projectId) links.projectId=d.projectId; if (d.companyId) links.companyId=d.companyId;
-    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...links,...receiptData}),"Expense added");
-    f.reset(); f.querySelector("[name=date]").value=today();
-    $("#receiptPreview").classList.add("hidden");
-    capturedReceiptFile = null;
+    const base={date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:(d.vendor||"").trim()};
+    let ok;
+    if (editing){
+      const patch={...base};
+      if (hasProjects()){ patch.projectId=d.projectId||null; patch.companyId=d.companyId||null; }
+      if (receiptData.receiptUrl) Object.assign(patch,receiptData);
+      else if (d.dropReceipt){ patch.receiptUrl=null; patch.receiptName=null; }
+      ok=await write(()=>Store.update("expenses",editing.id,patch),"Expense saved");
+    } else {
+      const links={}; if (d.projectId) links.projectId=d.projectId; if (d.companyId) links.companyId=d.companyId;
+      ok=await write(()=>Store.set("expenses",newId(),{...base,createdAt:Date.now(),businessId:S.businessId,...links,...receiptData}),"Expense added");
+    }
     submitBtn.disabled=false;
-    S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden");
+    if (ok) closeForm();   // on a failed save the form stays open with everything still filled in
   };
   left.append(f);
 
@@ -3218,9 +3628,10 @@ function viewBooks(){
       el("div",{class:"txr"},el("b",{class:"amt"},(r.kind==="income"?"+":"−")+money(r.amount)),
       r.kind==="expense"
         ? (r.fromJob ? el("button",{class:"btn small ghost",onclick:()=>{ const j=S.jobs.find(x=>x.id===r.fromJob); if(j) openCosts(j); }},"On job")
-          : el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete"))
+          : r.payroll ? el("button",{class:"btn small ghost",title:"Change this on the Pay screen",onclick:()=>goTab("payroll")},"Payroll")
+          : el("button",{class:"btn small ghost","aria-label":"Edit expense",onclick:()=>{ S.expEdit=r.id; S.expDraft=null; S.expOpen=true; capturedReceiptFile=null; render(); setTimeout(()=>{ const x=$("#expForm"); if(x) x.scrollIntoView({behavior:"smooth",block:"start"}); },50); }},"Edit"))
         : r.invRow ? el("button",{class:"btn small ghost",onclick:()=>openInvoice(r.invRow)},r.paid?"Paid":"Open")
-        : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
+        : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true,paidDate:ymd(new Date())}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
     tp.append(list);
     if (rows.length>SHOW) tp.append(el("button",{class:"btn small ghost",style:"margin-top:10px",onclick:()=>{S.txAll=!S.txAll;render();}},S.txAll?"Show fewer":"Show all "+rows.length));
   }
@@ -3327,7 +3738,7 @@ function laborFor(j){
     else if (r.payType==="percent"){ amt=(Number(j.price)||0)/n*rate/100; how=rate+"% of their share"; }
     else if (r.payType==="day"){ amt=rate; how="Day rate"; }
     else how="Paid by "+((PAY_TYPES.find(t=>t.id===r.payType)||{}).label||"another rule").toLowerCase()+", not per job";
-    if (amt && r.cls==="w2" && isUS()){ amt*=1.0765; how+=" + employer taxes"; }
+    if (amt && r.cls==="w2" && taxOn()){ amt*=1.0765; how+=" + employer taxes"; }
     return {e,amt:r2(amt),how};
   });
 }
@@ -3589,15 +4000,21 @@ function viewInvoices(){
     el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["paid30","Paid (30 days)"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
       el("button",{class:"chip","aria-pressed":String(f===id),onclick:()=>{S.invFilter=id;render();}},l))),
     el("span",{class:"grow"}),
-    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:"max-width:220px",
+    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:isDesktop()?"max-width:220px":"width:100%",
       oninput:ev=>{ S.invSearch=ev.target.value; clearTimeout(S.invSearchT); S.invSearchT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=document.querySelector('input[aria-label="Search invoices"]'); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }}),
-    el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice")));
+    isDesktop()?el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice"):null));
   // Each total opens its list: the invoices behind it, or the jobs waiting to be billed.
   const jump=(filter,target)=>{ if(filter){ S.invFilter=filter; S.invSearch=""; } if(target==="ready") S.invReadyAll=true; render();
     setTimeout(()=>{ const n=document.getElementById(target==="ready"?"invReady":"invList"); if(n) n.scrollIntoView({behavior:"smooth",block:"start"}); },60); };
   const card=(label,val,filter,target,extra)=>el("button",{type:"button",class:"stat statbtn"+(extra||"")+((filter&&f===filter)?" on":""),onclick:()=>jump(filter,target)},
     el("div",{class:"l"},label),el("div",{class:"v"},money(val)),el("div",{class:"go"},"View \u2192"));
-  frag.append(el("div",{class:"sum"},
+  if (!isDesktop()) frag.append(el("div",{class:"invsum"},   // phones: one calm summary instead of four boxes
+    el("button",{type:"button",class:"big",onclick:()=>jump("open")},el("span",{class:"kv"},"Clients owe you"),el("b",{},money(outstanding)),
+      overdue?el("span",{class:"od"},money(overdue)+" overdue"):el("span",{class:"kv"},"Nothing overdue")),
+    el("div",{class:"minis"},
+      el("button",{type:"button",onclick:()=>jump("paid30")},el("span",{class:"kv"},"Paid, last 30 days"),el("b",{},money(paid30))),
+      el("button",{type:"button",onclick:()=>jump(null,"ready")},el("span",{class:"kv"},"Finished, not billed"),el("b",{},money(readyAmt))))));
+  else frag.append(el("div",{class:"sum"},
     card("Outstanding",outstanding,"open"),
     card("Overdue",overdue,"overdue",null,overdue?" neg net":""),
     card("Paid in the last 30 days",paid30,"paid30"),
@@ -3683,11 +4100,20 @@ function invoiceEditor(d){
   if (!(d.lines||[]).length) tb.append(el("tr",{},el("td",{colspan:"6",class:"empty"},"No lines yet. Add finished jobs or a line below.")));
   const avail=unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id) && (!d.client.name || normName(j.client)===normName(d.client.name)));
   const availMat=S.jobs.filter(j=>d.lines.some(l=>l.type==="job"&&l.jobId===j.id)).flatMap(j=>costLines(j).filter(cl=>!d.lines.some(l=>l.costId===cl.costId)));
+  // One customer per invoice: jobs are grouped by customer, and ticking one customer's job greys out everyone else's.
   const pick=el("div",{class:"jobpick hidden"});
-  avail.slice(0,30).forEach(j=>pick.append(el("label",{class:"row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",value:j.id,style:"width:auto"}),
-    el("span",{class:"grow"},(j.client||"")+" · "+(j.service||"")+" · "+niceDate(j.date)),el("b",{},money(j.price)))));
+  const lockPick=()=>{ const on=[...pick.querySelectorAll("input:checked")].map(x=>x.dataset.c); const c=on[0];
+    pick.querySelectorAll("input[type=checkbox]").forEach(x=>{ x.disabled=!!c && x.dataset.c!==c; x.closest("label").style.opacity=x.disabled?".45":""; }); };
+  let lastC=null;
+  avail.slice(0,40).sort((a,b)=>normName(a.client).localeCompare(normName(b.client))||(a.date||"").localeCompare(b.date||"")).forEach(j=>{
+    const c=normName(j.client);
+    if (!d.client.name && c!==lastC){ pick.append(el("div",{class:"kv",style:"font-weight:700;margin:8px 0 2px"},j.client||"No name")); lastC=c; }
+    pick.append(el("label",{class:"row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",value:j.id,"data-c":c,style:"width:auto",onchange:lockPick}),
+      el("span",{class:"grow"},(d.client.name?"":"")+(j.service||"Job")+" · "+niceDate(j.date)),el("b",{},money(j.price))));
+  });
   pick.append(el("button",{type:"button",class:"btn small primary",onclick:()=>{
     const ids=[...pick.querySelectorAll("input:checked")].map(x=>x.value); const js=S.jobs.filter(j=>ids.includes(j.id));
+    if (new Set(js.map(j=>normName(j.client))).size>1) return toast("Pick jobs for one customer. Each customer gets their own invoice.");
     if (!d.client.name && js[0]){ d.client=clientInfo(js[0].client,js[0]); }
     js.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); if(!d.projectId&&j.projectId) d.projectId=j.projectId; });
     invoiceEditor(d); }},"Add selected"));
@@ -3750,10 +4176,14 @@ function invoiceEditor(d){
     if (!(d.lines||[]).length) return err.textContent="Add at least one line.";
     if (d.lines.some(l=>!String(l.desc||"").trim())) return err.textContent="Every line needs a description.";
     if (invTotals(d).total<=0) return err.textContent="The total is zero. Check the prices.";
+    // Every job on the invoice must belong to the customer it's addressed to.
+    const others=[...new Set((d.lines||[]).filter(l=>l.type==="job"&&l.jobId).map(l=>(S.jobs.find(j=>j.id===l.jobId)||{}).client).filter(c=>c&&normName(c)!==normName(d.client.name)))];
+    if (others.length) return err.textContent="This invoice has jobs for "+others.join(", ")+", not "+d.client.name.trim()+". Remove those lines and bill them on their own invoice.";
     d.client.email=(d.client.email||"").trim();
+    const was={status:d.status,sentAt:d.sentAt};
     if (send) d.status="sent";
     if (send && !d.sentAt) d.sentAt=Date.now();
-    try { await saveInvoice(d); } catch(e){ console.warn(e); return err.textContent="That didn't save. Check your connection and try again."; }
+    try { await saveInvoice(d); } catch(e){ console.warn(e); Object.assign(d,was); return err.textContent="That didn't save. Your changes are still here; check your connection and tap again."; }
     toast(send?"Invoice ready to send":"Draft saved");
     if (send) openSend(d); else $("#invDlg").close();
   };
@@ -4144,7 +4574,7 @@ function payRuleText(r){
   if (!r) return "No pay rule yet";
   const t=PAY_TYPES.find(x=>x.id===r.payType)||PAY_TYPES[0];
   const amt = t.id==="percent" ? (Number(r.rate)||0)+"% of job price" : money(r.rate)+(t.id==="salary"?" per period":" "+t.rateLabel.replace(cs()+" ",""));
-  return (isUS()?(r.cls==="1099"?"1099 contractor":"W-2 employee"):(r.cls==="1099"?"Contractor":"Employee"))+" · "+amt;
+  return (taxOn()?(r.cls==="1099"?"1099 contractor":"W-2 employee"):(r.cls==="1099"?"Contractor":"Employee"))+" · "+amt;
 }
 // What the board says each person did in the period.
 /* Overtime (federal FLSA rule): hours over 40 in a WORKWEEK, a fixed 7-day stretch that starts on the business's
@@ -4265,9 +4695,9 @@ function calcPay(e,start,end){
   const ytd=ytdBefore(e.id,start), other=r2(ed.deduct);
   const out={e,r,t,w,ck,src,cls,qty,auto,otHours,autoOt,wages,reimb,ytd,other,tips,bonus,miles,ed};
   // Outside the US, DayZift doesn't work out payroll taxes: pay is gross, less any deductions the owner enters.
-  if (cls==="1099" || !isUS()){
+  if (cls==="1099" || !taxOn()){
     const paid=r2(wages+reimb);
-    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,fitHow:"none",ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:isUS()&&ytd+paid>=TAX.necThreshold};
+    return {...out,paid,net:r2(paid-other),ssEe:0,medEe:0,fit:0,fitHow:"none",ssEr:0,medEr:0,futa:0,suta:0,erTax:0,cost:paid,needs1099:taxOn()&&ytd+paid>=TAX.necThreshold};
   }
   const ssBase=Math.max(0,Math.min(wages,TAX.ssBase-ytd));
   const ssEe=r2(ssBase*TAX.ssRate/100), ssEr=ssEe;
@@ -4293,7 +4723,7 @@ function payIssues(x){
     out.push({key:"shift:"+sh.id,shift:sh,blocking:!rv,reviewed:rv,
       text:"No clock-out on "+niceDate(ymd(d))+" (clocked in "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})+")"+(rv?" · left out"+(rv.note?": "+rv.note:"")+" by "+rv.by:" · these hours aren't counted"),act:"shift"});
   });
-  if (x.cls==="w2" && isUS() && x.r && fitMode()==="calc" && !x.w4){
+  if (x.cls==="w2" && taxOn() && x.r && fitMode()==="calc" && !x.w4){
     const rv=(run.w4ok||{})[x.e.id];
     out.push({key:"w4",blocking:!rv,reviewed:rv,text:rv?"No W-4 on file · withholding as Single with no adjustments (IRS default), OK'd by "+rv.by:"No W-4 on file · federal tax would be withheld as Single with no adjustments (the IRS default)",act:"w4"});
   }
@@ -4332,8 +4762,8 @@ function openPaySched(){
     el("label",{class:"f"},"Pay period starts on",el("select",{name:"dow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:ps.startDow===d},DOW_SHORT[d])))),
     el("p",{class:"kv full",style:"margin:0"},"Payroll and the timesheet open on your pay period automatically. For every 2 weeks, the current period starts this week."),
     el("label",{class:"f"},"Overtime workweek starts on",el("select",{name:"wwdow"},...[1,2,3,4,5,6,0].map(d=>el("option",{value:String(d),selected:workweekDow()===d},DOW_SHORT[d])))),
-    isUS()?el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"DayZift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))):el("input",{type:"hidden",name:"fit",value:fitMode()}),
-    el("p",{class:"kv full",style:"margin:0"},isUS()?"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week.":"The workweek is a fixed 7 days. It can differ from the pay period; keep it the same every week. Overtime isn't added automatically outside the US; add it as a bonus if you pay it."),
+    taxOn()?el("label",{class:"f"},"Federal income tax",el("select",{name:"fit"},el("option",{value:"calc",selected:fitMode()==="calc"},"DayZift estimates it from each W-4"),el("option",{value:"provider",selected:fitMode()==="provider"},"My payroll provider or accountant works it out"))):el("input",{type:"hidden",name:"fit",value:fitMode()}),
+    el("p",{class:"kv full",style:"margin:0"},taxOn()?"The overtime workweek is a fixed 7 days (federal rule: over 40 hours in it is overtime). It can differ from the pay period; keep it the same every week.":"The workweek is a fixed 7 days. It can differ from the pay period; keep it the same every week. Overtime isn't added automatically outside the US; add it as a bonus if you pay it."),
     el("div",{class:"acts"},el("span",{class:"grow"}),el("button",{type:"button",class:"btn",onclick:()=>$("#empDlg").close()},"Cancel"),el("button",{type:"submit",class:"btn primary"},"Save")));
   f.onsubmit=ev=>{ ev.preventDefault(); const d=Object.fromEntries(new FormData(f)); $("#empDlg").close();
     const startDow=Number(d.dow), every=d.every==="2"?2:1, t=new Date(); t.setDate(t.getDate()-((t.getDay()-startDow+7)%7));
@@ -4348,7 +4778,7 @@ function openPaySched(){
 const hm=h=>{ const m=Math.round(h*60); return Math.floor(m/60)+":"+pad(m%60); };
 const hmLong=h=>{ const m=Math.round(h*60), H=Math.floor(m/60), M=m%60; return (H?H+"h":"")+(H&&M?" ":"")+(M||!H?M+"m":""); };
 function periodDays(){ const out=[], d=parseYmd(S.pr.start), e=parseYmd(S.pr.end); while(d<=e){ out.push(new Date(d)); d.setDate(d.getDate()+1); } return out; }
-function dayShifts(empId,key){ return S.shifts.filter(x=>x.empId===empId && x.start && ymd(new Date(x.start))===key).sort((a,b)=>a.start-b.start); }
+function dayShifts(empId,key){ return S.shifts.filter(x=>x.empId===empId && x.start && !x.requested && ymd(new Date(x.start))===key).sort((a,b)=>a.start-b.start); }
 const forgot=sh=>!sh.end && Date.now()-sh.start>SHIFT_FORGOT_H*36e5;
 function viewTimesheet(){
   prInit();
@@ -4356,6 +4786,9 @@ function viewTimesheet(){
   const people=S.employees.filter(e=>e.active!==false && !e.companyId);
   frag.append(periodBar([el("button",{type:"button",class:"btn primary",onclick:()=>goTab("payroll")},"Go to payroll →")]));
   if (!people.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Add your crew under Crew & locations first."))); return frag; }
+  const asks=pendingTimeAsks().filter(x=>people.some(e=>e.id===x.empId));
+  if (asks.length) frag.append(timeAsksPanel(asks));
+  if (!isDesktop()) return timesheetList(frag,people,days), frag;
   let missing=0;
   const tbl=el("table",{class:"tsheet"});
   tbl.append(el("thead",{},el("tr",{},el("th",{class:"nm"},"Crew"),...days.map(d=>el("th",{class:ymd(d)===t?"today":""},d.toLocaleDateString("en-US",{weekday:"short"}),el("br"),el("span",{class:"kv"},String(d.getDate())))),el("th",{class:"tot"},"Total"))));
@@ -4378,8 +4811,59 @@ function viewTimesheet(){
   tbl.append(tb);
   if (missing) frag.append(el("div",{class:"banner warn"},el("span",{class:"grow"},missing+" day"+(missing===1?"":"s")+" with a missing clock-out (marked !). Tap to put in the right times so the hours count.")));
   frag.append(el("div",{class:"panel",style:"overflow-x:auto;padding:10px"},tbl));
-  frag.append(el("p",{class:"kv",style:"margin-top:10px"},"Hours fill in automatically when your crew taps Start shift and End shift. Tap any day to add hours someone worked without the app, or to fix times."));
+  frag.append(el("p",{class:"kv",style:"margin-top:10px"},"Hours fill in automatically when your crew clock in and out. Tap any day to add hours someone worked without the app, or to fix times."));
   return frag;
+}
+// Crew asked for a change, or added time they forgot: accept or decline in one tap.
+function timeAsksPanel(asks){
+  const p=el("section",{class:"rows asks"},el("div",{class:"askhead"},el("b",{},"Your crew asked"),el("span",{},asks.length+" to check")));
+  asks.sort((a,b)=>a.start-b.start).forEach(sh=>{
+    const e=S.employees.find(x=>x.id===sh.empId)||{name:sh.name||"Crew"}, k=ymd(new Date(sh.start)), cr=sh.changeRequest;
+    const what=sh.requested
+      ? ["Added time ",el("b",{},niceDate(k).replace(/,? \d{4}$/,"")+", "+hhmm(sh.start)+" \u2013 "+hhmm(sh.end)+" ("+hmLong(shiftHours(sh))+")"),sh.requested.note?" \u00b7 \u201c"+sh.requested.note+"\u201d":""]
+      : ["Change ",el("b",{},niceDate(k).replace(/,? \d{4}$/,"")),": "+hhmm(sh.start)+" \u2013 "+(sh.end?hhmm(sh.end):"no clock-out")+" \u2192 ",el("b",{},hhmm(cr.start)+" \u2013 "+hhmm(cr.end)),cr.note?" \u00b7 \u201c"+cr.note+"\u201d":""];
+    p.append(el("div",{class:"ask"},el("span",{class:"avatar sm",style:"background:"+colorFor(e)},initials(e.name)),
+      el("div",{class:"rm"},el("b",{},e.name),el("span",{},...what),
+        el("div",{class:"row",style:"gap:8px;margin-top:8px"},
+          el("button",{type:"button",class:"btn small primary",onclick:()=>answerTimeAsk(sh,true)},"Accept"),
+          el("button",{type:"button",class:"btn small",onclick:()=>answerTimeAsk(sh,false)},"Decline")))));
+  });
+  return p;
+}
+function answerTimeAsk(sh,ok){
+  const by=S.myEmail||"owner", now=Date.now();
+  if (sh.requested) return write(()=>ok?Store.update("shifts",sh.id,{requested:null,manual:true,note:sh.requested.note||"",accepted:{by,at:now}}):Store.del("shifts",sh.id),ok?"Time added to their hours":"Declined");
+  const cr=sh.changeRequest;
+  write(()=>Store.update("shifts",sh.id,ok
+    ?{start:cr.start,end:cr.end,changeRequest:{...cr,status:"accepted",answeredAt:now},edited:{by,at:now,note:cr.note||"Asked by "+(sh.name||"crew"),wasStart:sh.edited?sh.edited.wasStart:sh.start,wasEnd:sh.edited?sh.edited.wasEnd:(sh.end||null)}}
+    :{changeRequest:{...cr,status:"declined",answeredAt:now}}),ok?"Times changed":"Kept the original times");
+}
+// Phones: one row per person with their total; problems say what to fix; tap to see each day.
+function timesheetList(frag,people,days){
+  const rows=el("div",{class:"rows"});
+  people.forEach(e=>{
+    let total=0, nDays=0; const bad=[];
+    days.forEach(d=>{ const k=ymd(d), list=dayShifts(e.id,k); if (list.length) nDays++; list.forEach(x=>{ if (forgot(x)) bad.push(k); else total+=shiftHours(x); }); });
+    const open=!!(S.tsOpen||{})[e.id];
+    const head=el("button",{type:"button",class:"rowi",onclick:()=>{ (S.tsOpen ||= {})[e.id]=!open; render(); }},
+      el("span",{class:"avatar",style:"background:"+colorFor(e)},initials(e.name)),
+      el("span",{class:"rm"},el("b",{},e.name),el("span",{},nDays?hmLong(total)+" \u00b7 "+nDays+(nDays===1?" day":" days"):"No hours this week")),
+      bad.length?el("span",{class:"pill warn"},bad.length===1?"1 to fix":bad.length+" to fix"):null, chevron());
+    rows.append(head);
+    if (bad.length) rows.append(el("div",{class:"fixline"},el("span",{},el("b",{},niceDate(bad[0]).replace(/,? \d{4}$/,"")),": clocked in, never clocked out"),
+      el("button",{type:"button",class:"btn small primary",onclick:()=>openDayHours(e,bad[0])},"Fix")));
+    if (open){
+      const list=el("div",{class:"daylist"});
+      days.forEach(d=>{ const k=ymd(d), sh=dayShifts(e.id,k), h=sh.reduce((n,x)=>n+(forgot(x)?0:shiftHours(x)),0);
+        list.append(el("button",{type:"button",class:"dayi",onclick:()=>openDayHours(e,k)},
+          el("span",{},d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})),
+          el("span",{class:"kv"},sh.map(x=>hhmm(x.start)+"\u2013"+(x.end?hhmm(x.end):forgot(x)?"?":"now")).join(", ")),
+          el("b",{},sh.some(forgot)?"!":sh.length?hmLong(h):"+"))); });
+      rows.append(list);
+    }
+  });
+  frag.append(rows);
+  frag.append(el("p",{class:"kv center"},"Hours fill in when your crew clock in and out. Tap a name to see each day, or a day to add or change time."));
 }
 function openDayHours(e,key){
   const body=$("#shiftDlgBody");
@@ -4391,6 +4875,7 @@ function openDayHours(e,key){
     body.append(el("p",{class:"kv",style:"margin:0 0 12px"},niceDate(key)));
     if (!list.length) body.append(el("div",{class:"empty",style:"margin-bottom:10px"},"No hours this day yet."));
     list.forEach(sh=>{
+      if (forgot(sh)){ body.append(el("p",{style:"margin:0 0 6px;font-weight:600"},"Clocked in at "+hhmm(sh.start)+", never clocked out. When did "+e.name.split(" ")[0]+" finish?"),timesForm(sh)); return; }
       const row=el("div",{class:"srow"},
         el("div",{class:"sinfo"},el("b",{},hhmm(sh.start)+" – "+(sh.end?hhmm(sh.end):forgot(sh)?"no clock-out":"on shift now")+(sh.end?" · "+hmLong(shiftHours(sh)):"")),
           el("span",{class:"kv"},(sh.manual?"Added by hand":"Clocked in the app")+(sh.note?" · "+sh.note:sh.edited&&sh.edited.note?" · "+sh.edited.note:""))),
@@ -4399,8 +4884,10 @@ function openDayHours(e,key){
           el("button",{class:"btn small ghost",type:"button",onclick:()=>{ if(confirm("Remove these hours?")) write(()=>Store.del("shifts",sh.id),"Hours removed").then(()=>setTimeout(draw,50)); }},"Remove")));
       body.append(row);
     });
-    body.append(el("h3",{style:"margin:16px 0 6px;font-size:16px"},"Add hours"));
-    body.append(timesForm(null));
+    if (list.length){
+      const more=el("button",{type:"button",class:"btn small ghost",style:"margin-top:12px",onclick:()=>{ more.replaceWith(el("h3",{style:"margin:16px 0 6px;font-size:16px"},"Add more time"),timesForm(null)); }},"+ Add more time this day");
+      body.append(more);
+    } else { body.append(el("h3",{style:"margin:16px 0 6px;font-size:16px"},"Add hours")); body.append(timesForm(null)); }
   };
   // One small form for adding or changing hours: start and end, or just a number of hours.
   const timesForm=sh=>{
@@ -4476,11 +4963,11 @@ function viewPayroll(){
   const done1=unpaid.length>0 && unpaid.every(x=>x.hoursOk||x.blocked) && unpaid.some(x=>x.hoursOk);
   const auto = !unpaid.length ? 3 : apOk ? 3 : done1 ? 1 : 0;
   const step = S.pr.step!=null ? S.pr.step : auto;
-  frag.append(el("div",{class:"row",style:"margin:0 0 8px"},el("h2",{class:"grow",style:"margin:0"},"Crew pay & estimates")));
+  frag.append(el("div",{class:"row",style:"margin:0 0 8px"},el("h2",{class:"grow",style:"margin:0"},"Crew pay")));
   frag.append(periodBar([el("button",{class:"btn small ghost",onclick:openPaySched},"Payroll settings")]));
   const marks=[unpaid.length?(done1?"done":""):"done", ap&&apOk?"done":"", ap&&apOk?"done":"", !unpaid.length&&rows.length?"done":""];
   frag.append(el("ol",{class:"prsteps"},...PR_STEPS.map((l,i)=>el("li",{class:(i===step?"cur ":"")+marks[i]},
-    el("button",{type:"button",onclick:()=>{ S.pr.step=i; render(); }},el("span",{class:"n"},marks[i]==="done"?"✓":String(i+1)),l)))));
+    el("button",{type:"button",onclick:()=>{ S.pr.step=i; render(); }},el("span",{class:"n"},marks[i]==="done"?"✓":String(i+1)),el("span",{class:"l"},l))))));
   frag.append([prStep1,prStep2,prStep3,prStep4][step](st));
   const subs=S.employees.filter(e=>e.active!==false && e.companyId);
   if (subs.length) frag.append(el("p",{class:"kv"},subs.length+" subcontractor crew member(s) are left out. Their company is paid as a sub, logged in the Books."));
@@ -4494,9 +4981,9 @@ function prStep1(st){
   const box=document.createDocumentFragment(), {rows,paidIds}=st;
   const ww=workweekDow(), ps=paySched();
   if (!isUS()) box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Pay in "+COUNTRIES[bizCountry()][0]+": "),"DayZift adds up hours and pay. It doesn't add overtime or work out taxes outside the US, so enter overtime as a bonus and tax as a deduction, using your accountant's figures."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Pay schedule")));
-  else box.append(el("div",{class:"banner info"},el("span",{class:"grow"},el("b",{},"Overtime: "),"time and a half for W-2 hourly crew past 40 hours in a workweek ("+DOW_SHORT[ww]+"–"+DOW_SHORT[(ww+6)%7]+
-    (ww!==ps.startDow?"; it can cross two pay periods and is counted on the whole week":"")+
-    "). Some states add daily overtime; adjust it if yours does."),el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
+  else box.append(el("p",{class:"kv",style:"margin:0 4px 12px",title:"Some states add daily overtime; adjust it if yours does."+(ww!==ps.startDow?" A workweek can cross two pay periods; overtime is counted on the whole week.":"")},
+    "Overtime: time and a half for hourly employees after 40 hours a week ("+DOW_SHORT[ww]+"–"+DOW_SHORT[(ww+6)%7]+"). ",
+    el("a",{href:"#",onclick:ev=>{ev.preventDefault();openPaySched();}},"Change")));
   const tbl=el("table",{class:"ptable"});
   tbl.append(el("thead",{},el("tr",{},el("th",{},"Crew"),el("th",{},"Hours / work"),el("th",{},"Status"),el("th",{}))));
   const tb=el("tbody");
@@ -4559,7 +5046,7 @@ function prHoursDetail(x,paid){
         el("button",{type:"button","aria-pressed":String(x.src===id),onclick:()=>{ prSet(e.id,"src",id,"Hours from"); }},l)))));
     if (src.weeks.length) box.append(el("div",{class:"kv"},...src.weeks.map((wk,i)=>[i?el("br"):null,
       "Workweek "+niceDate(wk.start).replace(/,? \d{4}$/,"")+" – "+niceDate(wk.end).replace(/,? \d{4}$/,"")+": "+hrs(r2(wk.total))+" total"+(wk.partial?" ("+hrs(r2(wk.inPeriod))+" in this pay period)":"")+(wk.ot?" · "+hrs(r2(wk.ot))+" overtime":"")])));
-  } else box.append(el("div",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" done · "+ck.hours+" h clocked"));
+  } else box.append(el("div",{class:"kv"},w.jobs+" job"+(w.jobs===1?"":"s")+" done · "+hrs(ck.hours)+" clocked"));
   if (!paid){
     const inputs=el("div",{class:"expform"});
     if (t.unit) inputs.append(prNum(t.unit+(ed.qty!=null&&ed.qty!==""?" (changed from "+x.auto+")":""),ed.qty!=null&&ed.qty!==""?ed.qty:x.auto,v=>prSet(e.id,"qty",v===""?null:v,t.unit)));
@@ -4602,9 +5089,9 @@ function prStep2(st){
     const e=x.e, isOpen=!!(S.pr.open2||{})[e.id], toggle=()=>{ (S.pr.open2 ||= {})[e.id]=!isOpen; render(); };
     const inRun=x.hoursOk||paidIds.has(e.id);
     tb.append(el("tr",{class:"prow"+(isOpen?" open":"")+(inRun?"":" muted"),onclick:toggle},
-      el("td",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},inRun?(!isUS()?(x.cls==="1099"?"Contractor":"Employee"):x.cls==="1099"?"1099 · no withholding":"W-2"):"Hours not approved yet")),
+      el("td",{},el("b",{},e.name),el("div",{class:"kv",style:"font-size:12px"},inRun?(!taxOn()?(x.cls==="1099"?"Contractor":"Employee"):x.cls==="1099"?"1099 · no withholding":"W-2"):"Hours not approved yet")),
       el("td",{class:"num"},money(x.paid)),
-      el("td",{class:"num hide-sm"},x.cls==="w2"&&isUS()?money(r2(x.ssEe+x.medEe+x.fit))+(x.fitHow==="provider"?" + fed. by provider":""):"—"),
+      el("td",{class:"num hide-sm"},x.cls==="w2"&&taxOn()?money(r2(x.ssEe+x.medEe+x.fit))+(x.fitHow==="provider"?" + fed. by provider":""):"—"),
       el("td",{class:"num hide-sm"},x.other?money(x.other):"—"),
       el("td",{class:"num"},el("b",{},money(x.net))),
       el("td",{class:"num",style:"width:28px"},isOpen?"▴":"▾")));
@@ -4628,15 +5115,16 @@ function prStub(x,paid){
   if (x.tips) stub.append(L("Tips",money(x.tips)));
   if (x.bonus) stub.append(L("Bonus",money(x.bonus)));
   stub.append(L("Gross pay",money(x.paid),"t"));
-  if (cls==="w2"&&isUS()){
+  if (cls==="w2"&&taxOn()){
     stub.append(L("Social Security (6.2%)","−"+money(x.ssEe)),L("Medicare (1.45%)","−"+money(x.medEe)));
     stub.append(L("Federal income tax"+(x.fitHow==="entered"?" (entered)":x.fitHow==="provider"?" (by provider)":x.fitHow==="default"?" (no W-4: IRS default)":" (from W-4)"),x.fitHow==="provider"?"not entered":"−"+money(x.fit)));
   }
   if (x.other) stub.append(L("Advances / deductions","−"+money(x.other)));
-  if (x.reimb) stub.append(L("Mileage ("+x.miles+" "+distUnit()+(isUS()?", not taxed":"")+")","+"+money(x.reimb)));
-  stub.append(L(cls==="w2"&&isUS()?"Estimated take-home pay":"Estimated pay this period",money(x.net),"t"));
+  if (x.reimb) stub.append(L("Mileage ("+x.miles+" "+distUnit()+(taxOn()?", not taxed":"")+")","+"+money(x.reimb)));
+  stub.append(L(cls==="w2"&&taxOn()?"Estimated take-home pay":"Estimated pay this period",money(x.net),"t"));
   const side=el("div",{class:"pdbox"});
-  if (!isUS()) side.append(el("div",{class:"kv"},"No taxes are worked out here. DayZift only calculates US payroll taxes, so take off any tax or other deductions under Advances / deductions, or use your accountant's figures."));
+  if (!taxOn()) side.append(el("div",{class:"kv"},isUS()?"Pay is shown before taxes. Take off anything else under Advances / deductions, or ":"No taxes are worked out here. DayZift only calculates US payroll taxes, so take off any tax or other deductions under Advances / deductions, or use your accountant's figures.",
+    isUS()?el("a",{href:"#",onclick:ev=>{ev.preventDefault();setTaxEstimates(true);}},"turn on tax estimates"):null,isUS()?".":null));
   else if (cls==="w2"){
     const w4=x.w4;
     side.append(el("div",{},el("b",{},"W-4: "),w4?W4_STATUS[w4.status]+(w4.step2?" · Step 2 checked":"")+(Number(w4.dependents)?" · credits "+money(w4.dependents):"")+(Number(w4.extra)?" · extra "+money(w4.extra)+"/period":""):"none on file (IRS default: Single, no adjustments)",
@@ -4791,13 +5279,26 @@ function prHistory(run){
     el("span",{class:"grow"},x.detail||x.action),el("span",{class:"kv"},x.by))));
   return d;
 }
+// Tax estimates on or off for this business (owners only).
+function setTaxEstimates(on){
+  if (!S.isOwner) return;
+  if (on && !confirm("Turn on tax estimates? DayZift will show W-2 / 1099, ask for each employee's W-4 and estimate federal withholding, Social Security and Medicare. Your accountant or payroll provider still has the final say.")) return;
+  write(async()=>{ if (!S.demo) await firebase.firestore().doc("businesses/"+S.businessId).update({taxEstimates:!!on}); S.business.taxEstimates=!!on; render(); },on?"Tax estimates are on":"Tax estimates are off");
+}
 // Once a year: 1099 totals and the tax rates used. Folded away the rest of the time.
 function yearEndPanel(start){
   const yr=start.slice(0,4);
-  if (!isUS()){
+  if (taxOn() && S.isOwner){ const d0=yearEndPanelTax(start); d0.append(el("p",{class:"kv",style:"margin:12px 0 0"},el("a",{href:"#",onclick:ev=>{ev.preventDefault();setTaxEstimates(false);}},"Turn off tax estimates"),", to show pay before taxes only.")); return d0; }
+  return yearEndPanelTax(start);
+}
+function yearEndPanelTax(start){
+  const yr=start.slice(0,4);
+  if (!taxOn()){
     const d=el("details",{class:"panel",style:"margin-top:18px"},el("summary",{style:"cursor:pointer;font-weight:800"},"Rates ("+yr+")"));
     d.append(el("div",{class:"expform",style:"margin-top:8px"},prNum("Mileage rate "+cs()+" per "+distUnit(),mileageRate(),v=>saveBizNum("mileageRate",v))),
-      el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"DayZift works out US payroll taxes only. In "+COUNTRIES[bizCountry()][0]+", use your accountant's or payroll provider's figures for tax and other deductions."));
+      isUS()?el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"Tax estimates are off, so pay is shown before taxes. ",el("a",{href:"#",onclick:ev=>{ev.preventDefault();setTaxEstimates(true);}},"Turn on tax estimates"),
+          " to have DayZift estimate W-2 withholding and track 1099 totals.")
+        :el("p",{class:"kv",style:"margin:12px 0 0;max-width:75ch"},"DayZift works out US payroll taxes only. In "+COUNTRIES[bizCountry()][0]+", use your accountant's or payroll provider's figures for tax and other deductions."));
     return d;
   }
   const d=el("details",{class:"panel",style:"margin-top:18px"},el("summary",{style:"cursor:pointer;font-weight:800"},"Year-end & taxes ("+yr+")"));
@@ -4843,7 +5344,7 @@ function openPayRate(e){
   const f=$("#empForm"); f.replaceChildren();
   // Form W-4 (2020 or later), for estimating federal income tax withholding on W-2 employees.
   const w=r.w4||{};
-  const w4Box=el("fieldset",{class:"full",id:"w4Box",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0;display:"+(r.cls==="w2"&&isUS()?"block":"none")},
+  const w4Box=el("fieldset",{class:"full",id:"w4Box",style:"border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin:0;display:"+(r.cls==="w2"&&taxOn()?"block":"none")},
     el("legend",{class:"kv",style:"font-weight:700;padding:0 4px"},"Form W-4 (for estimating federal income tax)"),
     el("div",{class:"expform"},
       el("label",{class:"f"},"Step 1(c) filing status",el("select",{name:"w4status"},el("option",{value:""},"No W-4 on file"),...Object.entries(W4_STATUS).map(([k,l])=>el("option",{value:k,selected:w.status===k},l)))),
@@ -4854,7 +5355,7 @@ function openPayRate(e){
       el("label",{class:"f"},"Step 4(c) extra withholding $ (per pay period)",el("input",{name:"w4extra",type:"number",min:"0",step:"0.01",value:w.extra??""}))),
     el("p",{class:"kv",style:"margin:6px 0 0"},"Copy these from the employee's signed W-4. Without one, the IRS says to withhold as Single with no adjustments. DayZift's figure is an estimate; your payroll provider or accountant has the final say."));
   f.append(el("h2",{},"How "+e.name.split(" ")[0]+" is paid"),
-    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"&&isUS()?"block":"none"; }},el("option",{value:"1099"},isUS()?"1099 contractor":"Contractor"),el("option",{value:"w2"},isUS()?"W-2 employee":"Employee"))),
+    el("label",{class:"f"},"Paid as",el("select",{name:"cls",value:r.cls,onchange:ev=>{ $("#w4Box").style.display=ev.target.value==="w2"&&taxOn()?"block":"none"; }},el("option",{value:"1099"},taxOn()?"1099 contractor":"Contractor"),el("option",{value:"w2"},taxOn()?"W-2 employee":"Employee"))),
     el("label",{class:"f"},"Pay type",el("select",{name:"payType",value:r.payType},PAY_TYPES.map(t=>el("option",{value:t.id},t.label)))),
     el("label",{class:"f"},"Rate",el("input",{name:"rate",type:"number",min:"0",step:"0.01",inputmode:"decimal",required:true,value:r.rate??""})),
     el("label",{class:"f row",style:"align-items:center;gap:8px;font-weight:400;color:var(--ink);align-self:end;padding-bottom:9px"},
@@ -5589,7 +6090,7 @@ function enterBusiness(biz, opts){
   S.tab="home"; S.setTab=null; S.pr=null; S.invLook=null;   // every sign-in / client opened starts on Home
   // Coming back from Stripe's setup pages: show the card payment settings and check what Stripe says.
   const fromStripe=new URLSearchParams(location.search).get("stripe");
-  if (fromStripe && S.isOwner){ S.tab="settings"; S.setTab="invoices"; history.replaceState(null,"",location.pathname); setTimeout(()=>stripeCheck(false),300); }
+  if (fromStripe && S.isOwner){ S.tab="settings"; S.setTab="invoices"; S.setOpen=true; history.replaceState(null,"",location.pathname); setTimeout(()=>stripeCheck(false),300); }
   watchBusiness(biz.id, !!opts.adminView);
   showApp(); render();
   if (!S.adminView) enablePush();     // the admin's phone shouldn't get a client's booking alerts
@@ -6081,7 +6582,7 @@ function startDemo(type){
   S.homeBusiness=biz; S.adminView=false; S.viewOnly=false;
   S.business=biz; S.businessId=biz.id; applyBusinessLists(biz);
   S.myUserId="demo-owner"; S.myEmail="owner@demo.dayzift.com"; S.isOwner=true; S.isPlatformAdmin=false; S.console=false;
-  if (!["home","board","projects","team","timesheet","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
+  if (!["home","board","projects","team","hours","timesheet","payroll","invoices","books","insights","requests","rewards","settings"].includes(S.tab)) S.tab="home";
   S.who="all"; S.range="week"; S.pr=null; S.projFilter=null; S.setTab=null; pendingPopupShown=true;
   if (!switching && !/[?&]tour=0\b/.test(location.search)) setTimeout(demoWelcome,350);
   const h=$("#bizNameHeader"); if (h) h.firstChild.textContent=biz.name;
