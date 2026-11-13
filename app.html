@@ -718,6 +718,8 @@ h2.sect{font-size:17px;font-weight:600;margin:4px 4px 8px}
 .sheetform h3{margin:6px 0 0;font-size:16px}
 .sheetform .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .clockbar{padding:8px 12px}
+.sum .stat .s{font-size:12px;color:var(--muted);margin-top:2px}
+.owedline{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border-radius:12px;padding:12px 14px;margin:0 0 16px;font-size:14px}
 .asks{padding:4px 0}
 .askhead{display:flex;justify-content:space-between;align-items:baseline;padding:10px 16px 4px}
 .askhead span{font-size:13px;color:var(--muted)}
@@ -1212,15 +1214,30 @@ function viewOnlyBlocked(){
   return true;
 }
 async function write(fn, okMsg){
-  if (viewOnlyBlocked()) return;
-  try { await fn(); if(okMsg) toast(okMsg); }
+  if (viewOnlyBlocked()) return false;
+  try { await fn(); if(okMsg) toast(okMsg); return true; }
   catch(e){
     console.warn(e);
     const code = e && e.code;
     if (code==="invalid_argument") toast("You can view this board but not change it. Ask the owner for “Can interact” access.");
     else if (code==="quota_exceeded") toast("The board is full. Delete old expenses or finished jobs to make room.");
-    else toast("That didn’t save. Check your connection and try again.");
+    else toast(e&&e.code==="permission-denied" ? "You don’t have permission to change that. Ask the owner." : "That didn’t save. Check your connection and try again.");
+    return false;
   }
+}
+// Save from a form without losing what was typed: the button shows "Saving…", the form closes only once
+// the save goes through, and stays open with everything still filled in if it fails.
+// With no signal the database holds the change until it's back online, so after a few seconds we close and say so.
+async function saveForm(dlg, fn, okMsg){
+  if (viewOnlyBlocked()) return false;
+  const btn=dlg&&dlg.querySelector("button[type=submit],form .btn.primary");
+  const was=btn&&btn.textContent; if (btn){ btn.disabled=true; btn.textContent="Saving\u2026"; }
+  let slow=false; const t=setTimeout(()=>{ slow=true; if (dlg&&dlg.open) dlg.close(); toast("No connection right now. It will save when you're back online — keep DayZift open."); },8000);
+  const ok=await write(fn, null);
+  clearTimeout(t);
+  if (btn){ btn.disabled=false; btn.textContent=was; }
+  if (ok){ if (dlg&&dlg.open) dlg.close(); if (okMsg && !slow) toast(okMsg); }
+  return ok;
 }
 
 /* ---------- state ---------- */
@@ -1524,8 +1541,6 @@ function viewHomeOwner(){
     if (next.length){ sched.append(el("h3",{style:"margin:14px 0 4px;font-size:15px"},"Coming up"));
       sched.append(el("ul",{class:"sched"},...next.map(j=>{ const r=schedRow(j,true); r.firstChild.textContent=niceDate(j.date).replace(/,? \d{4}$/,""); return r; }))); }
   }
-  // Owners have "New job" at the top of every page; only add one here when that one isn't shown.
-  if (!S.viewOnly && !S.isOwner) sched.append(el("div",{class:"acts",style:"margin-top:12px"},el("button",{type:"button",class:"btn primary",onclick:()=>openJob()},"New job")));
   cols.append(sched);
   // Booking requests waiting for an answer
   const req=el("div",{class:"panel"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Waiting for you"),el("span",{class:"grow"}),
@@ -1936,7 +1951,7 @@ function settingsAccount(){
   const m=me();
   frag.append(setPanel("Account","",
     setRow("Signed in as",(m?m.name+" \u00b7 ":"")+(S.myEmail||""),el("button",{class:"btn small",onclick:signOutApp},"Sign out")),
-    S.demo||S.isPlatformAdmin?null:setRow("Delete my account","Permanently delete your sign-in and personal details."+(S.isOwner?" If you're the only owner, your business and its records are deleted too.":""),
+    S.demo||S.isPlatformAdmin?null:setRow("Delete my account","Permanently delete your sign-in and personal details."+(S.isOwner?" If you're the only owner, your business and its records are deleted too.":" Your shift and location history go too."),
       el("button",{type:"button",class:"btn small ghost danger",onclick:openDeleteAccount},"Delete my account")),
     S.business?setRow("Business",S.business.name||"",null):null,
     S.isPlatformAdmin?setRow("Import old data","Bring in jobs saved on this device before you had an account.",el("button",{class:"btn small ghost",onclick:claimLegacyData},"Import")):null));
@@ -1966,7 +1981,7 @@ function openDeleteAccount(){
     el("h2",{style:"margin:0"},"Delete your account?"),
     el("p",{style:"margin:0"},"This permanently deletes your DayZift sign-in ("+(S.myEmail||"")+") and your personal details."+
       (sole?" You're the only owner of "+S.business.name+", so the business, its jobs, crew, invoices and books are deleted too, within 30 days.":
-       S.isOwner?" The business stays with its other owners.":" Your employer keeps the work records of the jobs and shifts you did for them.")),
+       S.isOwner?" The business stays with its other owners.":" Your shift log and location history are removed within 30 days. Job and pay records the business needs for its taxes stay with the business, without your sign-in.")),
     el("p",{class:"kv",style:"margin:0"},"Records we must keep by law, like past billing, are kept for as long as required. This can't be undone."),
     el("label",{class:"f"},"Enter your password to confirm",pw),
     el("label",{class:"row",style:"gap:8px;font-weight:400"},ok,"I understand this can't be undone."),
@@ -2139,13 +2154,12 @@ function resetAlerts(){
 }
 function convertBookingToJob(b){
   const dateStr = (b.requestedDate||"").slice(0,10);
-  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], price:0, date:dateStr, time:"",
+  const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], date:dateStr, time:"",
     phone:b.phone||"", notes:[b.size,b.details].filter(Boolean).join(" \u00b7 "), window:WIN_SHORT[b.timeWindow]?b.timeWindow:"",
-    assigneeId:null, status:"new", paid:false, createdAt:Date.now(), fromBookingId:b.id, businessId:S.businessId };
-  write(async()=>{
-    await Store.set("jobs",newId(),jobData);
-    await Store.update("bookings",b.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()});
-  }, "Added to the job board");
+    assigneeId:null, status:"new", fromBookingId:b.id, address:b.address||"" };
+  // Open the job form filled in from the request, so price, crew and time get set before it lands on the board.
+  // The request is only marked confirmed once the job is saved.
+  openJob(null, jobData);
 }
 
 /* ---- platform admin ---- */
@@ -2573,7 +2587,7 @@ function jobCard(j){
     const inv=invoiceFor(j.id);
     if (!inv && !j.paid && (Number(j.price)||0)>0) acts.append(el("button",{class:"btn small primary",onclick:()=>openInvoice(invoiceFromJobs([j]))},"Invoice"));
     if (inv && inv.status==="sent" && invTotals(inv).balance>0.004) acts.append(el("button",{class:"btn small",onclick:()=>openPayment(JSON.parse(JSON.stringify(inv)))},"Record payment"));
-    else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,{paid:!j.paid}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
+    else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,j.paid?{paid:false,paidDate:null}:{paid:true,paidDate:ymd(new Date())}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
     acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
   }
   if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"+ Materials"));
@@ -2606,6 +2620,15 @@ function removeFromJob(j, empId){
 }
 function setStatus(j,status){
   const m=!S.isOwner&&me(), loc=m&&locFor(m.id);
+  // One job at a time: starting a new one while another is still running would leave the first one open forever.
+  if (m && status==="in_progress"){
+    const open=S.jobs.find(x=>x.id!==j.id&&x.status==="in_progress"&&jobCrew(x).includes(m.id));
+    if (open){
+      if (!confirm("You haven't finished "+(open.client||"your last job")+" yet. Mark it done and start this one?")) return;
+      const p={status:"done",completedAt:Date.now()}; logShiftJob(open,"job_done");
+      write(()=>Store.update("jobs",open.id,p),null);
+    }
+  }
   if (m && status==="in_progress" && !(loc&&loc.onDuty) && jobCrew(j).includes(m.id)) startDuty();   // the first job clocks you in
   if (m && status==="done" && loc&&loc.onDuty){
     const left=S.jobs.filter(x=>x.id!==j.id&&x.date===today()&&jobCrew(x).includes(m.id)&&x.status!=="done");
@@ -2625,7 +2648,9 @@ function setStatus(j,status){
 const REPEATS=[["","One-time"],["7","Every week"],["14","Every 2 weeks"],["21","Every 3 weeks"],["28","Every 4 weeks"],["month","Every month"]];
 function addRepeat(ymdStr, rep, times){
   const d=parseYmd(ymdStr); if (times==null) times=1;
-  if (rep==="month") d.setMonth(d.getMonth()+times); else d.setDate(d.getDate()+Number(rep)*times);
+  // Monthly on the 31st lands on the last day of shorter months (Jan 31 → Feb 28 → Mar 31), never spills into the next month.
+  if (rep==="month"){ const day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+times); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); }
+  else d.setDate(d.getDate()+Number(rep)*times);
   return ymd(d);
 }
 const repeatText=r=>(REPEATS.find(x=>x[0]===String(r||""))||REPEATS[0])[1];
@@ -2681,7 +2706,9 @@ function openJob(j, preset){
   const addrF=el("label",{class:"f full"},"Address",el("input",{name:"address",value:j.address||"",autocomplete:"off"}));
   const priceF=el("label",{class:"f"},phase?"Phase price":"Price",el("input",{name:"price",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:j.price??"",placeholder:phase?"0.00":""}));
   const dateF=el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date||""}));
-  const timeF=el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""}));
+  const fromBk=isNew&&j.fromBookingId?S.bookings.find(b=>b.id===j.fromBookingId):null;
+  const timeF=el("label",{class:"f"},"Time",el("input",{name:"time",type:"time",value:j.time||""}),
+    isNew&&WIN_SHORT[j.window]?el("span",{class:"kv",style:"font-weight:400"},"Client asked for "+WIN_SHORT[j.window].toLowerCase()):null);
   const phoneF=el("label",{class:"f"},"Client phone",el("input",{name:"phone",type:"tel",value:j.phone||""}));
   const leadF=el("label",{class:"f"},phase?"Crew lead":"Lead",el("select",{name:"assigneeId",value:j.assigneeId||""},el("option",{value:""},"Unassigned"),activeCrew.map(e=>el("option",{value:e.id},e.name))));
   const projF=hasProjects() ? el("label",{class:"f full"},"Project",el("select",{name:"projectId",value:j.projectId||"",onchange:()=>{ const ph=isPhase(); svcLabel.textContent=ph?"Phase name":"Service"; $("#svcField").className=ph?"f full":"f";
@@ -2695,7 +2722,7 @@ function openJob(j, preset){
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
       el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":"Add job"):"Save changes"));
-  const title=el("h2",{},isNew?(phase?"New phase":"New job"):(phase?"Edit phase":"Edit job"));
+  const title=el("h2",{},isNew?(phase?"New phase":fromBk?"Confirm request as a job":"New job"):(phase?"Edit phase":"Edit job"));
   // Cleaning and other non-project businesses: a new job leads with the client. A known client fills in everything else.
   const fast = !phase && isNew && !hasProjects();
   let parts0=null;
@@ -2762,16 +2789,21 @@ function openJob(j, preset){
     if (!data.assigneeId && status!=="done") status="new";
     else if (data.assigneeId && status==="new") status="assigned";
     data.status=status;
-    $("#jobDlg").close();
+    if (isNew && j.window && !data.time) data.window=j.window;   // the client asked for a morning/afternoon slot
+    if (fromBk) data.fromBookingId=fromBk.id;
+    const dlg=$("#jobDlg");
     if (d.repeat!==undefined) data.repeat=d.repeat||"";
     const count=Math.max(1,Math.min(12,Number(d.count)||1));
     if (isNew && count>1 && data.repeat && data.date){
       data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId;
-      write(async()=>{ for (let i=0;i<count;i++) await Store.set("jobs",newId(),{...data,date:addRepeat(data.date,data.repeat,i),createdAt:Date.now()+i}); },
+      saveForm(dlg,async()=>{ for (let i=0;i<count;i++) await Store.set("jobs",newId(),{...data,date:addRepeat(data.date,data.repeat,i),createdAt:Date.now()+i}); },
         count+" visits added for "+data.client+", "+repeatText(data.repeat).toLowerCase());
     }
-    else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; write(()=>Store.set("jobs",newId(),data),pj?"Phase added":"Job added"); }
-    else write(()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
+    else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; const id=newId();
+      saveForm(dlg,async()=>{ await Store.set("jobs",id,data);
+        if (fromBk) await Store.update("bookings",fromBk.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()}); },
+        fromBk?"Request confirmed and added to the job board":pj?"Phase added":"Job added"); }
+    else saveForm(dlg,()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
   };
   $("#jobDlg").showModal();
 }
@@ -3361,15 +3393,32 @@ function monthRows(){
     income.push({kind:"income",id:i.id,date:i.issueDate,cat:"Invoice extras",desc:(i.number||"")+" · "+((i.client||{}).name||"")+" · billed materials and fees"+(t.balance>0.004?" (unpaid)":""),amount:t.extras,paid:t.balance<=0.004,invRow:i}); });
   const pName=id=>{ const p=id&&S.projects.find(x=>x.id===id); return p?" · "+p.name:""; };
   const exp=allExpenses().filter(x=>inPeriod(x.date,P)).map(x=>({
-    kind:"expense", id:x.id, fromJob:x.fromJob||null, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
+    kind:"expense", id:x.id, fromJob:x.fromJob||null, payroll:!!x.payrollRun, date:x.date, cat:x.category, desc:(x.vendor||x.note||"")+pName(x.projectId), amount:Number(x.amount)||0,
     receiptUrl:x.receiptUrl||null, receiptName:x.receiptName||null}));
   return {income,exp};
+}
+// Three different numbers, kept apart so they always add up:
+//  earned    = work finished in the period (job prices + billed materials and fees), paid or not
+//  collected = money actually received in the period (invoice payments and deposits, plus jobs paid off-invoice)
+//  owed      = what clients owe right now: open invoice balances (after deposits, partial payments and retainage)
+//              plus finished work that hasn't been invoiced or paid yet
+function collectedIn(P){
+  let n=0;
+  S.invoices.filter(i=>i.status!=="void").forEach(i=>(i.payments||[]).forEach(p=>{ if (p.date&&inPeriod(p.date,P)) n+=Number(p.amount)||0; }));
+  S.jobs.filter(j=>j.status==="done"&&j.paid&&!invoiceFor(j.id)&&inPeriod(j.paidDate||j.date,P)).forEach(j=>{ n+=Number(j.price)||0; });
+  return r2(n);
+}
+function owedNow(){
+  let n=0;
+  S.invoices.filter(i=>i.status==="sent").forEach(i=>{ const t=invTotals(i); if (t.balance>0.004) n+=t.balance; });
+  S.jobs.filter(j=>j.status==="done"&&!j.paid).forEach(j=>{ const inv=invoiceFor(j.id); if (!inv||inv.status!=="sent") n+=Number(j.price)||0; });
+  return r2(n);
 }
 function viewBooks(){
   const frag=document.createDocumentFragment();
   const {income,exp}=monthRows();
   const inc=income.reduce((a,r)=>a+r.amount,0), out=exp.reduce((a,r)=>a+r.amount,0), net=inc-out;
-  const unpaid=income.filter(r=>!r.paid).reduce((a,r)=>a+r.amount,0);
+  const unpaid=owedNow(), got=collectedIn(booksPeriod());
 
   const P=booksPeriod();
   const bar=booksPeriodBar();
@@ -3381,32 +3430,45 @@ function viewBooks(){
   const salesTax=r2(S.invoices.filter(i=>i.status==="sent"&&inPeriod(i.issueDate,P)).reduce((n,i)=>n+invTotals(i).tax,0));
   if (salesTax>0) frag.append(el("div",{class:"banner info"},el("span",{class:"grow"},taxName()+" on invoices in this period: ",el("b",{},money(salesTax)),". It isn't counted as income. "+(isUS()?"Set it aside for the state.":"Set it aside for the tax office."))));
   frag.append(el("div",{class:"sum"},
-    el("div",{class:"stat"},el("div",{class:"l"},"Money in (jobs and invoices)"),el("div",{class:"v"},money(inc))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Money out (expenses)"),el("div",{class:"v"},money(out))),
-    el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net))),
-    el("div",{class:"stat"},el("div",{class:"l"},"Still owed by clients"),el("div",{class:"v"},money(unpaid)))));
+    el("div",{class:"stat"},el("div",{class:"l"},"Earned"),el("div",{class:"v"},money(inc)),el("div",{class:"s"},"Work finished, paid or not")),
+    el("div",{class:"stat"},el("div",{class:"l"},"Spent"),el("div",{class:"v"},money(out)),el("div",{class:"s"},"Expenses")),
+    el("div",{class:"stat net"+(net<0?" neg":"")},el("div",{class:"l"},"Profit"),el("div",{class:"v"},money(net)),el("div",{class:"s"},"Earned minus spent")),
+    el("div",{class:"stat"},el("div",{class:"l"},"Collected"),el("div",{class:"v"},money(got)),el("div",{class:"s"},"Payments received"))));
+  frag.append(el("div",{class:"owedline"},el("span",{},"Clients owe you right now: ",el("b",{},money(unpaid))),
+    el("a",{href:"#",onclick:ev=>{ev.preventDefault();S.invFilter="open";goTab("invoices");}},"See who owes")));
 
   const left=el("div",{});
-  const f=el("form",{class:"panel"});
+  const f=el("form",{class:"panel",id:"expForm"});
+  // Editing an expense, or a half-typed new one: what's typed survives a refresh of the screen and a failed save.
+  const editing=S.expEdit?S.expenses.find(x=>x.id===S.expEdit):null;
+  if (S.expEdit && !editing){ S.expEdit=null; S.expDraft=null; }
+  const dv=S.expDraft||(editing?{date:editing.date,amount:String(editing.amount),category:editing.category,vendor:editing.vendor||"",projectId:editing.projectId||"",companyId:editing.companyId||""}:{date:today()});
+  const catList=dv.category&&!EXP_CATS.includes(dv.category)?[...EXP_CATS,dv.category]:EXP_CATS;
+  const closeForm=()=>{ S.expOpen=false; S.expEdit=null; S.expDraft=null; capturedReceiptFile=null; render(); };
   // The form stays folded until it's needed, so the totals and transactions come first.
   const formBody=el("div",{class:"expform"+(S.expOpen?"":" hidden")},
-      el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:today()})),
-      el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00"})),
-      el("label",{class:"f full"},"Category",el("select",{name:"category"},EXP_CATS.map(c=>el("option",{},c)))),
-      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:hasProjects()?"Lowe's, 2x4s and screws":"Walmart, mop heads and bleach",autocomplete:"off"})),
-      hasProjects() ? el("label",{class:"f"},"Project",el("select",{name:"projectId"},el("option",{value:""},"None"),S.projects.filter(p=>p.status!=="done").map(p=>el("option",{value:p.id},p.name)))) : null,
-      hasProjects() ? el("label",{class:"f"},"Subcontractor",el("select",{name:"companyId"},el("option",{value:""},"None"),S.companies.map(c=>el("option",{value:c.id},c.name)))) : null,
-      el("label",{class:"f full"},"Receipt photo or PDF (optional)",
+      el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",required:true,value:dv.date||today()})),
+      el("label",{class:"f"},"Amount",el("input",{name:"amount",type:"number",min:"0.01",step:"0.01",inputmode:"decimal",required:true,placeholder:"0.00",value:dv.amount||""})),
+      el("label",{class:"f full"},"Category",el("select",{name:"category"},catList.map(c=>el("option",{selected:c===dv.category},c)))),
+      el("label",{class:"f full"},"Paid to / what for",el("input",{name:"vendor",placeholder:hasProjects()?"Lowe's, 2x4s and screws":"Walmart, mop heads and bleach",autocomplete:"off",value:dv.vendor||""})),
+      hasProjects() ? el("label",{class:"f"},"Project",el("select",{name:"projectId"},el("option",{value:""},"None"),S.projects.filter(p=>p.status!=="done"||p.id===dv.projectId).map(p=>el("option",{value:p.id,selected:p.id===dv.projectId},p.name)))) : null,
+      hasProjects() ? el("label",{class:"f"},"Subcontractor",el("select",{name:"companyId"},el("option",{value:""},"None"),S.companies.map(c=>el("option",{value:c.id,selected:c.id===dv.companyId},c.name)))) : null,
+      editing&&editing.receiptUrl ? el("div",{class:"f full kv"},"Receipt on file: ",el("a",{href:editing.receiptUrl,target:"_blank",rel:"noopener"},editing.receiptName||"Open"),
+        el("label",{class:"row",style:"align-items:center;gap:8px;font-weight:400;margin-top:6px"},el("input",{type:"checkbox",name:"dropReceipt",style:"width:auto;margin:0"}),"Remove this receipt")) : null,
+      el("label",{class:"f full"},editing&&editing.receiptUrl?"Replace the receipt (optional)":"Receipt photo or PDF (optional)",
         el("input",{name:"receipt",type:"file",accept:"image/*,application/pdf",onchange:handleReceiptPreview})),
       isNative() ? el("div",{class:"full",style:"margin-top:-6px;"},el("button",{type:"button",class:"btn small",onclick:captureReceiptPhoto},"📷 Take Photo")) : null,
       el("img",{id:"receiptPreview",class:"hidden",style:"max-width:110px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-top:2px;object-fit:cover;"}),
       el("label",{class:"f full row",style:"align-items:center;gap:8px;font-weight:400;"},
         el("input",{type:"checkbox",name:"asPdf",checked:true,style:"width:auto;margin:0;"}),
         "Save photo as a PDF receipt"),
-      el("div",{class:"full row",style:"gap:8px"},el("button",{type:"submit",class:"btn primary"},"Save expense"),
-        el("button",{type:"button",class:"btn ghost",onclick:()=>{ S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden"); }},"Cancel")));
+      el("div",{class:"full row",style:"gap:8px"},el("button",{type:"submit",class:"btn primary"},editing?"Save changes":"Save expense"),
+        el("button",{type:"button",class:"btn ghost",onclick:closeForm},"Cancel"),
+        editing?el("span",{class:"grow"}):null,
+        editing?el("button",{type:"button",class:"btn ghost danger",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",editing.id),"Expense deleted").then(ok=>{ if(ok) closeForm(); }); }},"Delete"):null));
+  f.oninput=f.onchange=ev=>{ if (ev.target.type==="file"||ev.target.name==="asPdf"||ev.target.name==="dropReceipt") return; const d=Object.fromEntries(new FormData(f)); delete d.receipt; S.expDraft=d; };
   const openBtn=el("button",{type:"button",class:"btn primary"+(S.expOpen?" hidden":""),onclick:()=>{ S.expOpen=true; formBody.classList.remove("hidden"); openBtn.classList.add("hidden"); const a=f.querySelector("[name=amount]"); if (a) a.focus(); }},"+ Add expense");
-  f.append(el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px"},el("h2",{style:"margin:0"},"Expenses"),openBtn),
+  f.append(el("div",{class:"row",style:"justify-content:space-between;align-items:center;gap:10px"},el("h2",{style:"margin:0"},editing?"Edit expense":"Expenses"),openBtn),
     el("p",{class:"kv",style:"margin:6px 0 0"},"Log gas, supplies and other costs, with a receipt photo if you have one."),
     formBody);
   f.onsubmit=async e=>{
@@ -3436,13 +3498,20 @@ function viewBooks(){
       console.warn(err);
       toast("Couldn't upload the receipt, but saving the expense anyway.");
     }
-    const links={}; if (d.projectId) links.projectId=d.projectId; if (d.companyId) links.companyId=d.companyId;
-    write(()=>Store.set("expenses",newId(),{date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:d.vendor.trim(),createdAt:Date.now(),businessId:S.businessId,...links,...receiptData}),"Expense added");
-    f.reset(); f.querySelector("[name=date]").value=today();
-    $("#receiptPreview").classList.add("hidden");
-    capturedReceiptFile = null;
+    const base={date:d.date,amount:Math.round(amt*100)/100,category:d.category,vendor:(d.vendor||"").trim()};
+    let ok;
+    if (editing){
+      const patch={...base};
+      if (hasProjects()){ patch.projectId=d.projectId||null; patch.companyId=d.companyId||null; }
+      if (receiptData.receiptUrl) Object.assign(patch,receiptData);
+      else if (d.dropReceipt){ patch.receiptUrl=null; patch.receiptName=null; }
+      ok=await write(()=>Store.update("expenses",editing.id,patch),"Expense saved");
+    } else {
+      const links={}; if (d.projectId) links.projectId=d.projectId; if (d.companyId) links.companyId=d.companyId;
+      ok=await write(()=>Store.set("expenses",newId(),{...base,createdAt:Date.now(),businessId:S.businessId,...links,...receiptData}),"Expense added");
+    }
     submitBtn.disabled=false;
-    S.expOpen=false; formBody.classList.add("hidden"); openBtn.classList.remove("hidden");
+    if (ok) closeForm();   // on a failed save the form stays open with everything still filled in
   };
   left.append(f);
 
@@ -3468,9 +3537,10 @@ function viewBooks(){
       el("div",{class:"txr"},el("b",{class:"amt"},(r.kind==="income"?"+":"−")+money(r.amount)),
       r.kind==="expense"
         ? (r.fromJob ? el("button",{class:"btn small ghost",onclick:()=>{ const j=S.jobs.find(x=>x.id===r.fromJob); if(j) openCosts(j); }},"On job")
-          : el("button",{class:"btn small ghost danger","aria-label":"Delete expense",onclick:()=>{ if(confirm("Delete this expense?")) write(()=>Store.del("expenses",r.id),"Expense deleted"); }},"Delete"))
+          : r.payroll ? el("button",{class:"btn small ghost",title:"Change this on the Pay screen",onclick:()=>goTab("payroll")},"Payroll")
+          : el("button",{class:"btn small ghost","aria-label":"Edit expense",onclick:()=>{ S.expEdit=r.id; S.expDraft=null; S.expOpen=true; capturedReceiptFile=null; render(); setTimeout(()=>{ const x=$("#expForm"); if(x) x.scrollIntoView({behavior:"smooth",block:"start"}); },50); }},"Edit"))
         : r.invRow ? el("button",{class:"btn small ghost",onclick:()=>openInvoice(r.invRow)},r.paid?"Paid":"Open")
-        : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
+        : (!r.paid ? (r.inv ? el("button",{class:"btn small",onclick:()=>openInvoice(r.inv)},r.inv.number||"Invoice") : el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",r.id,{paid:true,paidDate:ymd(new Date())}),"Marked paid")},"Mark paid")) : el("span",{class:"paid yes"},"Paid"))))));
     tp.append(list);
     if (rows.length>SHOW) tp.append(el("button",{class:"btn small ghost",style:"margin-top:10px",onclick:()=>{S.txAll=!S.txAll;render();}},S.txAll?"Show fewer":"Show all "+rows.length));
   }
@@ -3933,11 +4003,20 @@ function invoiceEditor(d){
   if (!(d.lines||[]).length) tb.append(el("tr",{},el("td",{colspan:"6",class:"empty"},"No lines yet. Add finished jobs or a line below.")));
   const avail=unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id) && (!d.client.name || normName(j.client)===normName(d.client.name)));
   const availMat=S.jobs.filter(j=>d.lines.some(l=>l.type==="job"&&l.jobId===j.id)).flatMap(j=>costLines(j).filter(cl=>!d.lines.some(l=>l.costId===cl.costId)));
+  // One customer per invoice: jobs are grouped by customer, and ticking one customer's job greys out everyone else's.
   const pick=el("div",{class:"jobpick hidden"});
-  avail.slice(0,30).forEach(j=>pick.append(el("label",{class:"row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",value:j.id,style:"width:auto"}),
-    el("span",{class:"grow"},(j.client||"")+" · "+(j.service||"")+" · "+niceDate(j.date)),el("b",{},money(j.price)))));
+  const lockPick=()=>{ const on=[...pick.querySelectorAll("input:checked")].map(x=>x.dataset.c); const c=on[0];
+    pick.querySelectorAll("input[type=checkbox]").forEach(x=>{ x.disabled=!!c && x.dataset.c!==c; x.closest("label").style.opacity=x.disabled?".45":""; }); };
+  let lastC=null;
+  avail.slice(0,40).sort((a,b)=>normName(a.client).localeCompare(normName(b.client))||(a.date||"").localeCompare(b.date||"")).forEach(j=>{
+    const c=normName(j.client);
+    if (!d.client.name && c!==lastC){ pick.append(el("div",{class:"kv",style:"font-weight:700;margin:8px 0 2px"},j.client||"No name")); lastC=c; }
+    pick.append(el("label",{class:"row",style:"gap:8px;font-weight:400"},el("input",{type:"checkbox",value:j.id,"data-c":c,style:"width:auto",onchange:lockPick}),
+      el("span",{class:"grow"},(d.client.name?"":"")+(j.service||"Job")+" · "+niceDate(j.date)),el("b",{},money(j.price))));
+  });
   pick.append(el("button",{type:"button",class:"btn small primary",onclick:()=>{
     const ids=[...pick.querySelectorAll("input:checked")].map(x=>x.value); const js=S.jobs.filter(j=>ids.includes(j.id));
+    if (new Set(js.map(j=>normName(j.client))).size>1) return toast("Pick jobs for one customer. Each customer gets their own invoice.");
     if (!d.client.name && js[0]){ d.client=clientInfo(js[0].client,js[0]); }
     js.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); if(!d.projectId&&j.projectId) d.projectId=j.projectId; });
     invoiceEditor(d); }},"Add selected"));
@@ -4000,10 +4079,14 @@ function invoiceEditor(d){
     if (!(d.lines||[]).length) return err.textContent="Add at least one line.";
     if (d.lines.some(l=>!String(l.desc||"").trim())) return err.textContent="Every line needs a description.";
     if (invTotals(d).total<=0) return err.textContent="The total is zero. Check the prices.";
+    // Every job on the invoice must belong to the customer it's addressed to.
+    const others=[...new Set((d.lines||[]).filter(l=>l.type==="job"&&l.jobId).map(l=>(S.jobs.find(j=>j.id===l.jobId)||{}).client).filter(c=>c&&normName(c)!==normName(d.client.name)))];
+    if (others.length) return err.textContent="This invoice has jobs for "+others.join(", ")+", not "+d.client.name.trim()+". Remove those lines and bill them on their own invoice.";
     d.client.email=(d.client.email||"").trim();
+    const was={status:d.status,sentAt:d.sentAt};
     if (send) d.status="sent";
     if (send && !d.sentAt) d.sentAt=Date.now();
-    try { await saveInvoice(d); } catch(e){ console.warn(e); return err.textContent="That didn't save. Check your connection and try again."; }
+    try { await saveInvoice(d); } catch(e){ console.warn(e); Object.assign(d,was); return err.textContent="That didn't save. Your changes are still here; check your connection and tap again."; }
     toast(send?"Invoice ready to send":"Draft saved");
     if (send) openSend(d); else $("#invDlg").close();
   };
