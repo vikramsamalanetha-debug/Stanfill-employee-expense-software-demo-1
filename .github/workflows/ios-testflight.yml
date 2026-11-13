@@ -134,6 +134,12 @@ jobs:
               apps = json.load(urllib.request.urlopen(req))
               names = [a["attributes"]["bundleId"] for a in apps.get("data", [])]
               print("::notice::Apple accepted the API key. Apps it can see: " + (", ".join(names) or "none"))
+              # The team that owns the app ID, straight from Apple (it changes if the account moves to an organization).
+              q = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/bundleIds?filter[identifier]=" + os.environ.get("BUNDLE_ID", "net.litamerica.dazift"), headers={"Authorization": "Bearer " + tok})
+              seed = [b["attributes"].get("seedId") for b in json.load(urllib.request.urlopen(q)).get("data", []) if b["attributes"].get("identifier") == os.environ.get("BUNDLE_ID", "net.litamerica.dazift")]
+              if seed and seed[0]:
+                  if seed[0] != team: print("::warning::APPLE_TEAM_ID in GitHub doesn't match the team that owns the app (" + seed[0] + "). Using Apple's. Update the APPLE_TEAM_ID secret to " + seed[0] + ".")
+                  open(os.environ["GITHUB_ENV"], "a").write("APPLE_TEAM=" + seed[0] + "\n")
           except urllib.error.HTTPError as e:
               print(f"::error::Apple rejected the API key ({e.code}). Check that ASC_KEY_ID matches the key and ASC_ISSUER_ID is the Issuer ID shown above the keys list, and that it's a Team key.")
               raise SystemExit(1)
@@ -144,10 +150,11 @@ jobs:
       # (a distribution certificate and profile made with the API key, no registered iPhone needed).
       - name: Build and sign
         env:
-          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_SECRET: ${{ secrets.APPLE_TEAM_ID }}
           KID: ${{ secrets.ASC_KEY_ID }}
           ISS: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          TEAM="${APPLE_TEAM:-$TEAM_SECRET}"
           xcodebuild -version
           set -o pipefail
           # Errors are also reported as annotations, so they show on the run's summary page.
@@ -161,10 +168,11 @@ jobs:
 
       - name: Upload to TestFlight
         env:
-          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_SECRET: ${{ secrets.APPLE_TEAM_ID }}
           KID: ${{ secrets.ASC_KEY_ID }}
           ISS: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          TEAM="${APPLE_TEAM:-$TEAM_SECRET}"
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
