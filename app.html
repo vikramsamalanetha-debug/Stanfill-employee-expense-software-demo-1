@@ -799,6 +799,32 @@ input,select,textarea{border-color:#DADFDB;border-radius:10px}
   .banner.demo .seg button{font-size:13px;padding:5px 10px}
   .banner.demo .btn.small{padding:5px 10px;font-size:12px}
 }
+/* ---- Truck & equipment repair add-on ---- */
+.btn.danger-solid{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.danger-solid:hover{filter:brightness(.93)}
+.pill.sos{background:var(--danger);color:#fff;letter-spacing:.02em}
+.unitline{font-size:13px;color:var(--ink);margin:4px 0;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.unitline b{font-weight:800}
+.unitline span{color:var(--muted)}
+.wo-box{border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface)}
+.wo-box h3{margin:0 0 6px;font-size:15px}
+.wo-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.wo-photos a,.wo-photos .ph{display:block;aspect-ratio:1;border-radius:var(--radius-sm);overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.wo-photos img{width:100%;height:100%;object-fit:cover;display:block}
+.wo-photos .ph{display:grid;place-items:center;font-size:12px;color:var(--muted);text-align:center;padding:6px}
+.sos-panel{border:2px solid var(--danger);background:var(--danger-soft)}
+.sos-panel h2{color:var(--danger)}
+.breakdown-cta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 0 16px;padding:14px 16px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line)}
+.breakdown-cta .grow{min-width:200px}
+.breakdown-cta b{display:block;font-size:16px}
+.unithist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.unithist li{border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;cursor:pointer;background:var(--surface)}
+.unithist li:hover{border-color:var(--muted)}
+.unithist .kv{display:block}
+.unitpick{min-width:0}
+.unitpick select{width:100%;max-width:100%;min-width:0}
+.newunit[hidden]{display:none}
+.newunit{min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;border:1px dashed var(--line);border-radius:var(--radius-sm);padding:10px}
 </style>
 <!-- Google Tag Manager on live dayzift.com and in the Android/iPhone app (never tests). Tracking is set up in tagmanager.google.com.
      Every app screen is reported under one fixed name and address, so business names and data never go to Google.
@@ -888,6 +914,8 @@ input,select,textarea{border-color:#DADFDB;border-radius:10px}
             <option>Electrical</option>
             <option>HVAC</option>
             <option>Roofing</option>
+          <option>Truck &amp; Equipment Repair</option>
+            <option>Truck &amp; Equipment Repair</option>
             <option>Other</option>
           </select>
         </label>
@@ -1014,9 +1042,13 @@ const SERVICE_DEFAULTS = {
   "Electrical":["Service call","Panel upgrade","Outlet & switch work","Lighting install","Rough-in","Estimate visit"],
   "HVAC":["Service call","System install","Maintenance visit","Duct work","Estimate visit"],
   "Roofing":["Roof inspection","Repair","Full replacement","Gutters","Estimate visit"],
+  "Truck & Equipment Repair":["Roadside repair","Diagnostics","Mobile tire service","DPF / DEF / EGR","Brakes & suspension","Preventive maintenance","Heavy equipment repair","Welding"],
   "Other":["Standard service","Large job","Consultation"]
 };
-const CATEGORIES = ["Cleaning","Lawn Care","Handyman","Pet Care","Construction","Plumbing","Electrical","HVAC","Roofing","Other"];
+const CATEGORIES = ["Cleaning","Lawn Care","Handyman","Pet Care","Construction","Plumbing","Electrical","HVAC","Roofing","Truck & Equipment Repair","Other"];
+// Mobile mechanics and repair shops: trucks & equipment on file, work orders on each job, breakdown calls.
+// On by default for this type; any business can switch it on or off in Settings.
+const REPAIR_CAT = "Truck & Equipment Repair";
 // Trades that run multi-day projects and hire subcontractors get those tools turned on by default.
 const TRADE_CATS = ["Construction","Plumbing","Electrical","HVAC","Roofing","Handyman"];
 let SERVICES = SERVICE_DEFAULTS.Cleaning.slice();
@@ -1025,7 +1057,8 @@ const TRADE_EXP_CATS = ["Materials","Subcontractors","Permits & fees","Tool rent
 function hasProjects(){ const b=S.business||{}; if (b.features && typeof b.features.projects==="boolean") return b.features.projects; return TRADE_CATS.includes(b.category); }
 // Customer rewards suit repeat-visit businesses (cleaning, lawn, pet care), not one-off trade jobs.
 // Off by default for the trades; any business can switch it in Settings. A business that already has members keeps it on.
-function hasRewards(){ const b=S.business||{}; if (b.features && typeof b.features.rewards==="boolean") return b.features.rewards; return !TRADE_CATS.includes(b.category) || S.customers.some(c=>c.rewardsMember); }
+function hasRewards(){ const b=S.business||{}; if (b.features && typeof b.features.rewards==="boolean") return b.features.rewards; return !(TRADE_CATS.includes(b.category)||b.category===REPAIR_CAT) || S.customers.some(c=>c.rewardsMember); }
+function hasRepair(){ const b=S.business||{}; if (b.features && typeof b.features.repair==="boolean") return b.features.repair; return b.category===REPAIR_CAT; }
 const PROJECT_STATUSES = [{id:"planning",label:"Planning"},{id:"active",label:"Active"},{id:"hold",label:"On hold"},{id:"done",label:"Finished"}];
 // Everyone working a job: the lead (assigneeId) plus any extra crew.
 function jobCrew(j){ return [...new Set([j.assigneeId,...(Array.isArray(j.crewIds)?j.crewIds:[])].filter(Boolean))]; }
@@ -1156,7 +1189,7 @@ function hideToast(){ const t=$("#toast"); t.classList.add("hidden"); try { if (
 $("#toast").addEventListener("click",hideToast);   // tap to dismiss
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices","payrollRuns"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices","payrollRuns","units"];
 // Firestore sentinels (server time, delete field) have no meaning in the on-device store.
 function localClean(data){
   const out={}; const FV=firebase.firestore.FieldValue;
@@ -1281,7 +1314,8 @@ function draw(){
     return;
   }
   if (tag) tag.textContent = S.isOwner ? "Crew board, team locations and the books, all in one place." : "Your jobs and your shift.";
-  if (!S.isOwner && ["requests","rewards","insights","books","payroll","timesheet","invoices","platform"].includes(S.tab)) S.tab="home";
+  if (!S.isOwner && ["requests","rewards","insights","books","payroll","timesheet","invoices","platform","units"].includes(S.tab)) S.tab="home";
+  if (S.tab==="units" && !hasRepair()) S.tab="board";
   if (S.tab==="projects" && !hasProjects()) S.tab="board";
   if (S.tab==="rewards" && !hasRewards()) S.tab="home";
   if (S.tab==="platform" && !S.isPlatformAdmin) S.tab="home";
@@ -1298,6 +1332,7 @@ function draw(){
   else if (S.tab==="requests") v.append(viewRequests());
   else if (S.tab==="rewards") v.append(viewRewards());
   else if (S.tab==="board") v.append(viewBoard());
+  else if (S.tab==="units") v.append(viewUnits());
   else if (S.tab==="team") v.append(viewTeam());
   else if (S.tab==="hours") v.append(viewMyHours());
   else if (S.tab==="insights") v.append(viewInsights());
@@ -1308,7 +1343,9 @@ function draw(){
 
 function plusAction(){
   const t=S.tab;
+  if (t==="home" && hasRepair()) return ["Breakdown call",()=>openBreakdown()];
   if (["home","board","requests"].includes(t)) return ["New job",()=>openJob()];
+  if (t==="units") return ["Add truck or equipment",()=>openUnit()];
   if (t==="projects") return ["New project",()=>openProject()];
   if (t==="team") return ["Add team member",()=>openEmp()];
   if (t==="invoices") return ["New invoice",()=>openInvoice(draftInvoice({}))];
@@ -1327,6 +1364,7 @@ function drawWho(){
   } else if (S.myEmail){
     w.append(el("span",{class:"kv"},el("b",{},S.myEmail)));
   }
+  if (S.isOwner && isDesktop() && hasRepair()) w.append(el("button",{class:"btn danger-solid",onclick:()=>openBreakdown()},"Breakdown call"));
   if (S.isOwner && isDesktop()) w.append(el("button",{class:"btn primary",onclick:()=>openJob()},"New job"));
   else if (S.isOwner){   // phones: one round + that adds whatever this page is about
     const act=plusAction(); if (act) w.append(el("button",{class:"btn primary plus","aria-label":act[0],title:act[0],onclick:act[1]},"+"));
@@ -1490,7 +1528,7 @@ function navGroups(){
   const nAdmin=S.isPlatformAdmin ? S.allBusinesses.filter(b=>b.status==="pending").length+unfinishedSignups().length : 0;
   return [
     {id:"home",label:"Home",icon:"home",tabs:[["home","Today"]]},
-    {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests","Booking requests"+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null]},
+    {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests",(hasRepair()?"Service requests":"Booking requests")+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null,hasRepair()?["units","Trucks & equipment"]:null]},
     {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["timesheet","Timesheet"],["payroll","Payroll"]]},
     {id:"money",label:"Money",icon:"money",tabs:[["invoices","Invoices"],["books","Books"],["insights","Insights"]]},
     {id:"more",label:"More",icon:"more",tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"]]},
@@ -1552,6 +1590,20 @@ function viewHomeOwner(){
   const frag=document.createDocumentFragment(), t=today();
   const m=me(), first=((m&&m.name)||"").split(" ")[0];
   frag.append(el("h2",{class:"hello"},greeting()+(first?", "+first:"")));
+  if (hasRepair()){
+    const sos=openBreakdowns();
+    if (!S.viewOnly && !isDesktop()) frag.append(el("div",{class:"breakdown-cta"},el("div",{class:"grow"},el("b",{},"Got a breakdown call?"),el("span",{class:"kv"},"Log the customer, where the truck is and what's wrong in under a minute.")),
+      el("button",{type:"button",class:"btn danger-solid",onclick:()=>openBreakdown()},"Breakdown call")));
+    if (sos.length){
+      const bp=el("div",{class:"panel sos-panel",style:"margin-bottom:16px"},el("h2",{style:"margin:0 0 6px"},sos.length===1?"1 open breakdown":sos.length+" open breakdowns"));
+      bp.append(el("div",{class:"rows"},...sos.map(j=>el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
+        el("span",{class:"rw"},el("b",{},j.time?fmtTime(j.time):"Now"),el("span",{},(STATUSES.find(x=>x.id===(j.status||"new"))||{}).label||"")),
+        el("span",{class:"rm"},el("b",{},(j.client||"Customer")+(jobUnit(j)?" \u00b7 "+unitName(jobUnit(j)):j.unitLabel?" \u00b7 "+j.unitLabel:"")),
+          el("span",{},[woOf(j).complaint,j.address].filter(Boolean).join(" \u00b7 ")||j.service||""),
+          el("span",{class:crewNames(j)?"":"unas"},crewNames(j)||"Nobody assigned yet")),chevron()))));
+      frag.append(bp);
+    }
+  }
   const pend=pendingBookings();
   const todays=S.jobs.filter(j=>j.date===t).sort((a,b)=>(a.time||"99").localeCompare(b.time||"99"));
   const going=todays.filter(j=>j.status==="in_progress").length, left=todays.filter(j=>j.status!=="done").length;
@@ -1768,12 +1820,17 @@ function chevron(){ const s=document.createElementNS("http://www.w3.org/2000/svg
 function crewJobCard(j,isNow){
   const st=j.status||"assigned";
   const card=el("section",{class:"jobnow"},
+    j.emergency&&st!=="done"?el("span",{class:"pill sos",style:"width:fit-content"},"Breakdown"):null,
     el("b",{class:"jt"},j.client||"Job"),
     el("span",{class:"jm"},[j.service,st==="in_progress"&&j.startedAt?"started "+hhmm(j.startedAt):j.time?(j.date===today()?"today ":niceDate(j.date)+" ")+fmtTime(j.time):""].filter(Boolean).join(" \u00b7 ")),
     j.address?el("span",{class:"jm"},j.address):null,
-    j.notes?el("div",{class:"jn"},j.notes):null);
+    hasRepair()?unitLine(j):null,
+    hasRepair()&&woOf(j).complaint?el("div",{class:"jn"},"Problem: "+woOf(j).complaint):null,
+    j.notes?el("div",{class:"jn"},j.notes):null,
+    j.phone&&hasRepair()?el("span",{class:"jm"},"Customer: ",el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)):null);
   const acts=el("div",{class:"ja"});
   if (j.address) acts.append(el("a",{class:"btn",href:"https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},"Directions"));
+  if (hasRepair() && st!=="new") acts.append(el("button",{type:"button",class:"btn",onclick:()=>openWorkOrder(j)},"Work order"+(jobPhotos(j).length?" \u00b7 "+jobPhotos(j).length+" photos":"")));
   if (st==="in_progress") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"done")},"Finish job"));
   else if (st!=="done") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
   card.append(acts);
@@ -1786,6 +1843,247 @@ function openCrewJob(j){
   body.querySelectorAll(".ja button").forEach(b=>b.addEventListener("click",()=>d.close()));
   d.showModal();
 }
+
+/* ---- Truck & equipment repair add-on ----
+   For mobile mechanics and repair shops (switched on by the "Truck & Equipment Repair" type, or in Settings).
+   Customers' trucks and equipment are kept in "units", each with its own service history.
+   A job can be tied to one unit and carries a work order: the complaint, fault codes, what was found,
+   what was done, odometer, labor hours and photos. Parts are the job's costs (billed to the customer). */
+const UNIT_KINDS=["Truck","Trailer","Equipment","Other"];
+const ENGINE_SUGGEST=["Cummins X15","Cummins ISX","Cummins ISC 8.3L","Cummins ISB","Detroit DD13","Detroit DD15","Detroit DD16","Detroit Series 60","Cat C7","Cat C13","Cat C15","PACCAR MX-11","PACCAR MX-13","Volvo D13","Mack MP8","International A26","International MaxxForce"];
+const unitById = id => (S.units||[]).find(u=>u.id===id);
+function unitName(u){ if (!u) return ""; return [u.unitNo?"#"+u.unitNo:"",u.year,u.make,u.model].filter(Boolean).join(" ").trim() || u.kind || "Unit"; }
+function unitLabel(u){ if (!u) return ""; return [unitName(u),u.engine].filter(Boolean).join(" · "); }
+const vinTail = v => v ? "VIN …"+String(v).slice(-6) : "";
+function jobUnit(j){ return j&&j.unitId ? unitById(j.unitId) : null; }
+// The truck on a job, as one line. Falls back to the label saved on the job if the unit was removed.
+function unitLine(j){
+  const u=jobUnit(j); const name=u?unitName(u):j.unitLabel||"";
+  if (!name) return null;
+  return el("div",{class:"unitline"},el("b",{},name),u&&u.engine?el("span",{},u.engine):null,u&&u.vin?el("span",{},vinTail(u.vin)):null,
+    u&&u.mileage?el("span",{},Number(u.mileage).toLocaleString()+" "+(u.kind==="Equipment"?"hrs":distUnit())):null);
+}
+const woOf = j => (j && j.workOrder && typeof j.workOrder==="object") ? j.workOrder : {};
+const jobPhotos = j => Array.isArray(j&&j.photos) ? j.photos : [];
+function lastServiceOf(u){ const t=today(); const js=S.jobs.filter(j=>j.unitId===u.id&&(j.date||"")<=t).sort((a,b)=>(b.date||"").localeCompare(a.date||"")); return js[0]||null; }
+function splitYmm(t){ const m=/^\s*((?:19|20)\d\d)\s+(\S+)\s*(.*)$/.exec(t||""); return m?{year:m[1],make:m[2],model:m[3].trim()}:{year:"",make:"",model:String(t||"").trim()}; }
+function cleanVin(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,17); }
+function unitsForClient(name){ const k=normName(name); return (S.units||[]).filter(u=>k && normName(u.client)===k); }
+function clientNames(){ return [...new Set([...clientProfiles().map(p=>p.name),...(S.units||[]).map(u=>u.client).filter(Boolean)])].sort((a,b)=>a.localeCompare(b)); }
+
+// Trucks & equipment: every customer unit, newest service first, with search.
+function viewUnits(){
+  const frag=document.createDocumentFragment(), q=(S.unitQ||"").trim().toLowerCase();
+  const all=(S.units||[]).map(u=>({u,last:lastServiceOf(u)}));
+  const list=all.filter(({u})=>!q || [u.client,u.unitNo,u.year,u.make,u.model,u.engine,u.vin,u.notes].join(" ").toLowerCase().includes(q))
+    .sort((a,b)=>((b.last&&b.last.date)||"").localeCompare((a.last&&a.last.date)||"") || unitName(a.u).localeCompare(unitName(b.u)));
+  const search=el("input",{type:"search",id:"unitSearch",placeholder:"Search by customer, unit #, VIN, engine…",value:S.unitQ||"",style:"max-width:420px",
+    oninput:ev=>{ S.unitQ=ev.target.value; clearTimeout(S.unitQT); S.unitQT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=$("#unitSearch"); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }});
+  frag.append(el("div",{class:"toolbar"},search,el("span",{class:"grow"}),el("span",{class:"kv"},all.length+" on file"),
+    el("button",{type:"button",class:"btn primary",onclick:()=>openUnit()},"Add truck or equipment")));
+  if (!all.length){
+    frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"No trucks or equipment yet. Add one here, or add it while you log a breakdown call or a new job. Each one keeps its own service history.")));
+    return frag;
+  }
+  if (!list.length){ frag.append(el("div",{class:"panel"},el("div",{class:"empty"},"Nothing matches “"+S.unitQ+"”."))); return frag; }
+  const box=el("div",{class:"rows"});
+  list.forEach(({u,last})=>box.append(el("button",{type:"button",class:"rowi",onclick:()=>openUnit(u)},
+    el("span",{class:"rw"},el("b",{},u.unitNo?"#"+u.unitNo:(u.kind||"Unit")),el("span",{},u.kind&&u.unitNo?u.kind:"")),
+    el("span",{class:"rm"},el("b",{},unitName(u)),el("span",{},[u.client,u.engine,vinTail(u.vin)].filter(Boolean).join(" · ")),
+      el("span",{},last?"Last service "+niceDate(last.date)+" · "+(last.service||"Job"):"No service yet")),
+    chevron())));
+  frag.append(box);
+  return frag;
+}
+
+// Add or edit a truck / trailer / piece of equipment, with its service history.
+function openUnit(u, preset){
+  const f=$("#jobForm"); f.replaceChildren();
+  const isNew=!u; u=u||{kind:"Truck",...(preset||{})};
+  const hist=isNew?[]:S.jobs.filter(j=>j.unitId===u.id).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const fld=(label,name,props,full)=>el("label",{class:"f"+(full?" full":"")},label,el("input",{name,value:u[name]??"",autocomplete:"off",...(props||{})}));
+  f.append(el("h2",{},isNew?"Add truck or equipment":unitName(u)),
+    !isNew?el("p",{class:"kv full",style:"margin:-6px 0 0"},[u.client,u.engine,u.vin?"VIN "+u.vin:""].filter(Boolean).join(" · ")):null,
+    el("label",{class:"f full"},"Customer",el("input",{name:"client",required:true,value:u.client||"",list:"unitClients",autocomplete:"off",placeholder:"Company or owner-operator"}),
+      el("datalist",{id:"unitClients"},clientNames().map(n=>el("option",{value:n})))),
+    el("label",{class:"f"},"Type",el("select",{name:"kind"},UNIT_KINDS.map(k=>el("option",{value:k,selected:(u.kind||"Truck")===k},k)))),
+    fld("Unit #","unitNo",{placeholder:"e.g. 12",maxlength:"20"}),
+    fld("Year","year",{inputmode:"numeric",maxlength:"4",placeholder:"2019"}),
+    fld("Make","make",{placeholder:"Peterbilt, Freightliner, Cat…",maxlength:"40"}),
+    fld("Model","model",{placeholder:"389, Cascadia, D6…",maxlength:"40"}),
+    el("label",{class:"f"},"Engine",el("input",{name:"engine",value:u.engine||"",list:"engineSuggest",autocomplete:"off",maxlength:"40"}),
+      el("datalist",{id:"engineSuggest"},ENGINE_SUGGEST.map(x=>el("option",{value:x})))),
+    fld("VIN / serial #","vin",{maxlength:"25",style:"text-transform:uppercase",placeholder:"17 characters for a truck"}),
+    el("label",{class:"f"},"Odometer / hours",el("input",{name:"mileage",type:"number",min:"0",value:u.mileage??""})),
+    fld("Tire sizes","tires",{placeholder:"Steer 295/75R22.5, drive 11R22.5",maxlength:"120"},true),
+    el("label",{class:"f full"},"Notes",el("textarea",{name:"notes",placeholder:"Fleet terms, where it's parked, quirks…"},u.notes||"")));
+  if (!isNew){
+    const hb=el("div",{class:"full"},el("h3",{style:"margin:6px 0 8px;font-size:15px"},"Service history ("+hist.length+")"));
+    if (!hist.length) hb.append(el("div",{class:"empty"},"No jobs on this unit yet."));
+    else hb.append(el("ul",{class:"unithist"},...hist.map(j=>{ const w=woOf(j);
+      return el("li",{tabindex:"0",onclick:()=>{ $("#jobDlg").close(); openJobSheet(j); },onkeydown:ev=>{ if(ev.key==="Enter"){ $("#jobDlg").close(); openJobSheet(j);} }},
+        el("b",{},niceDate(j.date)+" · "+(j.service||"Job")), j.emergency?el("span",{class:"pill sos",style:"margin-left:6px"},"Breakdown"):null,
+        el("span",{class:"kv"},[(STATUSES.find(x=>x.id===(j.status||"new"))||{}).label, w.odometer?Number(w.odometer).toLocaleString()+" "+(u.kind==="Equipment"?"hrs":distUnit()):"", w.codes?"Codes: "+w.codes:""].filter(Boolean).join(" · ")),
+        w.correction?el("span",{class:"kv"},"Done: "+w.correction):w.complaint?el("span",{class:"kv"},"Problem: "+w.complaint):null); })));
+    f.append(hb);
+  }
+  f.append(el("div",{class:"acts"},
+    !isNew?el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm("Remove "+unitName(u)+"? Its past jobs stay on the board.")){ $("#jobDlg").close(); write(()=>Store.del("units",u.id),"Removed"); } }},"Remove"):null,
+    el("span",{class:"grow"}),
+    !isNew?el("button",{type:"button",class:"btn",onclick:()=>{ $("#jobDlg").close(); setTimeout(()=>openJob(null,{client:u.client,unitId:u.id}),50); }},"New job for this unit"):null,
+    el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
+    el("button",{type:"submit",class:"btn primary"},isNew?"Add":"Save")));
+  f.onsubmit=e=>{
+    e.preventDefault();
+    const d=Object.fromEntries(new FormData(f));
+    const data={client:d.client.trim(),kind:d.kind,unitNo:d.unitNo.trim(),year:d.year.replace(/\D/g,"").slice(0,4),make:d.make.trim(),model:d.model.trim(),
+      engine:d.engine.trim(),vin:cleanVin(d.vin),mileage:Number(d.mileage)||null,tires:d.tires.trim(),notes:d.notes.trim()};
+    if (!data.client) return toast("Enter the customer.");
+    if (!data.unitNo && !data.make && !data.model && !data.vin) return toast("Add a unit #, make, model or VIN so you can tell it apart.");
+    if (data.vin && data.kind==="Truck" && data.vin.length!==17 && !confirm("A truck VIN is usually 17 characters. This one has "+data.vin.length+". Save it anyway?")) return;
+    const dupe=data.vin && (S.units||[]).find(x=>x.vin===data.vin && x.id!==u.id);
+    if (dupe) return toast("That VIN is already on file: "+unitName(dupe)+" ("+dupe.client+").");
+    const dlg=$("#jobDlg");
+    if (isNew){ data.businessId=S.businessId; data.createdAt=Date.now(); saveForm(dlg,()=>Store.set("units",newId(),data),"Added "+unitName(data)); }
+    else saveForm(dlg,()=>Store.update("units",u.id,data),"Saved");
+  };
+  $("#jobDlg").showModal();
+}
+
+// The truck picker used on the job form: this customer's units first, any other unit, or a new one typed in place.
+function unitPicker(j, clientInput){
+  const wrap=el("div",{class:"full unitpick",style:"display:grid;gap:8px"});
+  const sel=el("select",{name:"unitId"});
+  const nu=el("div",{class:"newunit",hidden:true},
+    el("label",{class:"f"},"Unit #",el("input",{name:"nu_unitNo",maxlength:"20",autocomplete:"off"})),
+    el("label",{class:"f",style:"grid-column:span 2"},"Year, make & model",el("input",{name:"nu_ymm",placeholder:"2019 Peterbilt 389",maxlength:"80",autocomplete:"off",value:j.unitText||""})),
+    el("label",{class:"f"},"Engine",el("input",{name:"nu_engine",list:"engineSuggest2",maxlength:"40",autocomplete:"off",value:j.unitEngine||""}),el("datalist",{id:"engineSuggest2"},ENGINE_SUGGEST.map(x=>el("option",{value:x})))),
+    el("label",{class:"f",style:"grid-column:span 2"},"VIN (optional)",el("input",{name:"nu_vin",maxlength:"25",autocomplete:"off",style:"text-transform:uppercase"})));
+  const fill=()=>{
+    const cur=sel.value||j.unitId||"", mine=unitsForClient(clientInput.value), others=(S.units||[]).filter(u=>!mine.includes(u));
+    sel.replaceChildren(el("option",{value:""},"No truck / equipment"),
+      mine.length?el("optgroup",{label:clientInput.value.trim()||"This customer"},mine.map(u=>el("option",{value:u.id},unitLabel(u)))):null,
+      others.length?el("optgroup",{label:"Other customers"},others.map(u=>el("option",{value:u.id},unitLabel(u)+" · "+(u.client||"")))):null,
+      el("option",{value:"__new"},"+ Add a new one"));
+    sel.value=[...sel.options].some(o=>o.value===cur)?cur:(mine.length===1&&!j.unitId&&cur!=="__new"?mine[0].id:(cur==="__new"?"__new":""));
+    nu.hidden=sel.value!=="__new";
+  };
+  sel.addEventListener("change",()=>{ nu.hidden=sel.value!=="__new"; if(!nu.hidden) nu.querySelector("[name=nu_ymm]").focus(); });
+  clientInput.addEventListener("change",fill);
+  if (j.unitText && !j.unitId) setTimeout(()=>{ sel.value="__new"; nu.hidden=false; },0);
+  fill();
+  wrap.append(el("label",{class:"f"},"Truck / equipment",sel),nu);
+  // What the form saves: an existing unit, or a new one to create alongside the job.
+  wrap.read=(client)=>{
+    if (sel.value!=="__new") { const u=unitById(sel.value); return {unitId:u?u.id:null,unitLabel:u?unitLabel(u):"",create:null}; }
+    const g=n=>(nu.querySelector("[name="+n+"]").value||"").trim();
+    const y=splitYmm(g("nu_ymm"));
+    const data={client,kind:"Truck",unitNo:g("nu_unitNo"),...y,engine:g("nu_engine"),vin:cleanVin(g("nu_vin")),mileage:null,tires:"",notes:"",businessId:S.businessId,createdAt:Date.now()};
+    if (!data.unitNo && !data.model && !data.make && !data.vin) return {error:"Add the unit #, year/make/model or VIN for the new truck, or pick “No truck”."};
+    return {unitId:newId(),unitLabel:unitLabel(data),create:data};
+  };
+  return wrap;
+}
+
+// Breakdown call: a job for right now, marked as an emergency, with where the truck is and what's wrong.
+function openBreakdown(preset){
+  const now=new Date();
+  openJob(null,{emergency:true,service:SERVICES.includes("Roadside repair")?"Roadside repair":SERVICES[0],date:today(),
+    time:String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),...(preset||{})});
+}
+
+// Shrink a photo before it's saved: phone photos are 3-12 MB, a work-order photo doesn't need to be.
+async function shrinkPhoto(file, max, q){
+  const url=URL.createObjectURL(file);
+  try {
+    const img=await new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=url; });
+    const k=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement("canvas");
+    c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    return await new Promise(res=>c.toBlob(b=>res(b),"image/jpeg",q||0.82));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function addJobPhotos(j, files){
+  files=[...files].filter(x=>/^image\//.test(x.type)).slice(0,10);
+  if (!files.length) return;
+  const have=jobPhotos(j).length; if (have+files.length>40) return toast("A job can hold 40 photos.");
+  const mine=me(), added=[];
+  toast("Saving "+files.length+" photo"+(files.length>1?"s":"")+"…");
+  for (const file of files){
+    try {
+      if (Store.mode==="db" && typeof storage!=="undefined" && storage){
+        const blob=await shrinkPhoto(file,1600,0.82);
+        const path="jobPhotos/"+S.businessId+"/"+j.id+"/"+Date.now()+"_"+Math.random().toString(36).slice(2,7)+".jpg";
+        const ref=storage.ref().child(path); await ref.put(blob,{contentType:"image/jpeg"});
+        added.push({url:await ref.getDownloadURL(),path,at:Date.now(),by:S.myUserId||null,byName:(mine&&mine.name)||(S.isOwner?"Owner":"")});
+      } else {   // demo: a small copy kept in memory only
+        const blob=await shrinkPhoto(file,640,0.7);
+        const url=await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); });
+        added.push({url,path:"",at:Date.now(),by:S.myUserId||null,byName:(mine&&mine.name)||"Owner"});
+      }
+    } catch(e){ console.warn(e); toast("A photo didn't upload. Check your connection and try again."); }
+  }
+  if (!added.length) return;
+  const cur=S.jobs.find(x=>x.id===j.id)||j, photos=[...jobPhotos(cur),...added];
+  await write(()=>Store.update("jobs",j.id,{photos}),added.length+" photo"+(added.length>1?"s":"")+" added");
+  return photos;
+}
+
+// The work order on a job: what the customer said, what the codes and the mechanic found, what was done.
+// The crew on the job and the owners can fill it in. Parts are the job's costs.
+function openWorkOrder(j0){
+  const j=S.jobs.find(x=>x.id===j0.id)||j0, w=woOf(j), u=jobUnit(j), own=S.isOwner;
+  const f=$("#jobForm"); f.replaceChildren();
+  const parts=jobCosts(j).filter(c=>c.kind==="material");
+  const unitsWord=u&&u.kind==="Equipment"?"hours":distUnit()==="km"?"km":"miles";
+  const photoBox=el("div",{class:"wo-photos"});
+  const photoHead=el("h3",{class:"grow"},"Photos ("+jobPhotos(j).length+")");
+  const drawPhotos=list=>{ photoHead.textContent="Photos ("+list.length+")"; photoBox.replaceChildren(...list.map(p=>el("a",{href:p.url,target:"_blank",rel:"noopener",title:(p.byName?p.byName+", ":"")+niceDate(ymd(new Date(p.at||Date.now())))},el("img",{src:p.url,alt:"Job photo",loading:"lazy"}))));
+    if (!list.length) photoBox.append(el("div",{class:"ph"},"No photos yet")); };
+  drawPhotos(jobPhotos(j));
+  const fileIn=el("input",{type:"file",accept:"image/*",multiple:true,id:"woPhotoIn",style:"display:none",onchange:async ev=>{
+    const list=await addJobPhotos(j,ev.target.files); ev.target.value=""; if (list) drawPhotos(list); }});
+  f.append(el("h2",{},"Work order"),
+    el("p",{class:"kv full",style:"margin:-6px 0 0"},[j.service,j.client,niceDate(j.date)].filter(Boolean).join(" · ")),
+    u||j.unitLabel?el("div",{class:"full"},unitLine(j)):null,
+    el("label",{class:"f full"},"Problem (what the customer said)",el("textarea",{name:"complaint",rows:"2",maxlength:"1500"},w.complaint||"")),
+    el("label",{class:"f"},"Fault codes",el("input",{name:"codes",maxlength:"300",autocomplete:"off",value:w.codes||"",placeholder:"SPN 3226 FMI 2, P20EE…"})),
+    el("label",{class:"f"},"Odometer ("+unitsWord+")",el("input",{name:"odometer",type:"number",min:"0",value:w.odometer??""})),
+    el("label",{class:"f full"},"What you found (cause)",el("textarea",{name:"cause",rows:"2",maxlength:"1500"},w.cause||"")),
+    el("label",{class:"f full"},"What you did (correction)",el("textarea",{name:"correction",rows:"3",maxlength:"2000"},w.correction||"")),
+    el("label",{class:"f"},"Labor hours",el("input",{name:"laborHours",type:"number",min:"0",step:"0.25",value:w.laborHours??""})),
+    el("div",{class:"full wo-box"},el("div",{class:"row"},el("h3",{class:"grow"},"Parts ("+parts.length+")"),
+        el("button",{type:"button",class:"btn small",onclick:()=>{ saveWo(false).then(()=>openCosts(S.jobs.find(x=>x.id===j.id)||j)); }},"+ Add parts")),
+      parts.length?el("div",{},...parts.map(c=>el("div",{class:"kv"},(Number(c.qty)||1)+" × "+(c.desc||"Part")+(own?" · "+money(Number(c.amount)||costAmt(c)):"")))):el("div",{class:"kv"},"No parts logged yet.")),
+    el("div",{class:"full wo-box"},el("div",{class:"row",style:"margin-bottom:8px"},photoHead,
+        el("button",{type:"button",class:"btn small",onclick:()=>fileIn.click()},"+ Add photos"),fileIn),photoBox));
+  const done=(j.status||"new")==="done";
+  f.append(el("div",{class:"acts"},
+    own&&done&&!invoiceFor(j.id)?el("button",{type:"button",class:"btn",onclick:async()=>{ if (await saveWo(false)){ $("#jobDlg").close(); openInvoice(invoiceFromJobs([S.jobs.find(x=>x.id===j.id)||j])); } }},"Save & invoice"):null,
+    el("span",{class:"grow"}),
+    el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Close"),
+    el("button",{type:"submit",class:"btn primary"},"Save work order")));
+  async function saveWo(close){
+    const d=Object.fromEntries(new FormData(f));
+    const wo={...w,complaint:d.complaint.trim(),codes:d.codes.trim(),cause:d.cause.trim(),correction:d.correction.trim(),
+      odometer:Number(d.odometer)||null,laborHours:Number(d.laborHours)||null,updatedAt:Date.now(),updatedBy:(me()||{}).name||(own?"Owner":"")};
+    const ok = close ? await saveForm($("#jobDlg"),()=>Store.update("jobs",j.id,{workOrder:wo}),"Work order saved")
+                     : await write(()=>Store.update("jobs",j.id,{workOrder:wo}),null);
+    // Keep the truck's odometer current (owners only; the crew can't change customer records).
+    if (ok && own && u && wo.odometer && wo.odometer>(Number(u.mileage)||0)) write(()=>Store.update("units",u.id,{mileage:wo.odometer}),null);
+    return ok;
+  }
+  f.onsubmit=e=>{ e.preventDefault(); saveWo(true); };
+  if (!$("#jobDlg").open) $("#jobDlg").showModal();
+}
+// What a repair job's work order adds to its invoice: the unit, and what was found and done.
+function woInvoiceNotes(j){
+  const w=woOf(j), u=jobUnit(j), name=u?unitLabel(u)+(u.vin?" · VIN "+u.vin:""):j.unitLabel||"";
+  return [name?"Unit: "+name:"", w.odometer?"Odometer: "+Number(w.odometer).toLocaleString():"", w.complaint?"Problem: "+w.complaint:"",
+    w.cause?"Found: "+w.cause:"", w.correction?"Work done: "+w.correction:""].filter(Boolean).join("\n");
+}
+// Open breakdowns (emergency jobs not finished), newest first.
+const openBreakdowns = () => S.jobs.filter(j=>j.emergency && (j.status||"new")!=="done" && (!j.date || j.date<=today())).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
 
 /* ---- Booking calendar: which days customers can request on the website ---- */
 function usHolidays(y){
@@ -2054,7 +2352,8 @@ function settingsBusiness(){
       el("p",{class:"kv full",style:"margin:-4px 0 0"},"Prices, invoices and reports show in this currency. Changing it doesn't convert amounts you've already entered."),
       el("div",{class:"checks",style:"align-self:end;padding-bottom:9px"},
         el("label",{},el("input",{type:"checkbox",name:"projects",checked:hasProjects()}),"Projects & subcontractors"),
-        el("label",{},el("input",{type:"checkbox",name:"rewards",checked:hasRewards()}),"Customer rewards")),
+        el("label",{},el("input",{type:"checkbox",name:"rewards",checked:hasRewards()}),"Customer rewards"),
+        el("label",{},el("input",{type:"checkbox",name:"repair",checked:hasRepair()}),"Trucks, equipment & work orders")),
       el("label",{class:"f full"},"Services you offer (one per line)",el("textarea",{name:"services",rows:"6"},SERVICES.join("\n"))),
       hasRewards() ? el("label",{class:"f full"},"Name of your rewards program",el("input",{name:"rewardsName",maxlength:"40",value:rewardsName()})) : el("input",{type:"hidden",name:"rewardsName",value:S.business.rewardsName||""}),
       el("div",{class:"full"},el("button",{type:"submit",class:"btn primary"},"Save"))));
@@ -2063,7 +2362,8 @@ function settingsBusiness(){
     const name=d.name.trim(), rn=d.rewardsName.trim();
     const category=CATEGORIES.includes(d.category)?d.category:"Other";
     const country=COUNTRIES[d.country]?d.country:"US", currency=CURRENCIES.includes(d.currency)?d.currency:COUNTRIES[country][1];
-    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked,rewards:!!f.querySelector("[name=rewards]").checked};
+    const features={...(S.business.features||{}),projects:!!f.querySelector("[name=projects]").checked,rewards:!!f.querySelector("[name=rewards]").checked,repair:!!f.querySelector("[name=repair]").checked};
+    const repairWas=hasRepair();
     if(!name) return toast("Enter your business name.");
     if(!services.length) return toast("List at least one service.");
     write(async()=>{
@@ -2071,6 +2371,7 @@ function settingsBusiness(){
       Object.assign(S.business,{name,services,category,country,currency,features}); if(rn) S.business.rewardsName=rn; else delete S.business.rewardsName;
       applyBusinessLists(S.business);
       const h=$("#bizNameHeader"); if(h) h.firstChild.textContent=name; document.title=name;
+      if (hasRepair()!==repairWas) subscribeAll();   // start or stop loading trucks & equipment
       render();
     },"Business details saved"); };
   return f;
@@ -2131,15 +2432,18 @@ function viewRequests(){
     const dateStr = (b.requestedDate||"").slice(0,10);
     const status = b.status||"pending";
     const card=el("article",{class:"card",style:"margin-bottom:12px;max-width:640px;"});
-    card.append(el("div",{class:"svc"},b.service||SERVICES[0]));
+    card.append(el("div",{class:"svc"},b.emergency&&status==="pending"?el("span",{class:"pill sos",style:"margin-right:6px"},"Breakdown"):null,b.service||SERVICES[0],b.source==="website"?el("span",{class:"kv"}," \u00b7 from your website"):null));
     card.append(el("h3",{},b.name||"Unknown"));
+    if (b.location) card.append(el("div",{class:"kv"},"Location: ",el("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(b.location),target:"_blank",rel:"noopener"},b.location)));
+    if (b.unit) card.append(el("div",{class:"kv"},"Truck / equipment: "+b.unit));
+    if (b.problem) card.append(el("div",{class:"notes"},el("b",{},"Problem: "),b.problem));
     card.append(el("div",{class:"meta"},
       el("span",{},niceDate(dateStr)+(WIN_LABEL[b.timeWindow]?" \u00b7 "+WIN_LABEL[b.timeWindow]:"")),
       el("span",{class:"paid "+(status==="confirmed"?"yes":"no")}, status)));
     if (b.size) card.append(el("div",{class:"kv"},"Size: "+b.size));
     if (b.phone) card.append(el("div",{class:"kv"},"Phone: ", el("a",{href:"tel:"+b.phone.replace(/[^\d+]/g,"")},b.phone)));
     if (b.email && /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(b.email)) card.append(el("div",{class:"kv"},"Email: ", el("a",{href:"mailto:"+b.email},b.email), b.guest?" (booked as a guest)":""));
-    if (b.details) card.append(el("div",{class:"notes"},b.details));
+    if (b.details && !b.problem) card.append(el("div",{class:"notes"},b.details));
     if (b.wantsRewards && hasRewards()) card.append(el("div",{class:"kv"},"Wants "+rewardsName()));
     const trail=[];
     if (b.ownerNotifiedAt) trail.push("Owners alerted");
@@ -2200,8 +2504,15 @@ function resetAlerts(){
 function convertBookingToJob(b){
   const dateStr = (b.requestedDate||"").slice(0,10);
   const jobData = { client:b.name||"", address:"", service:b.service||SERVICES[0], date:dateStr, time:"",
-    phone:b.phone||"", notes:[b.size,b.details].filter(Boolean).join(" \u00b7 "), window:WIN_SHORT[b.timeWindow]?b.timeWindow:"",
-    assigneeId:null, status:"new", fromBookingId:b.id, address:b.address||"" };
+    phone:b.phone||"", notes:[b.size,b.problem?"":b.details].filter(Boolean).join(" \u00b7 "), window:WIN_SHORT[b.timeWindow]?b.timeWindow:"",
+    assigneeId:null, status:"new", fromBookingId:b.id, address:b.location||b.address||"" };
+  // A service request from a repair business's website: where the truck is, which truck and what's wrong.
+  if (hasRepair()){
+    if (b.emergency){ jobData.emergency=true; const n=new Date(); jobData.date=today(); jobData.time=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); }
+    if (b.problem) jobData.workOrder={complaint:b.problem};
+    if (b.unit){ const k=String(b.unit).toLowerCase(); const u=unitsForClient(b.name).find(x=>x.vin&&k.includes(x.vin.toLowerCase().slice(-6))||x.unitNo&&k.includes("#"+String(x.unitNo).toLowerCase()));
+      if (u) jobData.unitId=u.id; else { const [ymm,...eng]=String(b.unit).split(","); jobData.unitText=ymm.trim(); jobData.unitEngine=eng.join(",").trim(); } }
+  }
   // Open the job form filled in from the request, so price, crew and time get set before it lands on the board.
   // The request is only marked confirmed once the job is saved.
   openJob(null, jobData);
@@ -2599,8 +2910,8 @@ function boardRows(frag){
     const crew=jobCrew(j).map(empById).filter(Boolean);
     box.append(el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
       el("span",{class:"rw"},el("b",{class:overdue?"neg":""},j.date===t?"Today":niceDate(j.date).replace(/,? \d{4}$/,"").replace(/^\w+, /,"")),el("span",{},jobWhen(j)||"Any time")),
-      el("span",{class:"rm"},el("b",{},j.client||"Untitled job"),
-        el("span",{},[j.service,shortAddr(j.address)].filter(Boolean).join(" \u00b7 ")),
+      el("span",{class:"rm"},el("b",{},j.emergency&&(j.status||"new")!=="done"?el("span",{class:"pill sos",style:"margin-right:6px"},"Breakdown"):null,j.client||"Untitled job"),
+        el("span",{},[j.service,hasRepair()?(jobUnit(j)?unitName(jobUnit(j)):j.unitLabel):"",shortAddr(j.address)].filter(Boolean).join(" \u00b7 ")),
         el("span",{class:crew.length?"":"unas"},crew.length?crew.map(e=>e.name.split(" ")[0]).join(", "):(S.isOwner?"Not assigned yet":""))),
       S.isOwner?el("span",{class:"rp"},money(j.price)):null, chevron()));
   });
@@ -2624,8 +2935,10 @@ function jobCard(j){
   const overdue = st!=="done" && j.date && j.date<t;
   const card=el("article",{class:"card"});
   const proj = j.projectId ? S.projects.find(p=>p.id===j.projectId) : null;
+  if (j.emergency&&st!=="done") card.append(el("span",{class:"pill sos",style:"width:fit-content;margin-bottom:4px"},"Breakdown"));
   card.append(el("div",{class:"svc"},(j.service||SERVICES[0])+(proj?" · "+proj.name:"")));
   card.append(el("h3",{},j.client||"Untitled job"));
+  if (hasRepair()) card.append(unitLine(j));
   if (j.address){
     card.append(el("div",{class:"addr"}, el("a",{href:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},j.address)));
   }
@@ -2633,6 +2946,7 @@ function jobCard(j){
     el("span",{class: overdue?"overdue":""}, niceDate(j.date)+(jobWhen(j)?", "+jobWhen(j):"")+(overdue?" (overdue)":"")),
     S.isOwner ? el("span",{class:"price"},money(j.price)) : null));
   if (j.phone) card.append(el("div",{class:"kv"},"Client phone: ", el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)));
+  if (hasRepair() && woOf(j).complaint) card.append(el("div",{class:"notes"},el("b",{},"Problem: "),woOf(j).complaint));
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
   // Costs: owners see profit; crew see the materials logged on their job.
   if (S.isOwner){
@@ -2681,7 +2995,11 @@ function jobCard(j){
     else if (!inv) acts.append(el("button",{class:"btn small",onclick:()=>write(()=>Store.update("jobs",j.id,j.paid?{paid:false,paidDate:null}:{paid:true,paidDate:ymd(new Date())}), j.paid?"Marked unpaid":"Marked paid")}, j.paid?"Mark unpaid":"Mark paid"));
     acts.append(el("button",{class:"btn small ghost",onclick:()=>setStatus(j, j.assigneeId?"assigned":"new")},"Reopen"));
   }
-  if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"+ Materials"));
+  if (hasRepair() && (S.isOwner || jobCrew(j).includes((me()||{}).id))){
+    const w=woOf(j), n=jobPhotos(j).length;
+    acts.append(el("button",{class:"btn small"+(st==="in_progress"?" primary":""),onclick:()=>openWorkOrder(j)},(w.correction||w.cause||w.codes?"Work order ✓":"Work order")+(n?" · "+n+" photo"+(n>1?"s":""):"")));
+  }
+  if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},hasRepair()?"+ Parts":"+ Materials"));
   if (S.isOwner && !(jobMoney(j).materials+jobMoney(j).linked>0 || st==="done")) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"Costs"));
   if (S.isOwner && !j.projectId && !hasProjects() && !S.viewOnly) acts.append(el("button",{class:"btn small ghost",title:"New job for "+(j.client||"this client")+" with the same details",onclick:()=>bookNext(j.client)},"\u21bb Book next"));
   if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
@@ -2786,6 +3104,8 @@ function openJob(j, preset){
   const svcIn=el("input",{name:"service",required:true,maxlength:"80",value:j.service||"",list:"svcSuggest",autocomplete:"off",
     placeholder:j.projectId?"Type a phase, e.g. Cabinet install":"Pick or type a service"});
   const activeCrew=S.employees.filter(e=>e.active!==false||jobCrew(j).includes(e.id));
+  // A one-person shop: a breakdown goes to that person without asking.
+  if (isNew && j.emergency && !j.assigneeId){ const act=activeCrew.filter(e=>e.active!==false); if (act.length===1) j.assigneeId=act[0].id; }
   const projOpts=S.projects.filter(p=>p.status!=="done"||p.id===j.projectId);
   // A phase belongs to a project, so client, address and phone come from the project. The form only asks for
   // what's new: name, when, who and price. Everything else sits under "More details".
@@ -2812,8 +3132,19 @@ function openJob(j, preset){
       !isNew ? el("button",{type:"button",class:"btn danger ghost",onclick:()=>{ if(confirm(phase?"Delete this phase?":"Delete this job?")){ $("#jobDlg").close(); write(()=>Store.del("jobs",j.id),phase?"Phase deleted":"Job deleted"); } }},"Delete") : null,
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Cancel"),
-      el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":"Add job"):"Save changes"));
-  const title=el("h2",{},isNew?(phase?"New phase":fromBk?"Confirm request as a job":"New job"):(phase?"Edit phase":"Edit job"));
+      el("button",{type:"submit",class:"btn primary"},isNew?(phase?"Add phase":j.emergency&&hasRepair()&&!fromBk?"Log breakdown":"Add job"):"Save changes"));
+  const title=el("h2",{},isNew?(phase?"New phase":j.emergency?"Breakdown call":fromBk?"Confirm request as a job":"New job"):(phase?"Edit phase":"Edit job"));
+  // Repair businesses: which truck, is it a breakdown, and what the customer says is wrong.
+  const repair=hasRepair()&&!phase;
+  const unitF=repair?unitPicker(j,clientF.querySelector("input")):null;
+  const emergF=repair?el("label",{class:"checkline full"},el("input",{type:"checkbox",name:"emergency",checked:!!j.emergency}),
+    el("span",{},el("b",{},"Breakdown / emergency"),el("small",{},"Shows in red on the board and at the top of Home until it's done"))):null;
+  const complaintF=repair?el("label",{class:"f full"},"What's wrong (customer's words)",el("textarea",{name:"complaint",rows:"2",maxlength:"1500",placeholder:"Won't start, derate, blown steer tire, air leak…"},woOf(j).complaint||"")):null;
+  if (repair){
+    addrF.firstChild.textContent=j.emergency?"Where is it? Address, mile marker or truck stop":"Address or location";
+    addrF.querySelector("input").placeholder=j.emergency?"I-40 EB mile 87, Love's Jackson, customer's yard…":"";
+    notesF.querySelector("textarea").placeholder="Gate code, who to ask for, tire size, parts to bring…";
+  }
   // Cleaning and other non-project businesses: a new job leads with the client. A known client fills in everything else.
   const fast = !phase && isNew && !hasProjects();
   let parts0=null;
@@ -2829,7 +3160,8 @@ function openJob(j, preset){
     const more=el("details",{class:"full morebox"},el("summary",{},"Address and notes",el("span",{class:"kv",id:"jobSum"}," \u00b7 address, phone, more crew, notes")),
       el("div",{class:"expform",style:"margin-top:10px"},addrF,phoneF,crewF,notesF));
     const setV=(n,v)=>{ const x=f.querySelector("[name="+n+"]"); if (x) x.value=v==null?"":v; };
-    const summary=()=>{ const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
+    const summary=()=>{ if (!$("#jobSum")) return;   // the form has since been reused for something else
+      const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
       const names=[...new Set(crew)].map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
       $("#jobSum").textContent=" \u00b7 "+([d.address,names.length>1?names.join(" + "):"",d.notes?"notes":""].filter(Boolean).join(" \u00b7 ")||"none yet"); };
     let filledFor=null;
@@ -2837,7 +3169,9 @@ function openJob(j, preset){
       if (!pr){ filledFor=null; memo.hidden=true; more.open=true; return; }
       if (filledFor===pr.key) return;          // already filled for this client: keep the owner's changes
       filledFor=pr.key;
-      setV("address",pr.address); setV("phone",pr.phone); setV("service",pr.service); setV("price",pr.price); setV("assigneeId",pr.assigneeId); setV("notes",pr.notes);
+      // A breakdown keeps where the truck is now and what was picked for this call.
+      if (!(repair&&j.emergency)){ setV("address",pr.address); setV("service",pr.service); setV("price",pr.price); setV("assigneeId",pr.assigneeId); }
+      setV("phone",pr.phone); setV("notes",pr.notes);
       if (pr.time && !f.querySelector("[name=time]").value) setV("time",pr.time);
       f.querySelectorAll("[name=crew]").forEach(x=>{ x.checked=pr.crewIds.includes(x.value); });
       repSel.value=pr.repeat||"";
@@ -2845,13 +3179,16 @@ function openJob(j, preset){
       memo.hidden=false;
       memo.replaceChildren(el("b",{},"\u21bb Repeat client"),
         " \u00b7 "+pr.visits+" visit"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+(pr.repeat?" \u00b7 "+repeatText(pr.repeat).toLowerCase():"")+(pr.nextBooked?" \u00b7 booked through "+niceDate(pr.lastJob.date):""),
-        el("div",{class:"kv"},"Their usual service, price, crew and address are filled in. Change anything below."));
+        el("div",{class:"kv"},repair&&j.emergency?"Their phone number is filled in. Pick their truck below.":"Their usual service, price, crew and address are filled in. Change anything below."));
       more.open=false; summary();
     };
     cIn.addEventListener("change",()=>fill(clientProfile(cIn.value)));
     cIn.addEventListener("input",()=>{ const pr=clientProfile(cIn.value); if (pr && profs.some(p=>p.name===cIn.value)) fill(pr); });
     f.addEventListener("change",ev=>{ if (ev.target!==cIn) summary(); });
-    parts0=[title, clientF, memo, svcField, priceF, dateF, timeF, leadF, repF, cntF, more, acts];
+    parts0=repair&&j.emergency ? [title, clientF, memo, phoneF, addrF, unitF, complaintF, svcField, leadF, dateF, timeF, priceF, emergF, more, acts]
+      : repair ? [title, clientF, memo, unitF, complaintF, svcField, priceF, dateF, timeF, leadF, emergF, repF, cntF, more, acts]
+      : [title, clientF, memo, svcField, priceF, dateF, timeF, leadF, repF, cntF, more, acts];
+    if (repair && j.emergency){ more.querySelector("summary").firstChild.textContent="More crew and notes"; const mx=more.querySelector(".expform"); mx.replaceChildren(crewF||el("span",{}),notesF); }
     setTimeout(()=>{ if (j.client) fill(clientProfile(j.client)); else { more.open=false; summary(); } cIn.focus(); },0);
   }
   const parts = parts0 ? parts0 : phase ? [
@@ -2861,11 +3198,11 @@ function openJob(j, preset){
       el("details",{class:"full morebox"},el("summary",{},"More details",el("span",{class:"kv"}," \u00b7 notes, client, address, phone, project")),
         el("div",{class:"expform",style:"margin-top:10px"},notesF,clientF,addrF,phoneF,el("span",{}),projF)),
       acts]
-    : [title, clientF, addrF, svcField, priceF, dateF, timeF, phoneF, leadF, projF,
+    : [title, clientF, addrF, unitF, complaintF, svcField, priceF, dateF, timeF, phoneF, leadF, projF, emergF,
        !hasProjects()?el("label",{class:"f"},"Repeats",el("select",{name:"repeat"},REPEATS.map(([v,l])=>el("option",{value:v,selected:String(j.repeat||"")===v},l)))):null,
        crewF, notesF, acts];
   f.append(...parts.filter(Boolean));
-  f.onsubmit=e=>{
+  f.onsubmit=async e=>{
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
     const svc=String(d.service||"").trim().replace(/\s+/g," ");
@@ -2882,7 +3219,20 @@ function openJob(j, preset){
     data.status=status;
     if (isNew && j.window && !data.time) data.window=j.window;   // the client asked for a morning/afternoon slot
     if (fromBk) data.fromBookingId=fromBk.id;
+    let newUnit=null;
+    if (repair){
+      const pick=unitF.read(data.client);
+      if (pick.error) return toast(pick.error);
+      data.unitId=pick.unitId||null; data.unitLabel=pick.unitLabel||""; newUnit=pick.create?{id:pick.unitId,data:pick.create}:null;
+      data.emergency=!!f.querySelector("[name=emergency]").checked;
+      const comp=String(d.complaint||"").trim();
+      if (comp || woOf(j).complaint) data.workOrder={...woOf(j),complaint:comp};
+    }
     const dlg=$("#jobDlg");
+    if (newUnit){   // a truck typed in on the job form is saved to Trucks & equipment first
+      const ok=await write(()=>Store.set("units",newUnit.id,newUnit.data),null);
+      if (!ok) return;
+    }
     if (d.repeat!==undefined) data.repeat=d.repeat||"";
     const count=Math.max(1,Math.min(12,Number(d.count)||1));
     if (isNew && count>1 && data.repeat && data.date){
@@ -2893,7 +3243,7 @@ function openJob(j, preset){
     else if (isNew){ data.createdAt=Date.now(); data.paid=false; data.businessId=S.businessId; const id=newId();
       saveForm(dlg,async()=>{ await Store.set("jobs",id,data);
         if (fromBk) await Store.update("bookings",fromBk.id,{status:"confirmed",respondedVia:"app",respondedAt:firebase.firestore.FieldValue.serverTimestamp()}); },
-        fromBk?"Request confirmed and added to the job board":pj?"Phase added":"Job added"); }
+        fromBk?"Request confirmed and added to the job board":pj?"Phase added":data.emergency?"Breakdown logged"+(data.assigneeId&&empById(data.assigneeId)?". "+empById(data.assigneeId).name.split(" ")[0]+" has it.":""):"Job added"); }
     else saveForm(dlg,()=>Store.update("jobs",j.id,data),pj?"Phase saved":"Job saved");
   };
   $("#jobDlg").showModal();
@@ -3717,6 +4067,7 @@ const COST_KINDS=[
 const OWNER_COST_KINDS=[{id:"sub",label:"Subcontractor",cat:"Subcontractors"},{id:"help",label:"Hired help (paid by the job)",cat:"Labor (hired help)"}];
 function costKind(id){
   const k=COST_KINDS.find(x=>x.id===id)||OWNER_COST_KINDS.find(x=>x.id===id)||COST_KINDS[COST_KINDS.length-1];
+  if (k.id==="material" && hasRepair()) return {...k,label:"Parts",cat:"Parts"};
   if (k.id==="material" && !TRADE_CATS.includes((S.business||{}).category)) return {...k,label:"Supplies & materials",cat:"Supplies"};
   return k;
 }
@@ -3726,6 +4077,7 @@ const jobLinkedExp = j => S.expenses.filter(x=>x.jobId===j.id);
 // Hours each person spent on the job: the owner's number if set, otherwise start to finish.
 function jobHours(j){
   if (Number(j.laborHours)>0) return Number(j.laborHours);
+  if (Number(woOf(j).laborHours)>0) return Number(woOf(j).laborHours);
   return (j.startedAt&&j.completedAt&&j.completedAt>j.startedAt) ? Math.min(16,(j.completedAt-j.startedAt)/36e5) : 0;
 }
 function laborFor(j){
@@ -3762,7 +4114,7 @@ function openCosts(j){
   const f=$("#jobForm"); f.replaceChildren();
   const own=S.isOwner, mine=me();
   const m=own?jobMoney(j):null;
-  f.append(el("h2",{},own?"Costs and profit":"Materials for this job"),
+  f.append(el("h2",{},own?"Costs and profit":hasRepair()?"Parts for this job":"Materials for this job"),
     el("p",{class:"kv full",style:"margin:-6px 0 0"},(j.service||"Job")+" · "+(j.client||"")+(j.date?" · "+niceDate(j.date):"")));
   if (own) f.append(el("div",{class:"mini full"},
     el("div",{},"Price",el("b",{},money(m.price))),
@@ -3806,14 +4158,14 @@ function openCosts(j){
   const coSel=el("select",{name:"companyId"},el("option",{value:""},"Choose a subcontractor"),S.companies.map(c=>el("option",{value:c.id},c.name)));
   const coWrap=el("label",{class:"f full hidden"},"Subcontractor",coSel);
   const billWrap=el("div",{class:"row full"+(own?"":" hidden")},
-    el("label",{class:"row",style:"gap:8px;font-weight:400;color:var(--ink)"},el("input",{type:"checkbox",name:"billable",checked:!!(own && hasProjects()),style:"width:auto;margin:0"}),"Bill this to the client"),
+    el("label",{class:"row",style:"gap:8px;font-weight:400;color:var(--ink)"},el("input",{type:"checkbox",name:"billable",checked:!!(own && (hasProjects()||hasRepair())),style:"width:auto;margin:0"}),"Bill this to the client"),
     el("label",{class:"f",style:"width:110px"},"Markup %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(invSettings().markup||0)})));
   kindSel.onchange=()=>{ const k=kindSel.value; coWrap.classList.toggle("hidden",k!=="sub"); billWrap.classList.toggle("hidden",!own||k==="sub"||k==="help"); };
   add.append(el("div",{class:"expform"},
     el("label",{class:"f"},"Type",kindSel),
     el("label",{class:"f"},"Date",el("input",{name:"date",type:"date",value:j.date&&j.date<=today()?j.date:today()})),
     coWrap,
-    el("label",{class:"f full"},"What was it",el("input",{name:"desc",placeholder:hasProjects()?"2x4s and deck screws, Lowe’s":"Degreaser and microfiber cloths",autocomplete:"off"})),
+    el("label",{class:"f full"},"What was it",el("input",{name:"desc",placeholder:hasRepair()?"NOx sensor, 2 gal DEF, air line fittings":hasProjects()?"2x4s and deck screws, Lowe’s":"Degreaser and microfiber cloths",autocomplete:"off"})),
     el("label",{class:"f"},"Quantity",el("input",{name:"qty",type:"number",min:"0",step:"any",inputmode:"decimal",value:"1"})),
     el("label",{class:"f"},"Cost each "+cs(),el("input",{name:"unitCost",type:"number",min:"0",step:"0.01",inputmode:"decimal",placeholder:"0.00"})),
     billWrap,
@@ -3832,6 +4184,8 @@ function openCosts(j){
       }
       const line={id:newId(),kind,desc,qty,unitCost:r2(unit),amount,date,by:S.myUserId||null,byName:(mine&&mine.name)||(own?"Owner":""),at:Date.now()};
       if (own && g("billable").checked){ line.billable=true; line.markup=Number(g("markup").value)||0; }
+      // Repair: parts the crew log go on the customer's bill (at the shop's usual markup); the owner can remove them.
+      else if (!own && hasRepair() && kind==="material"){ line.billable=true; line.markup=Number(invSettings().markup)||0; }
       const costs=[...jobCosts(j),line];
       write(()=>Store.update("jobs",j.id,{costs}),own?"Cost added":"Added. Thanks!");
       openCosts({...j,costs});
@@ -3905,7 +4259,8 @@ function clientInfo(name, j){
   return {name:name||"",email:(prev&&prev.client.email)||(c&&c.email)||(bk&&bk.email)||"",phone:(j&&j.phone)||(prev&&prev.client.phone)||(c&&c.phone)||(bk&&bk.phone)||"",
     address:(j&&j.address)||(prev&&prev.client.address)||""};
 }
-function jobLine(j){ return {id:newId(),type:"job",jobId:j.id,desc:(j.service||"Service")+(j.date?" · "+niceDate(j.date):"")+(j.address?" · "+j.address:""),qty:1,unitPrice:Number(j.price)||0,taxable:false}; }
+function jobLine(j){ const un=hasRepair()?(jobUnit(j)?unitName(jobUnit(j)):j.unitLabel||""):"";
+  return {id:newId(),type:"job",jobId:j.id,desc:(j.service||"Service")+(un?" · "+un:"")+(j.date?" · "+niceDate(j.date):"")+(j.address?" · "+j.address:""),qty:1,unitPrice:Number(j.price)||0,taxable:false}; }
 function costLines(j){ return jobCosts(j).filter(c=>c.billable&&!c.invoiceId).map(c=>({id:newId(),type:"material",jobId:j.id,costId:c.id,
   desc:(c.desc||costKind(c.kind).label),qty:Number(c.qty)||1,unitPrice:r2((Number(c.unitCost)||0)*(1+(Number(c.markup)||0)/100)),taxable:true})); }
 function draftInvoice(base){
@@ -3917,6 +4272,7 @@ function invoiceFromJobs(jobs){
   const j0=jobs[0]||{};
   const inv=draftInvoice({client:clientInfo(j0.client,j0),projectId:j0.projectId||null});
   jobs.forEach(j=>{ inv.lines.push(jobLine(j)); inv.lines.push(...costLines(j)); });
+  if (hasRepair()) inv.notes=jobs.map(woInvoiceNotes).filter(Boolean).join("\n\n").slice(0,3000);
   if (inv.projectId){ inv.retainagePct=Number(invSettings().retainage)||0; }
   const dep=depositsAvailable(inv.client.name,inv.projectId);
   if (dep>0) inv.depositApplied=Math.min(dep,invTotals(inv).total);
@@ -5579,7 +5935,7 @@ async function loadSample(){
   const R=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], cents=n=>Math.round(n*100)/100;
   const emps=[["Maria Lopez","731-555-0142"],["Tasha Greene","731-555-0178"],["Jordan Pike","731-555-0119"]]
     .map(([name,phone])=>({id:"s"+newId(),name,phone,active:true,userId:null,createdAt:Date.now(),sample:true,businessId:S.businessId}));
-  const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
+  const clients=P.clients||[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
     ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
     ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],
     ["Davis duplex","402 Poplar St, Lexington, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],["Hall family","225 Southern Ave, Lexington, TN"]];
@@ -5680,7 +6036,7 @@ function subscribeAll(){
   // Crew never load the team's locations: only their own, once we know which team member they are.
   let myLocSub=null;
   if (!S.isOwner && S.myUserId) unsubs.push(Store.subscribeWhere("shifts","userId",S.myUserId,arr=>{ if (S.businessId!==bid) return; S.shifts=arr; render(); }, bid));
-  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || (c!=="locations" && c!=="shifts")).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || (c!=="locations" && c!=="shifts")).filter(c=>c!=="units" || hasRepair()).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
     if (S.businessId!==bid) return;          // a late update from a business we've left
     S[c]=arr; render();
     if (c==="employees" && !S.isOwner){
@@ -5814,7 +6170,7 @@ function switchGateTab(which){
 // Demo logins are shared privately by LIT America. Only a fingerprint (SHA-256) of the password is kept here,
 // so reading this page's code doesn't reveal it. To change the password, replace DEMO_PASS_HASH with
 // the SHA-256 of "dazift-demo:" + the new password.
-const DEMO_LOGINS={"demo":"Construction","demo@dazift.com":"Construction","cleaning":"Cleaning","cleaning@dazift.com":"Cleaning"};
+const DEMO_LOGINS={"demo":"Construction","demo@dazift.com":"Construction","cleaning":"Cleaning","cleaning@dazift.com":"Cleaning","mechanic":"Truck & Equipment Repair","mechanic@dazift.com":"Truck & Equipment Repair"};
 const DEMO_PASS_HASH="f5577b960c68101119f9e0123abd9ed603a51eeb7ca7d13f74a2cf5815295fa6";
 async function demoPasswordOk(pw){
   try {
@@ -6070,6 +6426,9 @@ function applyBusinessLists(biz){
   // Trade businesses also log materials, subcontractor payments, permits and rentals.
   const trade = (biz.features && typeof biz.features.projects==="boolean") ? biz.features.projects : TRADE_CATS.includes(biz.category);
   TRADE_EXP_CATS.forEach(c=>{ const i=EXP_CATS.indexOf(c); if (trade && i<0) EXP_CATS.splice(EXP_CATS.length-1,0,c); if (!trade && i>=0) EXP_CATS.splice(i,1); });
+  // Repair businesses buy parts for each job.
+  const repair = (biz.features && typeof biz.features.repair==="boolean") ? biz.features.repair : biz.category===REPAIR_CAT;
+  const pi=EXP_CATS.indexOf("Parts"); if (repair && pi<0) EXP_CATS.splice(1,0,"Parts"); if (!repair && pi>=0) EXP_CATS.splice(pi,1);
 }
 function enterBusiness(biz, opts){
   opts=opts||{};
@@ -6162,7 +6521,7 @@ function seededRandom(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0;
 /* Demo businesses, one per type. Each is a short description fed into one of two builders:
    "visits" for repeat-visit work (cleaning, lawn, pet care) and "trade" for project work with subs.
    Every name, phone number and figure here is made up. Tasha Greene is in every crew so Crew view always has someone to show. */
-const DEMO_TYPES=["Construction","Plumbing","Electrical","HVAC","Roofing","Handyman","Cleaning","Lawn Care","Pet Care"];
+const DEMO_TYPES=["Construction","Plumbing","Electrical","HVAC","Roofing","Handyman","Cleaning","Lawn Care","Pet Care","Truck & Equipment Repair"];
 const DEMO_PROFILES={
   "Cleaning":{kind:"visits",name:"Sparkle & Shine Cleaning",rewardsName:"Shine Rewards",
     services:[["Regular cleaning",[115,165],[2,3.2],6,0],["Deep cleaning",[225,320],[3.5,5.5],2,.6],["Move-in / move-out",[275,395],[4,6],1,.6],["Commercial cleaning",[190,340],[2.5,4.5],1,.6]],
@@ -6188,6 +6547,22 @@ const DEMO_PROFILES={
     supplies:["Supplies",["Chewy","PetSmart","Tractor Supply"],"treats, bags and leashes",[30,80]],equipment:["Grooming table and dryer",412],insurance:95,
     bookings:[["Gail Owens","731-555-0164","Overnight stay","Two labs, Thursday to Sunday while we're at a wedding.",3],["Reed home","731-555-0123","Dog walking","Midday walks Monday to Friday for a young beagle.",1],["Hall family","731-555-0168","Grooming","Full groom for a shih tzu, she's nervous with clippers.",5]],
     lump:{eKayla:12100,eTasha:8800,eJordan:5400,eAmber:9300},live:["eKayla","eJordan"]},
+
+  "Truck & Equipment Repair":{kind:"trade",repair:true,name:"Crossroads Mobile Diesel",
+    services:["Roadside repair","Diagnostics","Mobile tire service","DPF / DEF / EGR","Brakes & suspension","Preventive maintenance","Heavy equipment repair","Welding"],
+    companies:[],projects:[],otherCosts:[],
+    clients:[["Volunteer Freight LLC","1200 Hwy 45 Bypass, Jackson, TN"],["Madison County Aggregates","88 Quarry Rd, Jackson, TN"],["Dale Pruitt (owner-operator)","Love's Travel Stop, I-40 exit 87, Jackson, TN"],
+      ["Hub City Logistics","455 Airways Blvd, Jackson, TN"],["Tri-County Farms","3100 Hwy 70, Alamo, TN"],["Westside Paving Co.","210 Industrial Dr, Humboldt, TN"],["Big River Timber","19 Mill Rd, Milan, TN"],["Gibson County Hauling","77 Depot St, Trenton, TN"]],
+    crew:[["eGary","Gary Holt","731-555-0151","Lead diesel tech"],["eTasha","Tasha Greene","731-555-0178","Diesel tech"],["eDre","Andre Moss","731-555-0113","Tire & service tech"]],
+    rates:{eGary:["w2","hourly",32],eTasha:["w2","hourly",27],eDre:["1099","perjob",60,true]},
+    calls:[["Roadside repair",[285,650],"eGary",[1.5,3.5]],["Diagnostics",[150,240],"eTasha",[1,2]],["Mobile tire service",[160,420],"eDre",[1,1.75]],["DPF / DEF / EGR",[380,1100],"eGary",[2,4]],
+      ["Brakes & suspension",[420,980],"eTasha",[2.5,4.5],"eDre"],["Preventive maintenance",[220,380],"eDre",[1.5,2.5]],["Heavy equipment repair",[480,1400],"eGary",[3,6],"eTasha"]],
+    overhead:{fuel:"diesel, two service trucks",supplies:[["FleetPride","NAPA","TruckPro"],"filters, fluids and fittings"],insurance:610,equipment:["Diagnostic laptop and adapters",1890],vehicle:["Service truck crane repair",740]},
+    mats:[["material","Fuel filters and oil, 15W-40",[85,160]],["material","NOx sensor",[260,420]],["material","Air line fittings and hose",[24,70]],["material","Wheel seal and hub oil",[45,90]],["material","DEF, 2.5 gal",[14,22]],["travel","Service call mileage",[30,75]]],
+    big:[[/tire/i,"Steer tire 295/75R22.5",[420,560]],[/dpf/i,"DPF filter, cleaned exchange",[680,980]],[/brake/i,"Brake shoes, drums and slack adjusters",[380,620]],[/heavy equipment/i,"Hydraulic hose and fittings",[120,260]]],
+    bookings:[["Dale Pruitt","731-555-0182","Roadside repair","Truck went into derate on I-40 EB near mile 87. Check engine light, won't go over 5 mph.",0],
+      ["Hub City Logistics","731-555-0140","Mobile tire service","Trailer tire blown at our yard, unit 22. Need it changed today.",0],["Tri-County Farms","731-555-0193","Preventive maintenance","Grain truck needs full service before harvest.",3]],
+    lump:{eGary:31400,eTasha:24800,eDre:11200},live:["eGary","eDre"]},
 
   "Construction":{kind:"trade",name:"Ridgeline Builders",
     services:["Remodel phase","Plumbing repair","Water heater install","Drywall & paint","Flooring","Decks & porches","Estimate visit","Punch list"],
@@ -6332,6 +6707,63 @@ const DEMO_PROFILES={
     bookings:[["Gail Owens","731-555-0164","Small repairs","Three doors that stick and a running toilet.",1],["Reed home","731-555-0123","Installations","Mount two TVs and a ceiling fan.",3],["Hall family","731-555-0168","Carpentry","Porch step is rotting.",5]],
     lump:{eMarcus:26800,eTasha:20900,eJordan:7100,eKendra:13200},live:["eMarcus","eJordan"]}
 };
+// Repair demo: every customer's trucks and equipment, work orders on finished jobs, and breakdowns on the board.
+function demoRepairExtras(C,{D,at,R,pick,rnd,put,cents}){
+  const FLEET={"Volunteer Freight LLC":[["101","2020","Freightliner","Cascadia","Detroit DD15"],["104","2018","Freightliner","Cascadia","Detroit DD15"],["112","2021","Kenworth","T680","PACCAR MX-13"]],
+    "Madison County Aggregates":[["D-3","2016","Mack","Granite","Mack MP8"],["L-7","2014","Cat","950K loader","Cat C7.1","Equipment"]],
+    "Dale Pruitt (owner-operator)":[["","2019","Peterbilt","389","Cummins X15"]],
+    "Hub City Logistics":[["22","2017","International","LT625","Cummins X15"],["31","2022","Volvo","VNL 760","Volvo D13"],["T-22","2019","Wabash","53' dry van","","Trailer"]],
+    "Tri-County Farms":[["","2012","International","7400 grain truck","International MaxxForce"],["","2015","John Deere","8270R tractor","John Deere 9.0L","Equipment"]],
+    "Westside Paving Co.":[["P-4","2018","Kenworth","T880 dump","PACCAR MX-13"],["","2013","Cat","CB34B roller","Cat C3.4","Equipment"]],
+    "Big River Timber":[["","2015","Western Star","4900 log truck","Detroit DD16"]],
+    "Gibson County Hauling":[["7","2016","Peterbilt","567","Cummins ISX"],["9","2019","Peterbilt","567","Cummins X15"]]};
+  const vinChars="ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
+  const vin=()=>"1"+[...Array(16)].map(()=>vinChars[Math.floor(rnd()*vinChars.length)]).join("");
+  const byClient={};
+  Object.entries(FLEET).forEach(([client,list])=>list.forEach(([unitNo,year,make,model,engine,kind])=>{
+    const k=kind||"Truck", u={client,kind:k,unitNo,year,make,model,engine,vin:k==="Equipment"?"":vin(),mileage:k==="Equipment"?Math.round(R(2200,9800)):Math.round(R(180,720))*1000,
+      tires:k==="Truck"?"Steer 295/75R22.5, drive 11R22.5":k==="Trailer"?"11R22.5":"",notes:"",createdAt:at(-120,9)};
+    const id=put("units",u); (byClient[client] ||= []).push([id,u]); }));
+  const WO={"Roadside repair":[["Won't start at the fuel island","SPN 157 FMI 18","Fuel rail pressure low. Primary fuel filter plugged and water in the separator.","Replaced fuel filters, drained separator, primed system. Started and ran 20 min, no codes."],
+      ["Lost power, check engine on","SPN 102 FMI 18","Boost leak. Charge air cooler boot split at the turbo outlet.","Replaced CAC boot and clamps, cleared codes, road tested."]],
+    "Diagnostics":[["Check engine light on and off","SPN 4364 FMI 18","SCR efficiency low. Downstream NOx sensor reading out of range.","Replaced downstream NOx sensor, ran SCR performance test, passed."]],
+    "Mobile tire service":[["Blown steer tire on the shoulder","","Left steer tire blown, rim OK.","Mounted new steer tire, torqued to spec, checked pressures all around."],
+      ["Trailer tire flat","","Nail in right rear outside trailer tire.","Replaced tire and checked the hub for heat."]],
+    "DPF / DEF / EGR":[["Truck in derate, DPF light on","SPN 3719 FMI 16","Soot load high. Short trips kept it from regenerating.","Ran a parked regen, soot load back under 20%. Advised highway run."],
+      ["Derate, DEF warning","SPN 3364 FMI 2","DEF quality bad. Tank was contaminated with water.","Drained and flushed the DEF tank, refilled, cleared derate."]],
+    "Brakes & suspension":[["Brakes pulling left","","Right front brake out of adjustment, slack adjuster worn.","Replaced slack adjuster, adjusted brakes, checked pushrod stroke."]],
+    "Preventive maintenance":[["Due for PM","","No issues found. Front axle seals dry.","Oil and filters, greased chassis, checked belts, hoses, lights and tires."]],
+    "Heavy equipment repair":[["Hydraulic leak at the boom","","Boom cylinder hose chafed through.","Replaced hydraulic hose, topped off fluid, tested under load."]]};
+  const clientsOf=Object.keys(byClient);
+  Object.entries(C.jobs).forEach(([jid,j])=>{
+    if (!byClient[j.client]) j.client=pick(clientsOf);
+    const units=byClient[j.client]; const eq=/heavy equipment/i.test(j.service);
+    const pool=units.filter(([,u])=>eq?u.kind==="Equipment":u.kind!=="Equipment"); const [uid,u]=pick(pool.length?pool:units);
+    j.unitId=uid; j.unitLabel=unitLabel(u); j.phone=j.phone||"731-555-01"+String(10+Math.floor(rnd()*89));
+    if (/roadside|tire/i.test(j.service) && j.date<D(0) && rnd()<.7) j.emergency=true;
+    const t=pick(WO[j.service]||WO["Roadside repair"]);
+    j.workOrder={complaint:t[0]};
+    if (j.status==="done"||j.status==="in_progress"){
+      j.workOrder={...j.workOrder,codes:t[1],cause:t[2],odometer:u.kind==="Equipment"?Math.round(u.mileage-R(5,200)):Math.round((u.mileage-R(500,9000))/10)*10};
+      if (j.status==="done") j.workOrder.correction=t[3], j.workOrder.laborHours=Math.round(((j.completedAt-j.startedAt)/36e5)*4)/4;
+    }
+  });
+  // Breakdowns on the board today: one being worked, one just called in.
+  const firstTruck=c=>byClient[c].find(([,u])=>u.kind==="Truck");
+  const [u1id,u1]=firstTruck("Volunteer Freight LLC"), [u2id,u2]=firstTruck("Gibson County Hauling");
+  put("jobs",{service:"Roadside repair",client:"Volunteer Freight LLC",address:"I-40 WB mile 79, Jackson, TN",price:385,date:D(0),time:"06:40",phone:"731-555-0121",notes:"Driver is Mike, cell 731-555-0177. Loaded, needs to deliver in Memphis by 2.",
+    assigneeId:"eGary",crewIds:[],status:"in_progress",paid:false,createdAt:at(0,6),startedAt:at(0,7,15),emergency:true,unitId:u1id,unitLabel:unitLabel(u1),
+    workOrder:{complaint:"Air leak, can't build pressure past 60 psi",codes:"",cause:"Air dryer purge valve stuck open."},
+    costs:[{id:"cbd1",kind:"material",desc:"Air dryer purge valve kit",qty:1,unitCost:86.4,amount:86.4,date:D(0),by:"demo-u1",byName:"Gary Holt",at:at(0,8),billable:true,markup:15}]});
+  put("jobs",{service:"Mobile tire service",client:"Gibson County Hauling",address:"Pilot Travel Center, I-40 exit 80, Jackson, TN",price:0,date:D(0),time:"09:10",phone:"731-555-0166",notes:"",
+    assigneeId:null,crewIds:[],status:"new",paid:false,createdAt:at(0,9,10),emergency:true,unitId:u2id,unitLabel:unitLabel(u2),
+    workOrder:{complaint:"Right front steer tire blown. Driver is parked at the back of the lot."}});
+  // Service requests from the website: where the truck is and what's wrong.
+  Object.values(C.bookings).forEach((b,i)=>{ b.size=""; b.timeWindow=""; b.source="website"; b.problem=b.details;
+    if (i===0){ b.emergency=true; b.location="I-40 EB mile 87, Jackson, TN"; b.unit="2019 Peterbilt 389, Cummins X15"; b.requestedDate=D(0); }
+    if (i===1){ b.emergency=true; b.location="455 Airways Blvd, Jackson, TN"; b.unit="Trailer #T-22"; b.requestedDate=D(0); }
+    if (i===2){ b.location="3100 Hwy 70, Alamo, TN"; b.unit="2012 International 7400 grain truck"; } });
+}
 function demoSeed(type){
   const P=DEMO_PROFILES[type]||DEMO_PROFILES.Construction;
   const rnd=seededRandom(DEMO_TYPES.indexOf(type)*97+42);
@@ -6352,13 +6784,13 @@ function demoSeed(type){
   const exp=(off,category,amount,vendor,extra)=>put("expenses",{date:D(off),category,amount:cents(amount),vendor,createdAt:at(off,18),...(extra||{})});
   P.crew.forEach(([key,name,phone,role,companyId],i)=>put("employees",{name,phone,phoneNorm:normPhone(phone),email:"",role:role||"",companyId:companyId||null,active:true,userId:"demo-u"+(i+1),createdAt:at(-200,9)},key));
   Object.entries(P.rates).forEach(([k,[cls,payType,rate,w9]])=>put("payRates",{cls,payType,rate,w9:!!w9},k));
-  const clients=[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
+  const clients=P.clients||[["Henderson family","112 Oak Ridge Dr, Lexington, TN"],["Dr. Patel","48 Natchez Trace Dr, Lexington, TN"],["Carter home","905 W Church St, Lexington, TN"],
     ["Lexington Family Dental","220 E Main St, Lexington, TN"],["Brooks rental","31 Pine Hollow Rd, Lexington, TN"],["Miller family","77 Cedar Ln, Parsons, TN"],
     ["Owens home","6 Beech Lake Rd, Lexington, TN"],["Sunrise Realty office","140 N Broad St, Lexington, TN"],["Webb family","18 Maple St, Huntingdon, TN"],["Reed home","59 Hickory Ct, Lexington, TN"],
     ["Hall family","225 Southern Ave, Lexington, TN"],["Davis duplex","402 Poplar St, Lexington, TN"]];
   const business={id:BID,name:P.name,category:type,city:"Lexington",state:"TN",status:"active",ownerUids:["demo-owner"],ownerEmails:["owner@demo.dayzift.com"],
     services:P.kind==="trade"?P.services.slice():P.services.map(x=>x[0]),sutaRate:2.7,
-    features:{projects:P.kind==="trade",rewards:P.kind==="visits"}};
+    features:{projects:P.kind==="trade"&&!P.repair,rewards:P.kind==="visits",repair:!!P.repair}};
   if (P.rewardsName) business.rewardsName=P.rewardsName;
 
   if (P.kind==="visits"){
@@ -6495,9 +6927,9 @@ function demoSeed(type){
   const trade=P.kind==="trade";
   business.invoice={address:"410 S Broad St",email:"office@"+slug+".example",phone:"731-555-0100",terms:trade?"net15":"net7",taxRate:trade?9.75:0,
     markup:trade?15:0,retainage:trade?10:0,payLink:"",payNote:"Checks payable to "+P.name+". Zelle: 731-555-0100. Cards by phone.",footer:"Thank you for your business!",autoRemind:true,startAt:1000};
-  const BIG=[[/water heater/i,"50-gallon gas water heater, Ferguson",[640,820]],[/ev charger/i,"48A EV charger and breaker",[520,690]],[/panel/i,"200A panel and breakers, Graybar",[480,760]],
+  const BIG=P.big||[[/water heater/i,"50-gallon gas water heater, Ferguson",[640,820]],[/ev charger/i,"48A EV charger and breaker",[520,690]],[/panel/i,"200A panel and breakers, Graybar",[480,760]],
     [/system install|heat pump|furnace/i,"Condenser pad, line set and fittings",[280,420]],[/replacement|tear-off|shingle/i,"Ridge vent and drip edge",[180,320]],[/gutter/i,"Seamless gutter coil and hangers",[160,260]]];
-  const MATS=trade?[["material","Fittings, fasteners and sealant",[18,95]],["material","Drywall, mud and tape",[40,140]],["material","Paint and supplies, Sherwin-Williams",[60,190]],["equipment","Tool rental, Sunbelt",[65,180]],["disposal","Dump fee",[25,60]],["permit","Permit fee",[45,120]]]
+  const MATS=P.mats?P.mats:trade?[["material","Fittings, fasteners and sealant",[18,95]],["material","Drywall, mud and tape",[40,140]],["material","Paint and supplies, Sherwin-Williams",[60,190]],["equipment","Tool rental, Sunbelt",[65,180]],["disposal","Dump fee",[25,60]],["permit","Permit fee",[45,120]]]
     : type==="Lawn Care"?[["material","Mulch, 12 bags",[42,72]],["material","Fertilizer and weed killer",[28,65]],["disposal","Green waste dump fee",[15,30]]]
     : type==="Pet Care"?[["material","Treats and waste bags",[6,18]],["material","Shampoo and conditioner",[9,22]]]
     : [["material","Degreaser and oven cleaner",[9,24]],["material","Microfiber cloths and mop heads",[14,38]],["equipment","Carpet cleaner rental",[35,45]]];
@@ -6565,6 +6997,7 @@ function demoSeed(type){
     inv.lines.filter(l=>l.costId).forEach(l=>{ const c=(C.jobs[l.jobId].costs||[]).find(x=>x.id===l.costId); if (c) c.invoiceId=key; });
     if (inv.status==="sent" && t.balance<=0.004) inv.jobIds.forEach(id=>{ C.jobs[id].paid=true; });
   });
+  if (P.repair) demoRepairExtras(C,{D,at,R,pick,rnd,put,cents});
   return {business,colls:C};
 }
 function startDemo(type){
@@ -6708,7 +7141,7 @@ showGate();
 // Website "Try the live demo" links: /app?demo=cleaning (or construction, plumbing, electrical, hvac, roofing, handyman, lawn-care, pet-care).
 // The demo is a private copy in the visitor's browser; it never reads or writes real data.
 (function(){ const m=/[?&]demo=([a-z-]+)/i.exec(location.search); if (!m) return;
-  const map={cleaning:"Cleaning",construction:"Construction",contractors:"Construction",remodeling:"Construction",plumbing:"Plumbing",electrical:"Electrical",hvac:"HVAC",roofing:"Roofing",handyman:"Handyman","lawn-care":"Lawn Care",lawn:"Lawn Care","pet-care":"Pet Care"};
+  const map={cleaning:"Cleaning",construction:"Construction",contractors:"Construction",remodeling:"Construction",plumbing:"Plumbing",electrical:"Electrical",hvac:"HVAC",roofing:"Roofing",handyman:"Handyman","lawn-care":"Lawn Care",lawn:"Lawn Care","pet-care":"Pet Care","truck-repair":"Truck & Equipment Repair",mechanic:"Truck & Equipment Repair",diesel:"Truck & Equipment Repair"};
   const type=map[m[1].toLowerCase()]; if (type) startDemo(type); })();
 
 $("#bizRegBtn").addEventListener("click", async ()=>{

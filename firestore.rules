@@ -120,7 +120,8 @@ service cloud.firestore {
 
     // ---------- day-to-day work: owners and crew ----------
     // The whole team sees the schedule. Only owners add, edit, price or delete jobs.
-    // Crew can only work the jobs they're on: start them, finish them and log materials they used.
+    // Crew can only work the jobs they're on: start them, finish them, log materials (parts) they used,
+    // and fill in the work order and photos (repair businesses).
     match /jobs/{id} {
       function isMyTeamRecord(empId) {
         return empId is string && empId != ''
@@ -137,11 +138,12 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.get('businessId', null));
       allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
         || (isMember(resource.data.get('businessId', null)) && sameBusiness()
-            && changedOnly(['status', 'startedAt', 'completedAt', 'costs'])
+            && changedOnly(['status', 'startedAt', 'completedAt', 'costs', 'workOrder', 'photos'])
             && request.resource.data.get('status', '') in ['assigned', 'in_progress', 'done']
             // materials can be added, not removed or rewritten away
             && request.resource.data.get('costs', []).size() >= resource.data.get('costs', []).size()
             && request.resource.data.get('costs', []).size() <= 200
+            && request.resource.data.get('photos', []).size() <= 40
             && onThisJob());
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
@@ -183,6 +185,14 @@ service cloud.firestore {
                 || (resource.data.get('end', null) == null
                     && request.resource.data.end is int
                     && request.resource.data.end <= request.time.toMillis() + 120000)));
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // Trucks and equipment (repair businesses): the whole crew sees them, only owners change them.
+    match /units/{id} {
+      allow read: if isMember(resource.data.get('businessId', null));
+      allow create: if isOwner(request.resource.data.get('businessId', null));
+      allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
 

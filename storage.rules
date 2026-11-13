@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Dayzift security rules (Storage: receipt photos)
+// Dayzift security rules (Storage: receipt photos and job photos)
 // Paste into Firebase console → Storage → Rules → Publish.
 // A product of LIT America — www.litamerica.net
 
@@ -22,6 +22,21 @@ service firebase.storage {
       allow create: if (isPlatformAdmin() || isOwner(businessId))
         && request.resource.size < 15 * 1024 * 1024
         && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+      allow delete: if isPlatformAdmin() || isOwner(businessId);
+    }
+
+    function isMember(businessId) {
+      let d = firestore.get(/databases/(default)/documents/businesses/$(businessId)).data;
+      return request.auth != null && (request.auth.uid in d.get('ownerUids', []) || d.get('ownerUid', '') == request.auth.uid
+        || request.auth.uid in d.get('crewUids', []));
+    }
+
+    // Work-order photos: the team (owners and crew) can see and add them; only owners remove them.
+    match /jobPhotos/{businessId}/{jobId}/{file} {
+      allow read: if isPlatformAdmin() || isMember(businessId);
+      allow create: if (isPlatformAdmin() || isMember(businessId))
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
       allow delete: if isPlatformAdmin() || isOwner(businessId);
     }
 
