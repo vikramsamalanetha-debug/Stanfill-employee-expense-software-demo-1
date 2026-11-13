@@ -1,0 +1,23 @@
+name: APK drop
+on:
+  push:
+    branches: [apk-drop]
+    paths: [.github/workflows/apk-drop.yml]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  drop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Dayzift-apk
+          run-id: 43343925114
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: drop
+      - run: |
+          ls -la drop
+          git config user.name "Vikram"; git config user.email "vikram.samalanetha@gmail.com"
+          git add drop && git commit -m "APK for download" && git push
