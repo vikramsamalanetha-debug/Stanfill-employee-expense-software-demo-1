@@ -150,11 +150,13 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.get('businessId', null))
         || (isMember(request.resource.data.get('businessId', null))
             && request.resource.data.get('userId', '') == uid()
-            && myTeamRecordFor(request.resource.data.get('empId', '')));
+            && myTeamRecordFor(request.resource.data.get('empId', ''))
+            // crew either clock in now (no end yet) or add time they forgot, which waits for the owner's OK
+            && (request.resource.data.get('end', null) == null || request.resource.data.get('requested', null) != null));
       // crew can only add points and job check-ins, and close the shift; they can't rewrite its start
       allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
         || (signedIn() && resource.data.get('userId', '') == uid() && sameBusiness()
-            && changedOnly(['end', 'points', 'events'])
+            && changedOnly(['end', 'points', 'events', 'changeRequest'])
             && request.resource.data.get('points', []).size() <= 500
             // the end time is set once, and never in the future
             && (request.resource.data.get('end', null) == resource.data.get('end', null)
