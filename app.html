@@ -832,6 +832,23 @@ input,select,textarea{border-color:#DADFDB;border-radius:10px}
 .unitpick{min-width:0}
 .unitpick select{width:100%;max-width:100%;min-width:0}
 .newunit[hidden]{display:none}
+.vf{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;min-width:0}
+.vf .full{grid-column:1/-1}
+.vf [hidden],.tiref[hidden],.twocol [hidden]{display:none!important}
+.vf select,.vf input{width:100%;min-width:0}
+.vf .f input[name$="_other"]{margin-top:6px}
+.vf input::placeholder{text-transform:none}
+.vinmsg{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin-top:4px;min-height:1em}
+.vinmsg.ok{color:var(--ok,#1f7a4d)}
+.vinmsg.warn{color:var(--danger)}
+.linkbtn{background:none;border:0;padding:0;color:inherit;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.twocol,.tiref{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:8px;min-width:0}
+.curjob{color:var(--ink);font-weight:600}
+.wo-ph{position:relative;aspect-ratio:1}
+.wo-ph a{height:100%}
+.wo-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
+.wo-x:focus-visible{outline:2px solid #fff;outline-offset:1px}
+dialog .acts.stickyacts{position:sticky;bottom:0;z-index:3;background:var(--surface);padding-block:10px;margin-bottom:-12px;border-top:1px solid var(--line)}
 .newunit{min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px;border:1px dashed var(--line);border-radius:var(--radius-sm);padding:10px}
 </style>
 <!-- Google Tag Manager on live dayzift.com and in the Android/iPhone app (never tests). Tracking is set up in tagmanager.google.com.
@@ -1066,6 +1083,16 @@ function hasProjects(){ const b=S.business||{}; if (b.features && typeof b.featu
 // Customer rewards suit repeat-visit businesses (cleaning, lawn, pet care), not one-off trade jobs.
 // Off by default for the trades; any business can switch it in Settings. A business that already has members keeps it on.
 function hasRewards(){ const b=S.business||{}; if (b.features && typeof b.features.rewards==="boolean") return b.features.rewards; return !(TRADE_CATS.includes(b.category)||b.category===REPAIR_CAT) || S.customers.some(c=>c.rewardsMember); }
+// A one-person repair business: no crew to assign, pay or track.
+function soloRepair(){ return hasRepair() && S.employees.filter(e=>e.active!==false).length<=1; }
+function soloId(){ const a=S.employees.filter(e=>e.active!==false); return a.length===1?a[0].id:null; }
+const TIRE_POSITIONS=["Steer, left","Steer, right","Drive, left outer","Drive, left inner","Drive, right outer","Drive, right inner","Trailer, left outer","Trailer, left inner","Trailer, right outer","Trailer, right inner","Spare","Equipment"];
+const TIRE_SIZES=["295/75R22.5","11R22.5","11R24.5","285/75R24.5","275/80R22.5","255/70R22.5","315/80R22.5","425/65R22.5","445/65R22.5","225/70R19.5","245/70R19.5","LT245/75R16"];
+const TIRE_SUPPLY=[["bring","Bring a new tire"],["customer","Customer has the tire"],["repair","Repair if it can be fixed"],["check","Check what's needed"]];
+const isTireJob = svc => /tire/i.test(svc||"");
+function tireText(t){ if (!t||!(t.size||t.position)) return ""; const sup=(TIRE_SUPPLY.find(x=>x[0]===t.supply)||[])[1]; return [t.size,t.position,sup?sup.toLowerCase():""].filter(Boolean).join(" \u00b7 "); }
+// Repair jobs can be logged before the price is known.
+function jobPriceText(j){ return j.price==null && hasRepair() ? "Price not set" : money(j.price); }
 function hasRepair(){ const b=S.business||{}; if (b.features && typeof b.features.repair==="boolean") return b.features.repair; return b.category===REPAIR_CAT; }
 const PROJECT_STATUSES = [{id:"planning",label:"Planning"},{id:"active",label:"Active"},{id:"hold",label:"On hold"},{id:"done",label:"Finished"}];
 // Everyone working a job: the lead (assigneeId) plus any extra crew.
@@ -1537,7 +1564,9 @@ function navGroups(){
   return [
     {id:"home",label:"Home",icon:"home",tabs:[["home","Today"]]},
     {id:"jobs",label:"Jobs",icon:"jobs",badge:nReq,tabs:[["requests",(hasRepair()?"Service requests":"Booking requests")+(nReq?" ("+nReq+")":"")],["board","Job board"],hasProjects()?["projects","Projects"]:null,hasRepair()?["units","Trucks & equipment"]:null]},
-    {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["timesheet","Timesheet"],["payroll","Payroll"]]},
+    // A one-person repair business has no crew to track or pay; Team stays so a helper can be added later.
+    soloRepair() ? {id:"team",label:"Team",icon:"team",tabs:[["team","Team"]]}
+      : {id:"team",label:"Team",icon:"team",tabs:[["team","Crew & locations"],["timesheet","Timesheet"],["payroll","Payroll"]]},
     {id:"money",label:"Money",icon:"money",tabs:[["invoices","Invoices"],["books","Books"],["insights","Insights"]]},
     {id:"more",label:"More",icon:"more",tabs:[hasRewards()?["rewards","Rewards"]:null,["settings","Settings"]]},
     S.adminView ? {id:"console",label:"All businesses",icon:"back",badge:nAdmin,tabs:[["platform","All businesses"]]} : null
@@ -1605,10 +1634,10 @@ function viewHomeOwner(){
     if (sos.length){
       const bp=el("div",{class:"panel sos-panel",style:"margin-bottom:16px"},el("h2",{style:"margin:0 0 6px"},sos.length===1?"1 open breakdown":sos.length+" open breakdowns"));
       bp.append(el("div",{class:"rows"},...sos.map(j=>el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
-        el("span",{class:"rw"},el("b",{},j.time?fmtTime(j.time):"Now"),el("span",{},(STATUSES.find(x=>x.id===(j.status||"new"))||{}).label||"")),
+        el("span",{class:"rw"},el("b",{},j.time?fmtTime(j.time):"Now"),el("span",{},(s=>s.charAt(0).toUpperCase()+s.slice(1))(JOB_STAGE[j.status||"new"]||""))),
         el("span",{class:"rm"},el("b",{},(j.client||"Customer")+(jobUnit(j)?" \u00b7 "+unitName(jobUnit(j)):j.unitLabel?" \u00b7 "+j.unitLabel:"")),
           el("span",{},[woOf(j).complaint,j.address].filter(Boolean).join(" \u00b7 ")||j.service||""),
-          el("span",{class:crewNames(j)?"":"unas"},crewNames(j)||"Nobody assigned yet")),chevron()))));
+          soloRepair()?el("span",{},j.driver&&j.driver.name?"Driver: "+j.driver.name+(j.driver.phone?", "+j.driver.phone:""):""):el("span",{class:crewNames(j)?"":"unas"},crewNames(j)||"Nobody assigned yet")),chevron()))));
       frag.append(bp);
     }
   }
@@ -1648,7 +1677,7 @@ function viewHomeOwner(){
       el("button",{type:"button",class:"btn small primary",onclick:()=>goTab("requests")},"Answer")))));
   cols.append(req);
   frag.append(cols);
-  const due=!hasProjects()&&!S.viewOnly?regularsToBook():[];
+  const due=!hasProjects()&&!hasRepair()&&!S.viewOnly?regularsToBook():[];
   if (due.length){
     const rp=el("div",{class:"panel",style:"margin-top:16px"},el("div",{class:"row"},el("h2",{style:"margin:0"},"Regulars to book"),el("span",{class:"grow"}),
       el("span",{class:"kv"},due.length+" due in the next week, nothing booked yet")));
@@ -1834,6 +1863,8 @@ function crewJobCard(j,isNow){
     j.address?el("span",{class:"jm"},j.address):null,
     hasRepair()?unitLine(j):null,
     hasRepair()&&woOf(j).complaint?el("div",{class:"jn"},"Problem: "+woOf(j).complaint):null,
+    hasRepair()&&tireText(woOf(j).tire)?el("div",{class:"jn"},"Tire: "+tireText(woOf(j).tire)):null,
+    hasRepair()&&j.driver&&(j.driver.name||j.driver.phone)?el("span",{class:"jm"},"Driver: "+(j.driver.name||""),j.driver.phone?el("span",{}," ",el("a",{href:"tel:"+j.driver.phone.replace(/[^\d+]/g,"")},j.driver.phone)):null):null,
     j.notes?el("div",{class:"jn"},j.notes):null,
     j.phone&&hasRepair()?el("span",{class:"jm"},"Customer: ",el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)):null);
   const acts=el("div",{class:"ja"});
@@ -1863,20 +1894,40 @@ const unitById = id => (S.units||[]).find(u=>u.id===id);
 function unitName(u){ if (!u) return ""; return [u.unitNo?"#"+u.unitNo:"",u.year,u.make,u.model].filter(Boolean).join(" ").trim() || u.kind || "Unit"; }
 function unitLabel(u){ if (!u) return ""; return [unitName(u),u.engine].filter(Boolean).join(" · "); }
 const vinTail = v => v ? "VIN …"+String(v).slice(-6) : "";
+const isSerialKind = u => u && (u.kind==="Equipment"||u.kind==="Other");
+const idTail = u => !u||!u.vin ? "" : isSerialKind(u) ? "Serial "+u.vin : "VIN …"+String(u.vin).slice(-6);
+const JOB_STAGE={new:"not started",assigned:"assigned",in_progress:"in progress",done:"done"};
 function jobUnit(j){ return j&&j.unitId ? unitById(j.unitId) : null; }
 // The truck on a job, as one line. Falls back to the label saved on the job if the unit was removed.
 function unitLine(j){
   const u=jobUnit(j); const name=u?unitName(u):j.unitLabel||"";
   if (!name) return null;
-  return el("div",{class:"unitline"},el("b",{},name),u&&u.engine?el("span",{},u.engine):null,u&&u.vin?el("span",{},vinTail(u.vin)):null,
+  return el("div",{class:"unitline"},el("b",{},name),u&&u.engine?el("span",{},u.engine):null,u&&u.vin?el("span",{},idTail(u)):null,
     u&&u.mileage?el("span",{},Number(u.mileage).toLocaleString()+" "+(u.kind==="Equipment"?"hrs":distUnit())):null);
 }
 const woOf = j => (j && j.workOrder && typeof j.workOrder==="object") ? j.workOrder : {};
 const jobPhotos = j => Array.isArray(j&&j.photos) ? j.photos : [];
-function lastServiceOf(u){ const t=today(); const js=S.jobs.filter(j=>j.unitId===u.id&&(j.date||"")<=t).sort((a,b)=>(b.date||"").localeCompare(a.date||"")); return js[0]||null; }
+// Last completed service, and any job on this unit that isn't finished yet. An open repair is not a completed service.
+function lastServiceOf(u){ const js=S.jobs.filter(j=>j.unitId===u.id&&(j.status||"new")==="done").sort((a,b)=>(b.date||"").localeCompare(a.date||"")); return js[0]||null; }
+function openJobOf(u){ const js=S.jobs.filter(j=>j.unitId===u.id&&(j.status||"new")!=="done").sort((a,b)=>(a.date||"").localeCompare(b.date||"")); return js[0]||null; }
 function splitYmm(t){ const m=/^\s*((?:19|20)\d\d)\s+(\S+)\s*(.*)$/.exec(t||""); return m?{year:m[1],make:m[2],model:m[3].trim()}:{year:"",make:"",model:String(t||"").trim()}; }
 function cleanVin(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,17); }
-function unitsForClient(name){ const k=normName(name); return (S.units||[]).filter(u=>k && normName(u.client)===k); }
+// The same customer written slightly differently: "Dale Pruitt" and "Dale Pruitt (owner-operator)", "Hub City Logistics LLC".
+function custKey(n){ return normName(String(n||"").replace(/\([^)]*\)/g," ").replace(/\b(llc|inc|co|corp|corporation|company|ltd|the)\b\.?/gi," ")); }
+function sameCustomer(a,b){ const x=custKey(a), y=custKey(b); if (!x||!y) return false;
+  return x===y || (Math.min(x.length,y.length)>=6 && (x.startsWith(y)||y.startsWith(x))); }
+function unitsForClient(name){ return (S.units||[]).filter(u=>name && sameCustomer(u.client,name)); }
+// Which of a customer's vehicles a typed description means: VIN, unit #, or year/make/model.
+function matchUnit(text, list){
+  const k=" "+String(text||"").toLowerCase().replace(/[^a-z0-9#]+/g," ")+" ";
+  const has=w=>w&&k.includes(" "+String(w).toLowerCase().replace(/[^a-z0-9]+/g," ").trim()+" ");
+  const scored=list.map(u=>{ let sc=0;
+    if (u.vin && k.replace(/ /g,"").includes(u.vin.toLowerCase().slice(-6))) sc+=10;
+    if (u.unitNo && (k.includes("#"+String(u.unitNo).toLowerCase())||k.includes("unit "+String(u.unitNo).toLowerCase()+" "))) sc+=6;
+    if (has(u.model)) sc+=3; if (has(u.make)) sc+=2; if (has(u.year)) sc+=1;
+    return {u,sc}; }).filter(x=>x.sc>=3).sort((a,b)=>b.sc-a.sc);
+  return scored.length && (scored.length===1||scored[0].sc>scored[1].sc) ? scored[0].u : null;
+}
 function clientNames(){ return [...new Set([...clientProfiles().map(p=>p.name),...(S.units||[]).map(u=>u.client).filter(Boolean)])].sort((a,b)=>a.localeCompare(b)); }
 
 // Trucks & equipment: every customer unit, newest service first, with search.
@@ -1897,8 +1948,9 @@ function viewUnits(){
   const box=el("div",{class:"rows"});
   list.forEach(({u,last})=>box.append(el("button",{type:"button",class:"rowi",onclick:()=>openUnit(u)},
     el("span",{class:"rw"},el("b",{},u.unitNo?"#"+u.unitNo:(u.kind||"Unit")),el("span",{},u.kind&&u.unitNo?u.kind:"")),
-    el("span",{class:"rm"},el("b",{},unitName(u)),el("span",{},[u.client,u.engine,vinTail(u.vin)].filter(Boolean).join(" · ")),
-      el("span",{},last?"Last service "+niceDate(last.date)+" · "+(last.service||"Job"):"No service yet")),
+    el("span",{class:"rm"},el("b",{},unitName(u)),el("span",{},[u.client,u.engine,idTail(u)].filter(Boolean).join(" · ")),
+      (()=>{ const cur=openJobOf(u); return cur?el("span",{class:"curjob"},(cur.date&&cur.date>today()?"Booked "+niceDate(cur.date):"Current job")+": "+(cur.service||"Job")+" · "+(JOB_STAGE[cur.status||"new"]||"")):null; })(),
+      el("span",{},last?"Last completed "+niceDate(last.date)+" · "+(last.service||"Job"):"No completed service yet")),
     chevron())));
   frag.append(box);
   return frag;
@@ -1910,18 +1962,12 @@ function openUnit(u, preset){
   const isNew=!u; u=u||{kind:"Truck",...(preset||{})};
   const hist=isNew?[]:S.jobs.filter(j=>j.unitId===u.id).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
   const fld=(label,name,props,full)=>el("label",{class:"f"+(full?" full":"")},label,el("input",{name,value:u[name]??"",autocomplete:"off",...(props||{})}));
+  const vf=vehicleFields(u,{onExisting:x=>{ $("#jobDlg").close(); setTimeout(()=>openUnit(x),50); }});
   f.append(el("h2",{},isNew?"Add truck or equipment":unitName(u)),
-    !isNew?el("p",{class:"kv full",style:"margin:-6px 0 0"},[u.client,u.engine,u.vin?"VIN "+u.vin:""].filter(Boolean).join(" · ")):null,
+    !isNew?el("p",{class:"kv full",style:"margin:-6px 0 0"},[u.client,u.engine,u.vin?(u.kind==="Equipment"||u.kind==="Other"?"Serial ":"VIN ")+u.vin:""].filter(Boolean).join(" · ")):null,
     el("label",{class:"f full"},"Customer",el("input",{name:"client",required:true,value:u.client||"",list:"unitClients",autocomplete:"off",placeholder:"Company or owner-operator"}),
       el("datalist",{id:"unitClients"},clientNames().map(n=>el("option",{value:n})))),
-    el("label",{class:"f"},"Type",el("select",{name:"kind"},UNIT_KINDS.map(k=>el("option",{value:k,selected:(u.kind||"Truck")===k},k)))),
-    fld("Unit #","unitNo",{placeholder:"e.g. 12",maxlength:"20"}),
-    fld("Year","year",{inputmode:"numeric",maxlength:"4",placeholder:"2019"}),
-    fld("Make","make",{placeholder:"Peterbilt, Freightliner, Cat…",maxlength:"40"}),
-    fld("Model","model",{placeholder:"389, Cascadia, D6…",maxlength:"40"}),
-    el("label",{class:"f"},"Engine",el("input",{name:"engine",value:u.engine||"",list:"engineSuggest",autocomplete:"off",maxlength:"40"}),
-      el("datalist",{id:"engineSuggest"},ENGINE_SUGGEST.map(x=>el("option",{value:x})))),
-    fld("VIN / serial #","vin",{maxlength:"25",style:"text-transform:uppercase",placeholder:"17 characters for a truck"}),
+    vf,
     el("label",{class:"f"},"Odometer / hours",el("input",{name:"mileage",type:"number",min:"0",value:u.mileage??""})),
     fld("Tire sizes","tires",{placeholder:"Steer 295/75R22.5, drive 11R22.5",maxlength:"120"},true),
     el("label",{class:"f full"},"Notes",el("textarea",{name:"notes",placeholder:"Fleet terms, where it's parked, quirks…"},u.notes||"")));
@@ -1944,13 +1990,12 @@ function openUnit(u, preset){
   f.onsubmit=e=>{
     e.preventDefault();
     const d=Object.fromEntries(new FormData(f));
-    const data={client:d.client.trim(),kind:d.kind,unitNo:d.unitNo.trim(),year:d.year.replace(/\D/g,"").slice(0,4),make:d.make.trim(),model:d.model.trim(),
-      engine:d.engine.trim(),vin:cleanVin(d.vin),mileage:Number(d.mileage)||null,tires:d.tires.trim(),notes:d.notes.trim()};
+    const data={client:d.client.trim(),...vf.read(),mileage:Number(d.mileage)||null,tires:d.tires.trim(),notes:d.notes.trim()};
     if (!data.client) return toast("Enter the customer.");
-    if (!data.unitNo && !data.make && !data.model && !data.vin) return toast("Add a unit #, make, model or VIN so you can tell it apart.");
-    if (data.vin && data.kind==="Truck" && data.vin.length!==17 && !confirm("A truck VIN is usually 17 characters. This one has "+data.vin.length+". Save it anyway?")) return;
+    if (!data.unitNo && !data.make && !data.model && !data.vin) return toast("Pick the make and model, or add a unit # or VIN, so you can tell it apart.");
     const dupe=data.vin && (S.units||[]).find(x=>x.vin===data.vin && x.id!==u.id);
-    if (dupe) return toast("That VIN is already on file: "+unitName(dupe)+" ("+dupe.client+").");
+    if (dupe) return toast("That "+(data.kind==="Equipment"?"serial":"VIN")+" is already on file: "+unitName(dupe)+" ("+dupe.client+").");
+    const prob=vf.problem(); if (prob && !confirm(prob+" Save it anyway?")) return;
     const dlg=$("#jobDlg");
     if (isNew){ data.businessId=S.businessId; data.createdAt=Date.now(); saveForm(dlg,()=>Store.set("units",newId(),data),"Added "+unitName(data)); }
     else saveForm(dlg,()=>Store.update("units",u.id,data),"Saved");
@@ -1958,45 +2003,219 @@ function openUnit(u, preset){
   $("#jobDlg").showModal();
 }
 
-// The vehicle picker on the job form: a dropdown of THIS customer's trucks and equipment, plus "Add a vehicle"
-// which opens Year / Make / Model / Other. Other customers' vehicles are never mixed in.
-const UNIT_MAKES=["Freightliner","Peterbilt","Kenworth","International","Volvo","Mack","Western Star","Ford","Chevrolet","GMC","Ram","Isuzu","Hino",
-  "Caterpillar","John Deere","Komatsu","Case","Bobcat","Kubota","Volvo CE","JCB","Wabash","Great Dane","Utility","Fontaine"];
+/* ---- Vehicle details: dropdowns, VIN check and VIN lookup ----
+   Year, make, model and engine are picked from lists (with "Other" for anything unusual), so the same truck
+   is written the same way every time. Models and engines follow the make that's picked.
+   A truck or trailer VIN is checked with its check digit and looked up in NHTSA's free VIN database,
+   which fills in the year, make, model and engine. Equipment keeps its own serial/PIN as typed. */
+const VEH_CAT={
+  Truck:{
+    "Freightliner":{models:["Cascadia","Coronado","Columbia","Century Class","M2 106","M2 112","108SD","114SD","122SD","FLD 120","Argosy"],engines:["Detroit DD15","Detroit DD13","Detroit DD16","Detroit Series 60","Cummins X15","Cummins ISX","Cummins X12","Cummins L9","Cummins ISL","Cummins B6.7","Cummins ISB","Cat C15","Cat C13","Mercedes MBE 4000"]},
+    "Peterbilt":{models:["579","389","567","389X","589","520","548","537","536","535","348","337","367","365","388","386","384","587","379","378"],engines:["PACCAR MX-13","PACCAR MX-11","Cummins X15","Cummins ISX","Cummins X12","Cummins L9","Cummins ISL","Cummins B6.7","Cat C15","Cat C13","Cat C7","Detroit Series 60"]},
+    "Kenworth":{models:["T680","T880","W900","W990","T800","T370","T380","T270","T280","T480","T440","T660","T700","W900L","C500"],engines:["PACCAR MX-13","PACCAR MX-11","Cummins X15","Cummins ISX","Cummins X12","Cummins L9","Cummins ISL","Cummins B6.7","Cat C15","Cat C13","Cat C7","Detroit Series 60"]},
+    "International":{models:["LT","LT625","RH","HX","HV","MV","CV","ProStar","LoneStar","9900i","9400i","8600","7400","7600","4300","4400","PayStar","WorkStar","TranStar","DuraStar"],engines:["International A26","International S13","International MaxxForce 13","International MaxxForce DT","International DT466","International N13","Cummins X15","Cummins ISX","Cummins L9","Cummins B6.7","Cummins ISB","Cat C15"]},
+    "Volvo":{models:["VNL 860","VNL 760","VNL 740","VNL 300","VNL 670","VNL 780","VNL 630","VNR","VHD","VNX","VAH"],engines:["Volvo D13","Volvo D11","Volvo D16","Volvo D12","Cummins X15","Cummins ISX","Cummins L9"]},
+    "Mack":{models:["Anthem","Pinnacle","Granite","Pioneer","LR","MD","TerraPro","CXU","CHU","Vision","Titan","RD","CH"],engines:["Mack MP7","Mack MP8","Mack MP10","Mack E7","Cummins L9","Cummins ISL"]},
+    "Western Star":{models:["49X","57X","47X","4900","5700","4700","6900"],engines:["Detroit DD15","Detroit DD13","Detroit DD16","Detroit Series 60","Cummins X15","Cummins ISX","Cummins L9"]},
+    "Ford":{models:["F-750","F-650","F-600","F-550","F-450","F-350","E-450"],engines:["Ford 6.7L Power Stroke","Ford 6.0L Power Stroke","Ford 7.3L Power Stroke","Ford 7.3L gas","Ford 6.8L gas","Cummins ISB"]},
+    "Ram":{models:["5500","4500","3500","2500"],engines:["Cummins 6.7L","Cummins 5.9L","Hemi 6.4L gas"]},
+    "Chevrolet":{models:["Silverado 6500HD","Silverado 5500HD","Silverado 4500HD","Silverado 3500HD","Kodiak"],engines:["Duramax 6.6L","Duramax 6.6L L5P","Gas 6.6L"]},
+    "GMC":{models:["Sierra 3500HD","Sierra 2500HD","TopKick","Savana"],engines:["Duramax 6.6L","Duramax 6.6L L5P","Gas 6.6L"]},
+    "Isuzu":{models:["NPR","NPR-HD","NQR","NRR","FTR","FVR"],engines:["Isuzu 4HK1","Isuzu 4JJ1","Isuzu 6HK1","Cummins B6.7"]},
+    "Hino":{models:["L6","L7","XL7","XL8","M5","338","268","258","195"],engines:["Hino J08E","Hino A09","Cummins B6.7"]},
+    "Autocar":{models:["ACX","ACMD","DC-64","ACTT"],engines:["Cummins X15","Cummins L9","Cummins ISL"]}
+  },
+  Trailer:{
+    "Great Dane":{},"Utility":{},"Wabash":{},"Stoughton":{},"Hyundai Translead":{},"Vanguard":{},"Fontaine":{},"East":{},"Wilson":{},"Timpte":{},
+    "MAC":{},"Trail King":{},"Talbert":{},"Landoll":{},"Polar":{},"Heil":{},"Doonan":{},"Reitnouer":{},"Kentucky":{},"Dorsey":{}
+  },
+  Equipment:{
+    "Cat":{},"John Deere":{},"Case":{},"Komatsu":{},"Bobcat":{},"Kubota":{},"Volvo CE":{},"JCB":{},"Hitachi":{},"Develon (Doosan)":{},
+    "Takeuchi":{},"New Holland":{},"Kenworth":{},"Liebherr":{},"Hyundai":{},"Gehl":{},"Vermeer":{},"Ditch Witch":{},"Genie":{},"JLG":{}
+  }
+};
+const TRAILER_MODELS=["Dry van","Reefer","Flatbed","Step deck","Lowboy","Dump trailer","End dump","Belly dump","Tanker","Hopper / grain","Livestock","Car hauler","Pneumatic","Log trailer","Chassis"];
+const EQUIP_MODELS=["Excavator","Mini excavator","Wheel loader","Dozer","Skid steer","Compact track loader","Backhoe","Motor grader","Roller","Paver","Tractor","Combine","Forklift","Telehandler","Generator","Air compressor","Crane"];
+const EQUIP_ENGINES=["Cat C4.4","Cat C7.1","Cat C9.3","Cat C13","Cat C15","Cat C18","Cat C3.4","John Deere 4.5L","John Deere 6.8L","John Deere 9.0L","John Deere 13.5L",
+  "Cummins QSB6.7","Cummins QSL9","Cummins QSX15","Cummins B6.7","Cummins L9","Kubota V3800","Kubota V2403","Komatsu SAA6D107","Volvo D8","Volvo D13","Perkins 1104","Perkins 1206","Deutz 2.9","Deutz 3.6","Yanmar 4TNV"];
+const VEH_YEARS=(()=>{ const a=[]; for (let y=new Date().getFullYear()+1;y>=1975;y--) a.push(String(y)); return a; })();
+function vehMakes(kind){ return Object.keys(VEH_CAT[kind]||VEH_CAT.Truck); }
+function vehModels(kind,make){ if (kind==="Trailer") return TRAILER_MODELS; if (kind==="Equipment") return EQUIP_MODELS; const m=(VEH_CAT.Truck[make]||{}).models; return m||[]; }
+function vehEngines(kind,make){
+  if (kind==="Trailer") return [];
+  if (kind==="Equipment") return EQUIP_ENGINES;
+  const m=(VEH_CAT.Truck[make]||{}).engines; if (m) return m;
+  return [...new Set(Object.values(VEH_CAT.Truck).flatMap(x=>x.engines||[]))];
+}
+// Equipment serials and PINs are kept as typed (letters, digits and dashes); only truck/trailer VINs get the 17-character rules.
+function cleanSerial(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,30); }
+function cleanUnitId(kind,v){ return kind==="Truck"||kind==="Trailer" ? cleanVin(v) : cleanSerial(v); }
+// North American VIN check digit (position 9). True = matches, false = mistyped, null = can't tell.
+function vinCheck(vin){
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) return false;
+  const T={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9};
+  const W=[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+  let sum=0; for (let i=0;i<17;i++){ const c=vin[i]; sum+=(/\d/.test(c)?Number(c):T[c])*W[i]; }
+  const r=sum%11, want=r===10?"X":String(r);
+  return vin[8]===want;
+}
+// Model year from the 10th character: the most recent year it can be, not in the future.
+function vinYear(vin){
+  const codes="ABCDEFGHJKLMNPRSTVWXY123456789", i=codes.indexOf(vin[9]); if (i<0) return "";
+  const max=new Date().getFullYear()+1; let y=1980+i; while (y+30<=max) y+=30; return String(y);
+}
+// Make from the first three characters (the maker's code), for when there's no signal for the lookup.
+const VIN_WMI={"1XP":"Peterbilt","2XP":"Peterbilt","1XK":"Kenworth","2XK":"Kenworth","3XK":"Kenworth","1FU":"Freightliner","1FV":"Freightliner","3AK":"Freightliner","3AL":"Freightliner","4UZ":"Freightliner",
+  "1HT":"International","1HS":"International","3HS":"International","3HA":"International","3HT":"International","3HC":"International","4V4":"Volvo","4V5":"Volvo","4VG":"Volvo","1M1":"Mack","1M2":"Mack","1M3":"Mack",
+  "5KJ":"Western Star","5KK":"Western Star","2WK":"Western Star","1FD":"Ford","1FT":"Ford","3FR":"Ford","3C6":"Ram","3C7":"Ram","1GB":"Chevrolet","1GC":"Chevrolet","1GD":"GMC","1GT":"GMC",
+  "JAL":"Isuzu","54D":"Isuzu","JHH":"Hino","JHB":"Hino","2AY":"Hino","5PV":"Hino","5VC":"Autocar","1GR":"Great Dane","1UY":"Utility","1JJ":"Wabash","1DW":"Stoughton","3H3":"Hyundai Translead",
+  "5V8":"Vanguard","13N":"Fontaine","1E1":"East","1W1":"Wilson","1TK":"Trail King","4WW":"Wilson","1TD":"Timpte"};
+async function vinLookup(vin){
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),7000);
+  try {
+    const r=await fetch("https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/"+encodeURIComponent(vin)+"?format=json",{signal:ctl.signal});
+    if (!r.ok) return null;
+    const x=((await r.json()).Results||[])[0]||{};
+    if (!x.Make && !x.ModelYear) return null;
+    return {year:x.ModelYear||"",make:x.Make||"",model:x.Model||"",engMaker:x.EngineManufacturer||"",engModel:x.EngineModel||"",liters:x.DisplacementL||"",type:x.VehicleType||""};
+  } catch(e){ return null; } finally { clearTimeout(t); }
+}
+const MAKE_ALIAS={"NAVISTAR":"International","INTERNATIONAL":"International","VOLVO TRUCK":"Volvo","VOLVO TRUCKS":"Volvo","CATERPILLAR":"Cat","MACK TRUCKS":"Mack","CHEVROLET":"Chevrolet","GMC":"GMC","RAM":"Ram","DODGE":"Ram"};
+function niceMake(m, kind){
+  const up=String(m||"").trim().toUpperCase(); if (!up) return "";
+  if (MAKE_ALIAS[up]) return MAKE_ALIAS[up];
+  const hit=vehMakes(kind).find(x=>x.toUpperCase()===up || up.startsWith(x.toUpperCase()+" "));
+  return hit || up.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+// A dropdown with "Other…" that opens a box for anything not on the list.
+function pickOther(label, name, list, value, ph){
+  const sel=el("select",{name:"vf_"+name}), other=el("input",{name:"vf_"+name+"_other",maxlength:"60",autocomplete:"off",placeholder:ph||"Type it",hidden:true});
+  const lab=el("label",{class:"f"},label,sel,other);
+  lab.set=v=>{ v=String(v||"").trim(); const hit=[...sel.options].find(o=>o.value&&o.value!=="__other"&&o.value.toLowerCase()===v.toLowerCase());
+    if (hit){ sel.value=hit.value; other.hidden=true; other.value=""; } else if (v){ sel.value="__other"; other.hidden=false; other.value=v; } else { sel.value=""; other.hidden=true; other.value=""; } };
+  lab.value=()=>sel.value==="__other"?other.value.trim():sel.value;
+  lab.setList=(items,keep)=>{ const cur=keep!==undefined?keep:lab.value();
+    sel.replaceChildren(el("option",{value:""},"Choose…"),...items.map(x=>el("option",{value:x},x)),el("option",{value:"__other"},"Other…")); lab.set(cur); };
+  sel.addEventListener("change",()=>{ other.hidden=sel.value!=="__other"; if (!other.hidden) other.focus(); if (lab.onpick) lab.onpick(); });
+  lab.setList(list,value);
+  return lab;
+}
+
+// Type, year, make, model, engine, unit # and VIN/serial for one vehicle.
+// opts.onExisting(unit) is called when the VIN typed is already on file.
+function vehicleFields(u, opts){
+  u=u||{}; opts=opts||{};
+  const box=el("div",{class:"vf full"});
+  const kindSel=el("select",{name:"vf_kind"},UNIT_KINDS.map(k=>el("option",{value:k,selected:(u.kind||"Truck")===k},k)));
+  const kind=()=>kindSel.value;
+  const unitIn=el("input",{name:"vf_unitNo",maxlength:"20",autocomplete:"off",value:u.unitNo||"",placeholder:"e.g. 12"});
+  const vinIn=el("input",{name:"vf_vin",maxlength:"30",autocomplete:"off",value:u.vin||"",style:"text-transform:uppercase"});
+  const vinLab=el("span",{}), vinMsg=el("span",{class:"vinmsg",role:"status"});
+  const yearF=pickOther("Year","year",VEH_YEARS,u.year,"e.g. 1972");
+  const makeF=pickOther("Make","make",vehMakes(u.kind||"Truck"),u.make);
+  const modelF=pickOther("Model","model",vehModels(u.kind||"Truck",u.make),u.model);
+  const engF=pickOther("Engine","engine",vehEngines(u.kind||"Truck",u.make),u.engine);
+  const relabel=()=>{ const k=kind(), isVin=k==="Truck"||k==="Trailer";
+    vinLab.textContent=isVin?"VIN":"Serial / PIN"; vinIn.placeholder=isVin?"17 characters, fills in the rest":"As stamped on the plate";
+    modelF.firstChild.textContent=k==="Equipment"?"Machine":k==="Trailer"?"Trailer type":"Model";
+    engF.hidden=k==="Trailer"; };
+  const refresh=()=>{ const k=kind(), mk=makeF.value(); modelF.setList(vehModels(k,mk)); engF.setList(vehEngines(k,mk)); };
+  kindSel.addEventListener("change",()=>{ makeF.setList(vehMakes(kind())); refresh(); relabel(); vinMsg.textContent=""; checkVin(); });
+  makeF.onpick=refresh;
+  let lastVin="", auto={};   // what the last VIN filled in, so a corrected VIN can replace it
+  const autoSet=(F,key,v)=>{ if (!v) return; const cur=F.value(); if (!cur || cur===auto[key]){ F.set(v); auto[key]=F.value(); } };
+  async function checkVin(){
+    const k=kind(); if (!(k==="Truck"||k==="Trailer")){ vinMsg.textContent=""; vinMsg.className="vinmsg"; return; }
+    const v=cleanVin(vinIn.value); if (vinIn.value!==v) vinIn.value=v;
+    vinMsg.className="vinmsg";
+    if (!v){ vinMsg.textContent=""; return; }
+    if (v.length<17){ vinMsg.textContent=v.length+" of 17 characters"; return; }
+    if (v===lastVin) return; lastVin=v;
+    const dupe=(S.units||[]).find(x=>x.vin===v && x.id!==u.id);
+    if (dupe){
+      vinMsg.className="vinmsg warn"; vinMsg.replaceChildren("Already on file: "+unitName(dupe)+" ("+(dupe.client||"no customer")+"). ");
+      if (opts.onExisting) vinMsg.append(el("button",{type:"button",class:"linkbtn",onclick:()=>opts.onExisting(dupe)},"Use that one"));
+      return;
+    }
+    const ok=vinCheck(v);
+    if (ok===false){ vinMsg.className="vinmsg warn"; vinMsg.textContent="This VIN doesn't pass the check. A character may be mistyped (0/O and 1/I are common)."; }
+    // Fill what the VIN itself says, then ask NHTSA for the rest.
+    const y=vinYear(v), mk=VIN_WMI[v.slice(0,3)];
+    autoSet(yearF,"year",y);
+    if (mk){ const before=makeF.value(); autoSet(makeF,"make",mk); if (makeF.value()!==before) refresh(); }
+    else if (auto.make && makeF.value()===auto.make){ makeF.set(""); auto.make=""; refresh(); }
+    if (ok===false) return;
+    vinMsg.textContent="Looking up this VIN…";
+    const r=await vinLookup(v);
+    if (cleanVin(vinIn.value)!==v) return;   // they kept typing
+    if (!r){ vinMsg.textContent="VIN looks right."+(y||mk?" Filled in what it shows.":""); vinMsg.className="vinmsg ok"; return; }
+    if (r.year){ yearF.set(r.year); auto.year=yearF.value(); }
+    if (r.make){ makeF.set(niceMake(r.make,k)); auto.make=makeF.value(); refresh(); }
+    if (r.model && k==="Truck"){ const list=vehModels(k,makeF.value()); const m=list.find(x=>x.toLowerCase()===r.model.toLowerCase())||list.find(x=>r.model.toLowerCase().replace(/[^a-z0-9]/g,"")===x.toLowerCase().replace(/[^a-z0-9]/g,"")); modelF.set(m||r.model); }
+    if (k==="Truck" && (r.engModel||r.engMaker)){
+      const tok=(r.engModel||"").toLowerCase().replace(/[^a-z0-9.]/g,""), list=vehEngines(k,makeF.value());
+      const m=tok&&list.find(x=>x.toLowerCase().replace(/[^a-z0-9.]/g,"").includes(tok));
+      if (m) engF.set(m); else if (!engF.value()) engF.set([niceMake(r.engMaker,k),r.engModel].filter(Boolean).join(" ")+(r.engModel?"":r.liters?" "+Number(r.liters).toFixed(1)+"L":""));
+    }
+    vinMsg.className="vinmsg ok";
+    vinMsg.textContent="Found: "+[yearF.value(),makeF.value(),modelF.value(),engF.hidden?"":engF.value()].filter(Boolean).join(" ")+". Check it matches the truck.";
+  }
+  vinIn.addEventListener("input",()=>{ clearTimeout(box._t); box._t=setTimeout(checkVin,250); });
+  box.append(el("label",{class:"f"},"Type",kindSel),el("label",{class:"f"},"Unit #",unitIn),
+    el("label",{class:"f full"},vinLab,vinIn,vinMsg),yearF,makeF,modelF,engF);
+  relabel();
+  box.read=()=>{ const k=kind();
+    return {kind:k,unitNo:unitIn.value.trim(),year:yearF.value().replace(/[^\d]/g,"").slice(0,4)||"",make:makeF.value(),model:modelF.value(),
+      engine:k==="Trailer"?"":engF.value(),vin:cleanUnitId(k,vinIn.value)}; };
+  // What to confirm before saving: a truck/trailer VIN that's the wrong length or fails the check.
+  box.problem=()=>{ const d=box.read(); if (!d.vin || !(d.kind==="Truck"||d.kind==="Trailer")) return "";
+    if (d.vin.length!==17) return "The VIN has "+d.vin.length+" characters. A truck or trailer VIN has 17.";
+    if (vinCheck(d.vin)===false) return "The VIN doesn't pass the check digit, so a character may be mistyped."; return ""; };
+  box.focus=()=>vinIn.focus();
+  return box;
+}
+
+// The vehicle picker on the job form: this customer's trucks and equipment, plus "+ Add a vehicle"
+// which opens the vehicle dropdowns. A customer whose name is written a little differently
+// ("Dale Pruitt" / "Dale Pruitt (owner-operator)") still finds their trucks.
 function unitShort(u){ const ymm=[u.year,u.make,u.model].filter(Boolean).join(" ")||u.kind||"Vehicle"; return ymm+(u.unitNo?" (#"+u.unitNo+")":""); }
 function unitPicker(j, clientInput){
   const wrap=el("div",{class:"full unitpick",style:"display:grid;gap:8px"});
   const sel=el("select",{name:"unitId"});
-  const thisYear=new Date().getFullYear()+1, years=[]; for (let y=thisYear;y>=1975;y--) years.push(String(y));
-  const pre=splitYmm(j.unitText||"");
-  const nu=el("div",{class:"newunit",hidden:true},
-    el("label",{class:"f"},"Type",el("select",{name:"nu_kind"},UNIT_KINDS.map(k=>el("option",{value:k},k)))),
-    el("label",{class:"f"},"Year",el("select",{name:"nu_year"},el("option",{value:""},"Year"),years.map(y=>el("option",{value:y,selected:y===pre.year},y)))),
-    el("label",{class:"f"},"Make",el("input",{name:"nu_make",list:"makeSuggest",maxlength:"40",autocomplete:"off",placeholder:"Peterbilt",value:pre.make||""}),el("datalist",{id:"makeSuggest"},UNIT_MAKES.map(x=>el("option",{value:x})))),
-    el("label",{class:"f"},"Model",el("input",{name:"nu_model",maxlength:"40",autocomplete:"off",placeholder:"389",value:pre.model||""})),
-    el("label",{class:"f",style:"grid-column:1/-1"},"Other",el("input",{name:"nu_other",maxlength:"160",autocomplete:"off",placeholder:"Unit #, VIN, engine, mileage… (optional)",value:j.unitEngine||""})));
+  const pre=splitYmm(j.unitText||""), preMake=pre.make?niceMake(pre.make,"Truck"):"";
+  let vf=null;
+  const nu=el("div",{class:"newunit",hidden:true});
+  const buildNew=()=>{ vf=vehicleFields({kind:"Truck",year:pre.year,make:preMake,model:pre.model,engine:j.unitEngine||""},{onExisting:u=>{
+      if (normName(u.client)!==normName(clientInput.value) && u.client){ clientInput.value=u.client; clientInput.dispatchEvent(new Event("change",{bubbles:true})); }
+      fill(); sel.value=u.id; nu.hidden=true; toast("Using "+unitShort(u)+" on file"); }});
+    nu.replaceChildren(vf); };
+  buildNew();
   const fill=()=>{
     const name=clientInput.value.trim(), mine=unitsForClient(name), cur=sel.value||j.unitId||"";
     if (!name){ sel.replaceChildren(el("option",{value:""},"Pick the customer first")); sel.disabled=true; nu.hidden=true; return; }
     sel.disabled=false;
-    sel.replaceChildren(el("option",{value:""},mine.length?"Choose a vehicle\u2026":"No vehicles on file yet"),
-      ...mine.map(u=>el("option",{value:u.id},unitShort(u))),
+    const others=new Set(mine.map(u=>u.client).filter(c=>normName(c)!==normName(name)));
+    sel.replaceChildren(el("option",{value:""},mine.length?"Choose a vehicle…":"No vehicles on file yet"),
+      ...mine.map(u=>el("option",{value:u.id},unitShort(u)+(others.size&&normName(u.client)!==normName(name)?" · "+u.client:""))),
       el("option",{value:"__new"},"+ Add a vehicle"));
-    sel.value=[...sel.options].some(o=>o.value===cur)?cur:(mine.length===1&&!j.unitId?mine[0].id:"");
+    sel.value=[...sel.options].some(o=>o.value===cur)?cur:(mine.length===1&&!j.unitId&&cur!=="__new"?mine[0].id:(cur==="__new"?"__new":""));
     nu.hidden=sel.value!=="__new";
   };
-  sel.addEventListener("change",()=>{ nu.hidden=sel.value!=="__new"; if(!nu.hidden) nu.querySelector("[name=nu_year]").focus(); });
+  sel.addEventListener("change",()=>{ nu.hidden=sel.value!=="__new"; if(!nu.hidden) vf.focus(); });
   clientInput.addEventListener("change",fill); clientInput.addEventListener("input",()=>{ clearTimeout(wrap._t); wrap._t=setTimeout(fill,300); });
   fill();
-  if (j.unitText && !j.unitId && clientInput.value.trim()) { sel.value="__new"; nu.hidden=false; }
+  if (j.unitText && !j.unitId && clientInput.value.trim() && !sel.value) { sel.value="__new"; nu.hidden=false; }
   wrap.append(el("label",{class:"f"},"Vehicle / equipment",sel),nu);
   // What the form saves: an existing vehicle, or a new one created alongside the job.
   wrap.read=(client)=>{
     if (sel.value!=="__new") { const u=unitById(sel.value); return {unitId:u?u.id:null,unitLabel:u?unitLabel(u):"",create:null}; }
-    const g=n=>(nu.querySelector("[name="+n+"]").value||"").trim();
-    const other=g("nu_other"), vinM=/\b[A-HJ-NPR-Z0-9]{17}\b/i.exec(other), noM=/#\s*([\w-]{1,12})/.exec(other);
-    const data={client,kind:g("nu_kind")||"Truck",unitNo:noM?noM[1]:"",year:g("nu_year"),make:g("nu_make"),model:g("nu_model"),engine:"",
-      vin:vinM?cleanVin(vinM[0]):"",mileage:null,tires:"",notes:other,businessId:S.businessId,createdAt:Date.now()};
-    if (!data.year && !data.make && !data.model && !other) return {error:"Add the year, make or model of the new vehicle, or pick “Choose a vehicle”."};
+    const v=vf.read();
+    if (!v.year && !v.make && !v.model && !v.unitNo && !v.vin) return {error:"Pick the year, make and model of the new vehicle, or choose one on file."};
+    const dupe=v.vin && (S.units||[]).find(x=>x.vin===v.vin);
+    if (dupe) return {unitId:dupe.id,unitLabel:unitLabel(dupe),create:null};
+    const prob=vf.problem(); if (prob && !confirm(prob+" Save it anyway?")) return {error:"Check the VIN, then save again."};
+    const data={client,...v,mileage:null,tires:"",notes:"",businessId:S.businessId,createdAt:Date.now()};
     return {unitId:newId(),unitLabel:unitLabel(data),create:data};
   };
   return wrap;
@@ -2055,8 +2274,20 @@ function openWorkOrder(j0){
   const unitsWord=u&&u.kind==="Equipment"?"hours":distUnit()==="km"?"km":"miles";
   const photoBox=el("div",{class:"wo-photos"});
   const photoHead=el("h3",{class:"grow"},"Photos ("+jobPhotos(j).length+")");
-  const drawPhotos=list=>{ photoHead.textContent="Photos ("+list.length+")"; photoBox.replaceChildren(...list.map(p=>el("a",{href:p.url,target:"_blank",rel:"noopener",title:(p.byName?p.byName+", ":"")+niceDate(ymd(new Date(p.at||Date.now())))},el("img",{src:p.url,alt:"Job photo",loading:"lazy"}))));
+  // Photos: tap to open full size; the × removes one added by mistake (owners, or whoever added it).
+  const drawPhotos=list=>{ photoHead.textContent="Photos ("+list.length+")";
+    photoBox.replaceChildren(...list.map(p=>el("div",{class:"wo-ph"},
+      el("a",{href:p.url,target:"_blank",rel:"noopener",title:(p.byName?p.byName+", ":"")+niceDate(ymd(new Date(p.at||Date.now())))},el("img",{src:p.url,alt:"Job photo",loading:"lazy"})),
+      (own||(p.by&&p.by===S.myUserId))?el("button",{type:"button",class:"wo-x","aria-label":"Remove this photo",onclick:()=>removePhoto(p)},"\u00d7"):null)));
     if (!list.length) photoBox.append(el("div",{class:"ph"},"No photos yet")); };
+  async function removePhoto(p){
+    if (!confirm("Remove this photo from the work order?")) return;
+    const cur=S.jobs.find(x=>x.id===j.id)||j, list=jobPhotos(cur).filter(x=>!(x.url===p.url&&x.at===p.at));
+    if (await write(()=>Store.update("jobs",j.id,{photos:list}),"Photo removed")){
+      drawPhotos(list);
+      if (own && p.path && Store.mode==="db" && typeof storage!=="undefined" && storage) storage.ref().child(p.path).delete().catch(()=>{});
+    }
+  }
   drawPhotos(jobPhotos(j));
   const fileIn=el("input",{type:"file",accept:"image/*",multiple:true,id:"woPhotoIn",style:"display:none",onchange:async ev=>{
     const list=await addJobPhotos(j,ev.target.files); ev.target.value=""; if (list) drawPhotos(list); }});
@@ -2069,23 +2300,34 @@ function openWorkOrder(j0){
     el("label",{class:"f full"},"What you found (cause)",el("textarea",{name:"cause",rows:"2",maxlength:"1500"},w.cause||"")),
     el("label",{class:"f full"},"What you did (correction)",el("textarea",{name:"correction",rows:"3",maxlength:"2000"},w.correction||"")),
     el("label",{class:"f"},"Labor hours",el("input",{name:"laborHours",type:"number",min:"0",step:"0.25",value:w.laborHours??""})),
+    isTireJob(j.service)?el("div",{class:"full tiref"},
+      el("label",{class:"f"},"Tire size",el("input",{name:"tireSize",list:"tireSizes2",maxlength:"30",autocomplete:"off",value:(w.tire||{}).size||""}),el("datalist",{id:"tireSizes2"},TIRE_SIZES.map(x=>el("option",{value:x})))),
+      el("label",{class:"f"},"Which wheel",el("select",{name:"tirePos"},el("option",{value:""},"Choose\u2026"),TIRE_POSITIONS.map(x=>el("option",{value:x,selected:(w.tire||{}).position===x},x)))),
+      el("label",{class:"f"},"Tire",el("select",{name:"tireSupply"},TIRE_SUPPLY.map(([v,l])=>el("option",{value:v,selected:((w.tire||{}).supply||"bring")===v},l))))):null,
     el("div",{class:"full wo-box"},el("div",{class:"row"},el("h3",{class:"grow"},"Parts ("+parts.length+")"),
         el("button",{type:"button",class:"btn small",onclick:()=>{ saveWo(false).then(()=>openCosts(S.jobs.find(x=>x.id===j.id)||j)); }},"+ Add parts")),
       parts.length?el("div",{},...parts.map(c=>el("div",{class:"kv"},(Number(c.qty)||1)+" × "+(c.desc||"Part")+(own?" · "+money(Number(c.amount)||costAmt(c)):"")))):el("div",{class:"kv"},"No parts logged yet.")),
     el("div",{class:"full wo-box"},el("div",{class:"row",style:"margin-bottom:8px"},photoHead,
         el("button",{type:"button",class:"btn small",onclick:()=>fileIn.click()},"+ Add photos"),fileIn),photoBox));
   const done=(j.status||"new")==="done";
-  f.append(el("div",{class:"acts"},
-    own&&done&&!invoiceFor(j.id)?el("button",{type:"button",class:"btn",onclick:async()=>{ if (await saveWo(false)){ $("#jobDlg").close(); openInvoice(invoiceFromJobs([S.jobs.find(x=>x.id===j.id)||j])); } }},"Save & invoice"):null,
+  // Save stays in reach at the bottom of the screen, and closing with unsaved changes asks first.
+  let dirty=false; f.oninput=()=>{ dirty=true; };
+  const dlg=$("#jobDlg"), leaveOk=()=>!dirty||confirm("You have changes on this work order that aren't saved. Close without saving?");
+  dlg.oncancel=e=>{ if (!leaveOk()) e.preventDefault(); };
+  dlg.addEventListener("close",()=>{ dlg.oncancel=null; f.oninput=null; },{once:true});
+  f.append(el("div",{class:"acts stickyacts"},
+    own&&done&&!invoiceFor(j.id)?el("button",{type:"button",class:"btn",onclick:async()=>{ if (await saveWo(false)){ dlg.close(); openInvoice(invoiceFromJobs([S.jobs.find(x=>x.id===j.id)||j])); } }},"Save & invoice"):null,
     el("span",{class:"grow"}),
-    el("button",{type:"button",class:"btn",onclick:()=>$("#jobDlg").close()},"Close"),
+    el("button",{type:"button",class:"btn",onclick:()=>{ if (leaveOk()) dlg.close(); }},"Close"),
     el("button",{type:"submit",class:"btn primary"},"Save work order")));
   async function saveWo(close){
     const d=Object.fromEntries(new FormData(f));
     const wo={...w,complaint:d.complaint.trim(),codes:d.codes.trim(),cause:d.cause.trim(),correction:d.correction.trim(),
       odometer:Number(d.odometer)||null,laborHours:Number(d.laborHours)||null,updatedAt:Date.now(),updatedBy:(me()||{}).name||(own?"Owner":"")};
+    if (d.tireSize!==undefined) wo.tire={size:String(d.tireSize||"").trim(),position:d.tirePos||"",supply:d.tireSupply||""};
     const ok = close ? await saveForm($("#jobDlg"),()=>Store.update("jobs",j.id,{workOrder:wo}),"Work order saved")
                      : await write(()=>Store.update("jobs",j.id,{workOrder:wo}),null);
+    if (ok) dirty=false;
     // Keep the truck's odometer current (owners only; the crew can't change customer records).
     if (ok && own && u && wo.odometer && wo.odometer>(Number(u.mileage)||0)) write(()=>Store.update("units",u.id,{mileage:wo.odometer}),null);
     return ok;
@@ -2095,7 +2337,7 @@ function openWorkOrder(j0){
 }
 // What a repair job's work order adds to its invoice: the unit, and what was found and done.
 function woInvoiceNotes(j){
-  const w=woOf(j), u=jobUnit(j), name=u?unitLabel(u)+(u.vin?" · VIN "+u.vin:""):j.unitLabel||"";
+  const w=woOf(j), u=jobUnit(j), name=u?unitLabel(u)+(u.vin?(isSerialKind(u)?" · Serial ":" · VIN ")+u.vin:""):j.unitLabel||"";
   return [name?"Unit: "+name:"", w.odometer?"Odometer: "+Number(w.odometer).toLocaleString():"", w.complaint?"Problem: "+w.complaint:"",
     w.cause?"Found: "+w.cause:"", w.correction?"Work done: "+w.correction:""].filter(Boolean).join("\n");
 }
@@ -2527,8 +2769,12 @@ function convertBookingToJob(b){
   if (hasRepair()){
     if (b.emergency){ jobData.emergency=true; const n=new Date(); jobData.date=today(); jobData.time=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); }
     if (b.problem) jobData.workOrder={complaint:b.problem};
-    if (b.unit){ const k=String(b.unit).toLowerCase(); const u=unitsForClient(b.name).find(x=>x.vin&&k.includes(x.vin.toLowerCase().slice(-6))||x.unitNo&&k.includes("#"+String(x.unitNo).toLowerCase()));
-      if (u) jobData.unitId=u.id; else { const [ymm,...eng]=String(b.unit).split(","); jobData.unitText=ymm.trim(); jobData.unitEngine=eng.join(",").trim(); } }
+    // Use the customer's name as it's already on file, so "Dale Pruitt" lands on "Dale Pruitt (owner-operator)".
+    const known=[...clientProfiles().map(p=>p.name),...(S.units||[]).map(u=>u.client)].find(n=>n && sameCustomer(n,b.name));
+    if (known) jobData.client=known;
+    if (b.unit){ const u=matchUnit(b.unit,unitsForClient(jobData.client));
+      if (u){ jobData.unitId=u.id; if (u.client) jobData.client=u.client; }
+      else { const [ymm,...eng]=String(b.unit).split(","); jobData.unitText=ymm.trim(); jobData.unitEngine=eng.join(",").trim(); } }
   }
   // Open the job form filled in from the request, so price, crew and time get set before it lands on the board.
   // The request is only marked confirmed once the job is saved.
@@ -2934,7 +3180,7 @@ function boardRows(frag){
       el("span",{class:"rm"},el("b",{},j.emergency&&(j.status||"new")!=="done"?el("span",{class:"pill sos",style:"margin-right:6px"},"Breakdown"):null,j.client||"Untitled job"),
         el("span",{},[j.service,hasRepair()?(jobUnit(j)?unitName(jobUnit(j)):j.unitLabel):"",shortAddr(j.address)].filter(Boolean).join(" \u00b7 ")),
         el("span",{class:crew.length?"":"unas"},crew.length?crew.map(e=>e.name.split(" ")[0]).join(", "):(S.isOwner?"Not assigned yet":""))),
-      S.isOwner?el("span",{class:"rp"},money(j.price)):null, chevron()));
+      S.isOwner?el("span",{class:"rp"},jobPriceText(j)):null, chevron()));
   });
   frag.append(box);
   return frag;
@@ -2965,9 +3211,11 @@ function jobCard(j){
   }
   card.append(el("div",{class:"meta"},
     el("span",{class: overdue?"overdue":""}, niceDate(j.date)+(jobWhen(j)?", "+jobWhen(j):"")+(overdue?" (overdue)":"")),
-    S.isOwner ? el("span",{class:"price"},money(j.price)) : null));
+    S.isOwner ? el("span",{class:"price"},jobPriceText(j)) : null));
   if (j.phone) card.append(el("div",{class:"kv"},"Client phone: ", el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)));
   if (hasRepair() && woOf(j).complaint) card.append(el("div",{class:"notes"},el("b",{},"Problem: "),woOf(j).complaint));
+  if (hasRepair() && tireText(woOf(j).tire)) card.append(el("div",{class:"kv"},"Tire: "+tireText(woOf(j).tire)));
+  if (hasRepair() && j.driver && (j.driver.name||j.driver.phone)) card.append(el("div",{class:"kv"},"Driver: "+[j.driver.name,j.driver.phone].filter(Boolean).join(", ")));
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
   // Costs: owners see profit; crew see the materials logged on their job.
   if (S.isOwner){
@@ -3022,7 +3270,7 @@ function jobCard(j){
   }
   if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},hasRepair()?"+ Parts":"+ Materials"));
   if (S.isOwner && !(jobMoney(j).materials+jobMoney(j).linked>0 || st==="done")) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},"Costs"));
-  if (S.isOwner && !j.projectId && !hasProjects() && !S.viewOnly) acts.append(el("button",{class:"btn small ghost",title:"New job for "+(j.client||"this client")+" with the same details",onclick:()=>bookNext(j.client)},"\u21bb Book next"));
+  if (S.isOwner && !j.projectId && !hasProjects() && !hasRepair() && !S.viewOnly) acts.append(el("button",{class:"btn small ghost",title:"New job for "+(j.client||"this client")+" with the same details",onclick:()=>bookNext(j.client)},"\u21bb Book next"));
   if (S.isOwner) acts.append(el("button",{class:"btn small ghost",onclick:()=>openJob(j)},"Edit"));
   card.append(acts);
   return card;
@@ -3161,7 +3409,21 @@ function openJob(j, preset){
   const emergF=repair?el("label",{class:"checkline full"},el("input",{type:"checkbox",name:"emergency",checked:!!j.emergency}),
     el("span",{},el("b",{},"Breakdown / emergency"),el("small",{},"Shows in red on the board and at the top of Home until it's done"))):null;
   const complaintF=repair?el("label",{class:"f full"},"What's wrong (customer's words)",el("textarea",{name:"complaint",rows:"2",maxlength:"1500",placeholder:"Won't start, derate, blown steer tire, air leak…"},woOf(j).complaint||"")):null;
+  const solo=repair&&soloRepair();
+  const driverF=repair?el("div",{class:"full twocol"},
+    el("label",{class:"f"},j.emergency?"Who's calling (driver)":"Driver / contact",el("input",{name:"driverName",maxlength:"80",autocomplete:"off",value:(j.driver||{}).name||"",placeholder:"Driver's name"})),
+    el("label",{class:"f"},"Their phone",el("input",{name:"driverPhone",type:"tel",maxlength:"40",autocomplete:"off",value:(j.driver||{}).phone||""}))):null;
+  // Tire calls: size, which wheel, and whether to bring a tire. Only shown when the service is a tire job.
+  const tw=woOf(j).tire||{};
+  const tireF=repair?el("div",{class:"full tiref",hidden:!isTireJob(j.service)},
+    el("label",{class:"f"},"Tire size",el("input",{name:"tireSize",list:"tireSizes",maxlength:"30",autocomplete:"off",value:tw.size||"",placeholder:"295/75R22.5"}),el("datalist",{id:"tireSizes"},TIRE_SIZES.map(x=>el("option",{value:x})))),
+    el("label",{class:"f"},"Which wheel",el("select",{name:"tirePos"},el("option",{value:""},"Choose\u2026"),TIRE_POSITIONS.map(x=>el("option",{value:x,selected:tw.position===x},x)))),
+    el("label",{class:"f"},"Tire",el("select",{name:"tireSupply"},TIRE_SUPPLY.map(([v,l])=>el("option",{value:v,selected:(tw.supply||"bring")===v},l))))):null;
+  if (tireF) svcIn.addEventListener("input",()=>{ tireF.hidden=!isTireJob(svcIn.value); });
   if (repair){
+    clientF.firstChild.textContent="Customer (who pays)";
+    clientF.querySelector("input").placeholder="Fleet, company or owner-operator";
+    priceF.querySelector("input").placeholder="Not set yet";
     addrF.firstChild.textContent=j.emergency?"Where is it? Address, mile marker or truck stop":"Address or location";
     addrF.querySelector("input").placeholder=j.emergency?"I-40 EB mile 87, Love's Jackson, customer's yard…":"";
     notesF.querySelector("textarea").placeholder="Gate code, who to ask for, tire size, parts to bring…";
@@ -3182,12 +3444,15 @@ function openJob(j, preset){
       el("div",{class:"expform",style:"margin-top:10px"},addrF,phoneF,crewF,notesF));
     const setV=(n,v)=>{ const x=f.querySelector("[name="+n+"]"); if (x) x.value=v==null?"":v; };
     const summary=()=>{ if (!$("#jobSum")) return;   // the form has since been reused for something else
+      if (repair&&j.emergency){ const d=Object.fromEntries(new FormData(f)), lead=empById(d.assigneeId||j.assigneeId);
+        $("#jobSum").textContent=" \u00b7 "+[d.date===today()?(d.time?"today "+fmtTime(d.time):"today"):niceDate(d.date), String(d.price||"").trim()?money(Number(d.price)):"price not set",
+          solo?"":(lead?lead.name.split(" ")[0]:"nobody assigned")].filter(Boolean).join(" \u00b7 "); return; }
       const d=Object.fromEntries(new FormData(f)), crew=[d.assigneeId,...[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value)].filter(Boolean);
       const names=[...new Set(crew)].map(empById).filter(Boolean).map(e=>e.name.split(" ")[0]);
       $("#jobSum").textContent=" \u00b7 "+([d.address,names.length>1?names.join(" + "):"",d.notes?"notes":""].filter(Boolean).join(" \u00b7 ")||"none yet"); };
     let filledFor=null;
     const fill=(pr)=>{
-      if (!pr){ filledFor=null; memo.hidden=true; more.open=true; return; }
+      if (!pr){ filledFor=null; memo.hidden=true; more.open=!(repair&&j.emergency); return; }
       if (filledFor===pr.key) return;          // already filled for this client: keep the owner's changes
       filledFor=pr.key;
       // A breakdown keeps where the truck is now and what was picked for this call.
@@ -3198,6 +3463,10 @@ function openJob(j, preset){
       repSel.value=pr.repeat||"";
       const t=today(); if (!preset||!preset.date){ const nd=pr.nextDue&&pr.nextDue>t?pr.nextDue:pr.repeat?t:addRepeat(t,"1"); setV("date",nd); }
       memo.hidden=false;
+      if (repair){ memo.hidden=false; const nu=unitsForClient(pr.name).length;
+        memo.replaceChildren(el("b",{},"Customer on file")," \u00b7 "+pr.visits+" job"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+" \u00b7 "+nu+" vehicle"+(nu===1?"":"s"),
+          el("div",{class:"kv"},j.emergency?"Their phone number is filled in. Pick their truck below.":"Their usual service, price and address are filled in. Change anything below."));
+        more.open=false; summary(); return; }
       memo.replaceChildren(el("b",{},"\u21bb Repeat client"),
         " \u00b7 "+pr.visits+" visit"+(pr.visits===1?"":"s")+(pr.lastVisit?" \u00b7 last on "+niceDate(pr.lastVisit):"")+(pr.repeat?" \u00b7 "+repeatText(pr.repeat).toLowerCase():"")+(pr.nextBooked?" \u00b7 booked through "+niceDate(pr.lastJob.date):""),
         el("div",{class:"kv"},repair&&j.emergency?"Their phone number is filled in. Pick their truck below.":"Their usual service, price, crew and address are filled in. Change anything below."));
@@ -3206,10 +3475,13 @@ function openJob(j, preset){
     cIn.addEventListener("change",()=>fill(clientProfile(cIn.value)));
     cIn.addEventListener("input",()=>{ const pr=clientProfile(cIn.value); if (pr && profs.some(p=>p.name===cIn.value)) fill(pr); });
     f.addEventListener("change",ev=>{ if (ev.target!==cIn) summary(); });
-    parts0=repair&&j.emergency ? [title, clientF, memo, phoneF, addrF, unitF, complaintF, svcField, leadF, dateF, timeF, priceF, emergF, more, acts]
-      : repair ? [title, clientF, memo, unitF, complaintF, svcField, priceF, dateF, timeF, leadF, emergF, repF, cntF, more, acts]
+    // Breakdown: who's calling, where, which truck and what's wrong come first. Price, time and crew wait under "More details".
+    parts0=repair&&j.emergency ? [title, driverF, addrF, clientF, memo, unitF, complaintF, svcField, tireF, more, acts]
+      : repair ? [title, clientF, memo, unitF, complaintF, svcField, tireF, priceF, dateF, timeF, solo?null:leadF, emergF, more, acts]
       : [title, clientF, memo, svcField, priceF, dateF, timeF, leadF, repF, cntF, more, acts];
-    if (repair && j.emergency){ more.querySelector("summary").firstChild.textContent="More crew and notes"; const mx=more.querySelector(".expform"); mx.replaceChildren(crewF||el("span",{}),notesF); }
+    const mx=more.querySelector(".expform");
+    if (repair && j.emergency){ more.querySelector("summary").firstChild.textContent="More details"; mx.replaceChildren(priceF,dateF,timeF,solo?el("span",{}):leadF,phoneF,crewF||el("span",{}),notesF,emergF); }
+    else if (repair){ more.querySelector("summary").firstChild.textContent="Location, driver and notes"; mx.replaceChildren(addrF,phoneF,driverF,crewF||el("span",{}),notesF); }
     setTimeout(()=>{ if (j.client) fill(clientProfile(j.client)); else { more.open=false; summary(); } cIn.focus(); },0);
   }
   const parts = parts0 ? parts0 : phase ? [
@@ -3219,8 +3491,8 @@ function openJob(j, preset){
       el("details",{class:"full morebox"},el("summary",{},"More details",el("span",{class:"kv"}," \u00b7 notes, client, address, phone, project")),
         el("div",{class:"expform",style:"margin-top:10px"},notesF,clientF,addrF,phoneF,el("span",{}),projF)),
       acts]
-    : [title, clientF, addrF, unitF, complaintF, svcField, priceF, dateF, timeF, phoneF, leadF, projF, emergF,
-       !hasProjects()?el("label",{class:"f"},"Repeats",el("select",{name:"repeat"},REPEATS.map(([v,l])=>el("option",{value:v,selected:String(j.repeat||"")===v},l)))):null,
+    : [title, clientF, addrF, driverF, unitF, complaintF, svcField, tireF, priceF, dateF, timeF, phoneF, solo?null:leadF, projF, emergF,
+       !hasProjects()&&!repair?el("label",{class:"f"},"Repeats",el("select",{name:"repeat"},REPEATS.map(([v,l])=>el("option",{value:v,selected:String(j.repeat||"")===v},l)))):null,
        crewF, notesF, acts];
   f.append(...parts.filter(Boolean));
   f.onsubmit=async e=>{
@@ -3231,7 +3503,9 @@ function openJob(j, preset){
     const pj=d.projectId&&S.projects.find(p=>p.id===d.projectId);   // a phase falls back to its project's client details
     if (pj){ if (!d.client.trim()) d.client=pj.client||pj.name||""; if (!d.address.trim()) d.address=pj.address||""; if (!d.phone.trim()) d.phone=pj.phone||""; }
     if (!d.client.trim()) return toast("Enter the client's name.");
-    const data={client:d.client.trim(),address:d.address.trim(),service:svc,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),assigneeId:d.assigneeId||null};
+    const data={client:d.client.trim(),address:d.address.trim(),service:svc,price:Number(d.price)||0,date:d.date,time:d.time,phone:d.phone.trim(),notes:d.notes.trim(),
+      assigneeId:d.assigneeId!==undefined?(d.assigneeId||null):(j.assigneeId||(solo?soloId():null))};
+    if (repair && String(d.price??"").trim()==="") data.price=null;   // price not set yet, which isn't the same as a $0 repair
     data.crewIds=[...f.querySelectorAll("[name=crew]:checked")].map(x=>x.value).filter(id=>id!==data.assigneeId);
     if (hasProjects()) data.projectId=d.projectId||null;
     let status=j.status||"new";
@@ -3248,6 +3522,10 @@ function openJob(j, preset){
       data.emergency=!!f.querySelector("[name=emergency]").checked;
       const comp=String(d.complaint||"").trim();
       if (comp || woOf(j).complaint) data.workOrder={...woOf(j),complaint:comp};
+      const dn=String(d.driverName||"").trim(), dp=String(d.driverPhone||"").trim();
+      if (dn||dp||j.driver) data.driver={name:dn,phone:dp};
+      if (isTireJob(svc)){ const t={size:String(d.tireSize||"").trim(),position:d.tirePos||"",supply:d.tireSupply||""};
+        if (t.size||t.position) data.workOrder={...(data.workOrder||woOf(j)),tire:t}; }
     }
     const dlg=$("#jobDlg");
     if (newUnit){   // a truck typed in on the job form is saved to Trucks & equipment first
@@ -6576,8 +6854,8 @@ const DEMO_PROFILES={
       ["Hub City Logistics","455 Airways Blvd, Jackson, TN"],["Tri-County Farms","3100 Hwy 70, Alamo, TN"],["Westside Paving Co.","210 Industrial Dr, Humboldt, TN"],["Big River Timber","19 Mill Rd, Milan, TN"],["Gibson County Hauling","77 Depot St, Trenton, TN"]],
     crew:[["eGary","Gary Holt","731-555-0151","Lead diesel tech"],["eTasha","Tasha Greene","731-555-0178","Diesel tech"],["eDre","Andre Moss","731-555-0113","Tire & service tech"]],
     rates:{eGary:["w2","hourly",32],eTasha:["w2","hourly",27],eDre:["1099","perjob",60,true]},
-    calls:[["Roadside repair",[285,650],"eGary",[1.5,3.5]],["Diagnostics",[150,240],"eTasha",[1,2]],["Mobile tire service",[160,420],"eDre",[1,1.75]],["DPF / DEF / EGR",[380,1100],"eGary",[2,4]],
-      ["Brakes & suspension",[420,980],"eTasha",[2.5,4.5],"eDre"],["Preventive maintenance",[220,380],"eDre",[1.5,2.5]],["Heavy equipment repair",[480,1400],"eGary",[3,6],"eTasha"]],
+    calls:[["Roadside repair",[385,780],"eGary",[1.5,3.5]],["Diagnostics",[180,260],"eTasha",[1,2]],["Mobile tire service",[640,820],"eDre",[1,1.75]],["DPF / DEF / EGR",[1250,1850],"eGary",[2,4]],
+      ["Brakes & suspension",[980,1500],"eTasha",[2.5,4.5],"eDre"],["Preventive maintenance",[220,380],"eDre",[1.5,2.5]],["Heavy equipment repair",[480,1400],"eGary",[3,6],"eTasha"]],
     overhead:{fuel:"diesel, two service trucks",supplies:[["FleetPride","NAPA","TruckPro"],"filters, fluids and fittings"],insurance:610,equipment:["Diagnostic laptop and adapters",1890],vehicle:["Service truck crane repair",740]},
     mats:[["material","Fuel filters and oil, 15W-40",[85,160]],["material","NOx sensor",[260,420]],["material","Air line fittings and hose",[24,70]],["material","Wheel seal and hub oil",[45,90]],["material","DEF, 2.5 gal",[14,22]],["travel","Service call mileage",[30,75]]],
     big:[[/tire/i,"Steer tire 295/75R22.5",[420,560]],[/dpf/i,"DPF filter, cleaned exchange",[680,980]],[/brake/i,"Brake shoes, drums and slack adjusters",[380,620]],[/heavy equipment/i,"Hydraulic hose and fittings",[120,260]]],
@@ -6774,11 +7052,12 @@ function demoRepairExtras(C,{D,at,R,pick,rnd,put,cents}){
   const [u1id,u1]=firstTruck("Volunteer Freight LLC"), [u2id,u2]=firstTruck("Gibson County Hauling");
   put("jobs",{service:"Roadside repair",client:"Volunteer Freight LLC",address:"I-40 WB mile 79, Jackson, TN",price:385,date:D(0),time:"06:40",phone:"731-555-0121",notes:"Driver is Mike, cell 731-555-0177. Loaded, needs to deliver in Memphis by 2.",
     assigneeId:"eGary",crewIds:[],status:"in_progress",paid:false,createdAt:at(0,6),startedAt:at(0,7,15),emergency:true,unitId:u1id,unitLabel:unitLabel(u1),
-    workOrder:{complaint:"Air leak, can't build pressure past 60 psi",codes:"",cause:"Air dryer purge valve stuck open."},
+    workOrder:{complaint:"Air leak, can't build pressure past 60 psi",codes:"",cause:"Air dryer purge valve stuck open."},driver:{name:"Mike Turner",phone:"731-555-0177"},
     costs:[{id:"cbd1",kind:"material",desc:"Air dryer purge valve kit",qty:1,unitCost:86.4,amount:86.4,date:D(0),by:"demo-u1",byName:"Gary Holt",at:at(0,8),billable:true,markup:15}]});
   put("jobs",{service:"Mobile tire service",client:"Gibson County Hauling",address:"Pilot Travel Center, I-40 exit 80, Jackson, TN",price:0,date:D(0),time:"09:10",phone:"731-555-0166",notes:"",
     assigneeId:null,crewIds:[],status:"new",paid:false,createdAt:at(0,9,10),emergency:true,unitId:u2id,unitLabel:unitLabel(u2),
-    workOrder:{complaint:"Right front steer tire blown. Driver is parked at the back of the lot."}});
+    workOrder:{complaint:"Right front steer tire blown. Driver is parked at the back of the lot.",tire:{size:"295/75R22.5",position:"Steer, right",supply:"bring"}},
+    driver:{name:"Luis Ortega",phone:"731-555-0166"},price:null});
   // Service requests from the website: where the truck is and what's wrong.
   Object.values(C.bookings).forEach((b,i)=>{ b.size=""; b.timeWindow=""; b.source="website"; b.problem=b.details;
     if (i===0){ b.emergency=true; b.location="I-40 EB mile 87, Jackson, TN"; b.unit="2019 Peterbilt 389, Cummins X15"; b.requestedDate=D(0); }
