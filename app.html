@@ -844,6 +844,18 @@ input,select,textarea{border-color:#DADFDB;border-radius:10px}
 .linkbtn{background:none;border:0;padding:0;color:inherit;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 .twocol,.tiref{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:8px;min-width:0}
 .curjob{color:var(--ink);font-weight:600}
+.stagebar{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px}
+.stagebtn{font:inherit;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.stagebtn:hover{border-color:var(--muted)}
+.stagebtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.stagebtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.pill.stagepill{background:var(--surface-2);color:var(--ink);font-weight:700;display:inline-block;margin:6px 0 2px}
+.stagetxt{color:var(--ink);font-weight:700}
+.locline{font-size:13px;color:var(--muted);margin:4px 0}
+.locline.ok{color:var(--ink);font-weight:600}
+.locline.ok a{font-weight:700}
+dialog.locdlg{width:min(460px,calc(100vw - 24px))}
+dialog.locdlg .pad{padding:20px}
 .wo-ph{position:relative;aspect-ratio:1}
 .wo-ph a{height:100%}
 .wo-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.62);color:#fff;font-size:16px;line-height:26px;padding:0;cursor:pointer}
@@ -1224,7 +1236,7 @@ function hideToast(){ const t=$("#toast"); t.classList.add("hidden"); try { if (
 $("#toast").addEventListener("click",hideToast);   // tap to dismiss
 
 /* ---------- store (shared db, or local fallback) ---------- */
-const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices","payrollRuns","units"];
+const COLLS = ["employees","jobs","locations","expenses","bookings","customers","pointsLedger","projects","companies","payRates","shifts","invoices","publicInvoices","payrollRuns","units","locationRequests"];
 // Firestore sentinels (server time, delete field) have no meaning in the on-device store.
 function localClean(data){
   const out={}; const FV=firebase.firestore.FieldValue;
@@ -1337,7 +1349,7 @@ const locFor = id => S.locations.find(l=>l.id===id);
 
 /* ---------- rendering ---------- */
 let renderQueued=false;
-function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); }); }
+function render(){ if(renderQueued) return; renderQueued=true; requestAnimationFrame(()=>{ renderQueued=false; draw(); try{ noticeSharedLocations(); }catch(e){} }); }
 function draw(){
   const tag=$("#appTagline");
   if (S.console){   // platform admin: every client business, not one business
@@ -1634,7 +1646,7 @@ function viewHomeOwner(){
     if (sos.length){
       const bp=el("div",{class:"panel sos-panel",style:"margin-bottom:16px"},el("h2",{style:"margin:0 0 6px"},sos.length===1?"1 open breakdown":sos.length+" open breakdowns"));
       bp.append(el("div",{class:"rows"},...sos.map(j=>el("button",{type:"button",class:"rowi",onclick:()=>openJobSheet(j)},
-        el("span",{class:"rw"},el("b",{},j.time?fmtTime(j.time):"Now"),el("span",{},(s=>s.charAt(0).toUpperCase()+s.slice(1))(JOB_STAGE[j.status||"new"]||""))),
+        el("span",{class:"rw"},el("b",{},j.time?fmtTime(j.time):"Now"),el("span",{class:j.stage?"stagetxt":""},j.stage?stageName(j.stage):(s=>s.charAt(0).toUpperCase()+s.slice(1))(JOB_STAGE[j.status||"new"]||""))),
         el("span",{class:"rm"},el("b",{},(j.client||"Customer")+(jobUnit(j)?" \u00b7 "+unitName(jobUnit(j)):j.unitLabel?" \u00b7 "+j.unitLabel:"")),
           el("span",{},[woOf(j).complaint,j.address].filter(Boolean).join(" \u00b7 ")||j.service||""),
           soloRepair()?el("span",{},j.driver&&j.driver.name?"Driver: "+j.driver.name+(j.driver.phone?", "+j.driver.phone:""):""):el("span",{class:crewNames(j)?"":"unas"},crewNames(j)||"Nobody assigned yet")),chevron()))));
@@ -1866,9 +1878,12 @@ function crewJobCard(j,isNow){
     hasRepair()&&tireText(woOf(j).tire)?el("div",{class:"jn"},"Tire: "+tireText(woOf(j).tire)):null,
     hasRepair()&&j.driver&&(j.driver.name||j.driver.phone)?el("span",{class:"jm"},"Driver: "+(j.driver.name||""),j.driver.phone?el("span",{}," ",el("a",{href:"tel:"+j.driver.phone.replace(/[^\d+]/g,"")},j.driver.phone)):null):null,
     j.notes?el("div",{class:"jn"},j.notes):null,
+    hasRepair()&&stageText(j)?el("span",{class:"pill stagepill",style:"width:fit-content"},stageText(j)):null,
+    hasRepair()?locLine(j):null,
     j.phone&&hasRepair()?el("span",{class:"jm"},"Customer: ",el("a",{href:"tel:"+j.phone.replace(/[^\d+]/g,"")},j.phone)):null);
   const acts=el("div",{class:"ja"});
   if (j.address) acts.append(el("a",{class:"btn",href:"https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(j.address),target:"_blank",rel:"noopener"},"Directions"));
+  if (hasRepair() && isActiveRepairJob(j)){ const sb=stageBar(j); if (sb) card.append(sb); acts.append(el("button",{type:"button",class:"btn",onclick:()=>sendLocationLink(j)},locReqFor(j)?"New location link":"Location link")); }
   if (hasRepair() && st!=="new") acts.append(el("button",{type:"button",class:"btn",onclick:()=>openWorkOrder(j)},"Work order"+(jobPhotos(j).length?" \u00b7 "+jobPhotos(j).length+" photos":"")));
   if (st==="in_progress") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"done")},"Finish job"));
   else if (st!=="done") acts.append(el("button",{type:"button",class:"btn primary",onclick:()=>setStatus(j,"in_progress")},"Start job"));
@@ -1949,7 +1964,7 @@ function viewUnits(){
   list.forEach(({u,last})=>box.append(el("button",{type:"button",class:"rowi",onclick:()=>openUnit(u)},
     el("span",{class:"rw"},el("b",{},u.unitNo?"#"+u.unitNo:(u.kind||"Unit")),el("span",{},u.kind&&u.unitNo?u.kind:"")),
     el("span",{class:"rm"},el("b",{},unitName(u)),el("span",{},[u.client,u.engine,idTail(u)].filter(Boolean).join(" · ")),
-      (()=>{ const cur=openJobOf(u); return cur?el("span",{class:"curjob"},(cur.date&&cur.date>today()?"Booked "+niceDate(cur.date):"Current job")+": "+(cur.service||"Job")+" · "+(JOB_STAGE[cur.status||"new"]||"")):null; })(),
+      (()=>{ const cur=openJobOf(u); return cur?el("span",{class:"curjob"},(cur.date&&cur.date>today()?"Booked "+niceDate(cur.date):"Current job")+": "+(cur.service||"Job")+" · "+(cur.stage?stageName(cur.stage).toLowerCase():(JOB_STAGE[cur.status||"new"]||""))):null; })(),
       el("span",{},last?"Last completed "+niceDate(last.date)+" · "+(last.service||"Job"):"No completed service yet")),
     chevron())));
   frag.append(box);
@@ -2219,6 +2234,79 @@ function unitPicker(j, clientInput){
     return {unitId:newId(),unitLabel:unitLabel(data),create:data};
   };
   return wrap;
+}
+
+/* ---- Repair progress steps ----
+   Between "assigned" and "done": On the way, On site, Waiting for parts. Picking one starts the job if it
+   hasn't started, and each step is kept with its time so the owner can see what happened when. */
+const STAGES=[["on_the_way","On the way"],["on_site","On site"],["waiting_parts","Waiting for parts"]];
+const stageName = id => (STAGES.find(x=>x[0]===id)||[])[1]||"";
+function stageText(j){ if (!j.stage || (j.status||"new")==="done") return ""; return stageName(j.stage)+(j.stageAt?" · "+fmtClock(j.stageAt):""); }
+function fmtClock(ms){ const d=new Date(ms); return fmtTime(String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")); }
+function setStage(j0, stage){
+  const j=S.jobs.find(x=>x.id===j0.id)||j0, st=j.status||"new";
+  if (j.stage===stage) return;
+  if (st==="new"||st==="assigned") setStatus(j,"in_progress");
+  const by=(me()||{}).name||(S.isOwner?"Owner":"");
+  const log=[...(Array.isArray(j.stageLog)?j.stageLog:[]),{stage,at:Date.now(),by}].slice(-20);
+  write(()=>Store.update("jobs",j.id,{stage,stageAt:Date.now(),stageLog:log}),stageName(stage));
+}
+// The step buttons on a repair job that isn't done yet.
+// Only for jobs happening now: today's (or overdue) and anything already started, so future bookings stay uncluttered.
+const isActiveRepairJob = j => (j.status||"new")!=="done" && ((j.status||"new")==="in_progress" || !j.date || j.date<=today());
+function stageBar(j){
+  if (!isActiveRepairJob(j)) return null;
+  return el("div",{class:"stagebar",role:"group","aria-label":"Where the job is"},
+    ...STAGES.map(([id,label])=>el("button",{type:"button",class:"stagebtn"+(j.stage===id?" on":""),"aria-pressed":j.stage===id?"true":"false",
+      onclick:ev=>{ ev.stopPropagation(); setStage(j,id); }},label)));
+}
+
+/* ---- Driver location link ----
+   A link the mechanic texts to the driver. The driver taps it, allows location once, and the exact pin
+   shows on the job. The link works for 24 hours and only for that job; the driver doesn't sign in. */
+const locReqFor = j => (S.locationRequests||[]).filter(r=>r.jobId===j.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0]||null;
+const mapsUrl = r => "https://www.google.com/maps/search/?api=1&query="+r.lat+","+r.lng;
+function locToken(){ const a=new Uint8Array(18); crypto.getRandomValues(a); return [...a].map(x=>"abcdefghijkmnpqrstuvwxyz23456789"[x%32]).join(""); }
+function locLink(token){ return "https://dayzift.com/where/?t="+token; }
+function locLine(j){
+  const r=locReqFor(j); if (!r) return null;
+  if (r.status==="shared" && typeof r.lat==="number") return el("div",{class:"locline ok"},"Driver's location: ",
+    el("a",{href:mapsUrl(r),target:"_blank",rel:"noopener"},"Open in Maps"),
+    el("span",{class:"kv"}," · shared "+fmtClock(r.sharedAt||r.createdAt)+(r.accuracy?", within "+Math.round(r.accuracy*3.281)+" ft":"")));
+  if ((r.expiresAtMs||0)<Date.now()) return el("div",{class:"locline"},"Location link expired. Send a new one if you still need it.");
+  return el("div",{class:"locline"},"Location link sent "+fmtClock(r.createdAt)+" · waiting for the driver");
+}
+async function sendLocationLink(j){
+  const token=locToken(), b=S.business||{};
+  const doc={businessId:S.businessId,jobId:j.id,bizName:b.name||"",bizPhone:b.phone||"",createdAt:Date.now(),expiresAtMs:Date.now()+24*3600e3,
+    status:"waiting",by:(me()||{}).name||(S.isOwner?"Owner":"")};
+  if (!await write(()=>Store.set("locationRequests",token,doc),null)) return;
+  const link=locLink(token), to=((j.driver&&j.driver.phone)||j.phone||"").replace(/[^\d+]/g,"");
+  const msg=(b.name||"Your mechanic")+": tap this link to share your exact location so we can find your truck: "+link;
+  const dlg=el("dialog",{class:"locdlg"});
+  const close=()=>{ dlg.close(); dlg.remove(); };
+  const copyBtn=el("button",{type:"button",class:"btn",onclick:async()=>{ try{ await navigator.clipboard.writeText(msg); toast("Message copied"); }catch(e){ linkBox.select(); } }},"Copy message");
+  const linkBox=el("textarea",{readonly:true,rows:"3",style:"width:100%"},msg);
+  dlg.append(el("form",{method:"dialog",class:"pad",style:"display:grid;gap:12px"},
+    el("h2",{style:"margin:0"},"Ask the driver for their location"),
+    el("p",{class:"kv",style:"margin:0"},"Text this to "+((j.driver&&j.driver.name)||"the driver")+". When they tap the link and allow location, the pin shows on this job. The link works for 24 hours."),
+    linkBox,
+    el("div",{class:"acts",style:"display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end"},
+      Store.mode!=="db"?el("button",{type:"button",class:"btn ghost",onclick:()=>{ close();
+        write(()=>Store.update("locationRequests",token,{lat:35.6187,lng:-88.7826,accuracy:9,sharedAt:Date.now(),status:"shared"}),"Demo: the driver shared their location"); }},"Demo: driver shares"):null,
+      copyBtn,
+      to?el("a",{class:"btn primary",href:"sms:"+to+"?&body="+encodeURIComponent(msg),onclick:()=>setTimeout(close,300)},"Text "+((j.driver&&j.driver.phone)||j.phone)):null,
+      el("button",{type:"button",class:"btn",onclick:close},"Done"))));
+  document.body.append(dlg); dlg.showModal();
+}
+// When a driver's location comes in while the app is open, say so.
+let seenShared=null;
+function noticeSharedLocations(){
+  if (!hasRepair()) return;
+  const shared=(S.locationRequests||[]).filter(r=>r.status==="shared");
+  if (seenShared===null){ seenShared=new Set(shared.map(r=>r.id)); return; }
+  shared.filter(r=>!seenShared.has(r.id)).forEach(r=>{ seenShared.add(r.id); const j=S.jobs.find(x=>x.id===r.jobId);
+    toast("Driver's location received"+(j&&j.client?" for "+j.client:"")+". It's on the job now."); });
 }
 
 // Breakdown call: a job for right now, marked as an emergency, with where the truck is and what's wrong.
@@ -3216,6 +3304,9 @@ function jobCard(j){
   if (hasRepair() && woOf(j).complaint) card.append(el("div",{class:"notes"},el("b",{},"Problem: "),woOf(j).complaint));
   if (hasRepair() && tireText(woOf(j).tire)) card.append(el("div",{class:"kv"},"Tire: "+tireText(woOf(j).tire)));
   if (hasRepair() && j.driver && (j.driver.name||j.driver.phone)) card.append(el("div",{class:"kv"},"Driver: "+[j.driver.name,j.driver.phone].filter(Boolean).join(", ")));
+  if (hasRepair() && stageText(j)) card.append(el("span",{class:"pill stagepill"},stageText(j)));
+  if (hasRepair()) card.append(locLine(j));
+  if (hasRepair() && (S.isOwner || jobCrew(j).includes((me()||{}).id)) && !S.viewOnly) card.append(stageBar(j));
   if (j.notes) card.append(el("div",{class:"notes"},j.notes));
   // Costs: owners see profit; crew see the materials logged on their job.
   if (S.isOwner){
@@ -3266,6 +3357,7 @@ function jobCard(j){
   }
   if (hasRepair() && (S.isOwner || jobCrew(j).includes((me()||{}).id))){
     const w=woOf(j), n=jobPhotos(j).length;
+    if (isActiveRepairJob(j) && !S.viewOnly) acts.append(el("button",{class:"btn small ghost",onclick:()=>sendLocationLink(j)},locReqFor(j)?"New location link":"Location link"));
     acts.append(el("button",{class:"btn small"+(st==="in_progress"?" primary":""),onclick:()=>openWorkOrder(j)},(w.correction||w.cause||w.codes?"Work order ✓":"Work order")+(n?" · "+n+" photo"+(n>1?"s":""):"")));
   }
   if (!S.isOwner && st!=="done" && jobCrew(j).includes((me()||{}).id)) acts.append(el("button",{class:"btn small ghost",onclick:()=>openCosts(j)},hasRepair()?"+ Parts":"+ Materials"));
@@ -6335,7 +6427,7 @@ function subscribeAll(){
   // Crew never load the team's locations: only their own, once we know which team member they are.
   let myLocSub=null;
   if (!S.isOwner && S.myUserId) unsubs.push(Store.subscribeWhere("shifts","userId",S.myUserId,arr=>{ if (S.businessId!==bid) return; S.shifts=arr; render(); }, bid));
-  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || (c!=="locations" && c!=="shifts")).filter(c=>c!=="units" || hasRepair()).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
+  COLLS.filter(c=>S.isOwner || !OWNER_ONLY.includes(c)).filter(c=>S.isOwner || (c!=="locations" && c!=="shifts")).filter(c=>(c!=="units"&&c!=="locationRequests") || hasRepair()).forEach(c=>unsubs.push(Store.subscribe(c, arr=>{
     if (S.businessId!==bid) return;          // a late update from a business we've left
     S[c]=arr; render();
     if (c==="employees" && !S.isOwner){

@@ -138,12 +138,13 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.get('businessId', null));
       allow update: if (isOwner(resource.data.get('businessId', null)) && sameBusiness())
         || (isMember(resource.data.get('businessId', null)) && sameBusiness()
-            && changedOnly(['status', 'startedAt', 'completedAt', 'costs', 'workOrder', 'photos'])
+            && changedOnly(['status', 'startedAt', 'completedAt', 'costs', 'workOrder', 'photos', 'stage', 'stageAt', 'stageLog'])
             && request.resource.data.get('status', '') in ['assigned', 'in_progress', 'done']
             // materials can be added, not removed or rewritten away
             && request.resource.data.get('costs', []).size() >= resource.data.get('costs', []).size()
             && request.resource.data.get('costs', []).size() <= 200
             && request.resource.data.get('photos', []).size() <= 40
+            && request.resource.data.get('stageLog', []).size() <= 20
             && onThisJob());
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
@@ -193,6 +194,27 @@ service cloud.firestore {
       allow read: if isMember(resource.data.get('businessId', null));
       allow create: if isOwner(request.resource.data.get('businessId', null));
       allow update: if isOwner(resource.data.get('businessId', null)) && sameBusiness();
+      allow delete: if isOwner(resource.data.get('businessId', null));
+    }
+
+    // Driver location links (repair businesses). The team creates one for a job and texts the link; the driver
+    // opens it without signing in and can only add their location, once, within 24 hours. The link's id is a
+    // long random code, so a request can be read by its link but never listed by outsiders.
+    match /locationRequests/{token} {
+      allow get: if true;
+      allow list: if isMember(resource.data.get('businessId', null));
+      allow create: if isMember(request.resource.data.get('businessId', null))
+        && request.resource.data.get('status', '') == 'waiting'
+        && request.resource.data.keys().hasOnly(['businessId', 'jobId', 'bizName', 'bizPhone', 'createdAt', 'expiresAtMs', 'status', 'by'])
+        && request.resource.data.get('expiresAtMs', 0) is number;
+      allow update: if (isMember(resource.data.get('businessId', null)) && sameBusiness())
+        || (resource.data.get('status', '') == 'waiting'
+            && request.time.toMillis() < resource.data.get('expiresAtMs', 0)
+            && changedOnly(['lat', 'lng', 'accuracy', 'sharedAt', 'status'])
+            && request.resource.data.status == 'shared'
+            && request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90
+            && request.resource.data.lng is number && request.resource.data.lng >= -180 && request.resource.data.lng <= 180
+            && request.resource.data.get('accuracy', 0) is number);
       allow delete: if isOwner(resource.data.get('businessId', null));
     }
 
