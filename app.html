@@ -801,6 +801,21 @@ dialog:has(.simpleinv){width:min(920px,calc(100vw - 24px));max-width:none}
   .sibottom{grid-template-columns:1fr}
   .sitop{flex-direction:column}.sino{text-align:left}
 }
+.invseg{max-width:420px}
+.bigsearch{font-size:18px;min-height:52px;width:100%;margin:6px 0 12px}
+.blist{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.bcard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.bcard.off{opacity:.7;background:#FAFAF8}
+.bhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.bbtns{display:flex;gap:10px;flex-wrap:wrap}
+.bbtns:empty{display:none}
+.bbtns .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:200px;text-align:left}
+.bbtns .btn small{font-weight:500;font-size:13px;opacity:.9}
+.btn.corebtn{background:#FFF4D6;border-color:#E9C877;color:#8A5A00}
+.rhist{margin-top:14px;display:grid;gap:4px}
+.pill.bad{background:#FBE7E4;color:#A3271B}
+.sitot .trow.good{color:var(--ok,#1E6B45)}
+.rowi .rp small{font-weight:600}
 .btn.plus{width:44px;height:44px;min-height:44px;padding:0;border-radius:22px;font-size:26px;font-weight:400;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 @media (max-width:999px){ header.top #bizNameHeader{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 110px)} header.top{align-items:center} }
 .rowi .rp{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
@@ -4322,7 +4337,8 @@ function monthRows(){
 //              plus finished work that hasn't been invoiced or paid yet
 function collectedIn(P){
   let n=0;
-  S.invoices.filter(i=>i.status!=="void").forEach(i=>(i.payments||[]).forEach(p=>{ if (p.date&&inPeriod(p.date,P)) n+=Number(p.amount)||0; }));
+  S.invoices.filter(i=>i.status!=="void").forEach(i=>{ (i.payments||[]).forEach(p=>{ if (p.date&&inPeriod(p.date,P)) n+=Number(p.amount)||0; });
+    (i.returns||[]).forEach(r=>{ if (r.how==="refund"&&inPeriod(r.at,P)) n-=Number(r.amount)||0; }); });
   S.jobs.filter(j=>j.status==="done"&&j.paid&&!invoiceFor(j.id)&&inPeriod(j.paidDate||j.date,P)).forEach(j=>{ n+=Number(j.price)||0; });
   return r2(n);
 }
@@ -4810,13 +4826,16 @@ async function releaseInvoiceCosts(inv){
 }
 
 function viewInvoices(){
+  if (S.invView==="returns") return viewInvReturns();
+  if (S.invView==="today") return viewInvToday();
   const frag=document.createDocumentFragment();
+  frag.append(invSeg());
   const f=S.invFilter||"open";
   const rows=S.invoices.map(i=>({i,t:invTotals(i)})).map(x=>({...x,s:invStatus(x.i,x.t)}));
   const q=(S.invSearch||"").toLowerCase();
   const show=rows.filter(({i,s})=>{
-    if (q && !((i.number||"")+" "+((i.client||{}).name||"")).toLowerCase().includes(q)) return false;
-    if (f==="all") return true;
+    if (q && !((i.number||"")+" "+((i.client||{}).name||"")+" "+String((i.client||{}).phone||"").replace(/\D/g,"")).toLowerCase().includes(q.replace(/^(\d[\d\s().-]+)$/,m=>m.replace(/\D/g,"")))) return false;
+    if (f==="all"||q) return true;   // a search looks through every invoice
     if (f==="open") return ["sent","viewed","partial","overdue","retainage"].includes(s.id);
     if (f==="paid30") return (i.payments||[]).some(p=>p.date&&parseYmd(p.date).getTime()>=Date.now()-30*864e5);
     return s.id===f;
@@ -4833,7 +4852,7 @@ function viewInvoices(){
     el("div",{class:"chips"},[["open","Open"],["overdue","Overdue"],["paid30","Paid (30 days)"],["draft","Drafts"],["paid","Paid"],["all","All"]].map(([id,l])=>
       el("button",{class:"chip","aria-pressed":String(f===id),onclick:()=>{S.invFilter=id;render();}},l))),
     el("span",{class:"grow"}),
-    el("input",{type:"search",placeholder:"Search client or number","aria-label":"Search invoices",value:S.invSearch||"",style:isDesktop()?"max-width:220px":"width:100%",
+    el("input",{type:"search",placeholder:"Invoice number, name or phone","aria-label":"Search invoices",value:S.invSearch||"",style:isDesktop()?"max-width:220px":"width:100%",
       oninput:ev=>{ S.invSearch=ev.target.value; clearTimeout(S.invSearchT); S.invSearchT=setTimeout(()=>{ render(); setTimeout(()=>{ const x=document.querySelector('input[aria-label="Search invoices"]'); if(x){ x.focus(); x.setSelectionRange(x.value.length,x.value.length);} },0); },250); }}),
     isDesktop()?el("button",{class:"btn primary",onclick:()=>openInvoice(draftInvoice({}))},"New invoice"):null));
   // Each total opens its list: the invoices behind it, or the jobs waiting to be billed.
@@ -4866,7 +4885,7 @@ function viewInvoices(){
     frag.append(p);
   }
 
-  const fName={open:"Outstanding",overdue:"Overdue",paid30:"Paid in the last 30 days",draft:"Drafts",paid:"Paid",all:"All invoices"}[f]||"Invoices";
+  const fName=q?"Search results":({open:"Outstanding",overdue:"Overdue",paid30:"Paid in the last 30 days",draft:"Drafts",paid:"Paid",all:"All invoices"}[f]||"Invoices");
   const tp=el("div",{class:"panel",id:"invList"},el("h2",{},fName+(show.length?" ("+show.length+")":"")));
   if (!show.length) tp.append(el("div",{class:"empty"},f==="paid30"?"No payments recorded in the last 30 days.":f==="overdue"?"Nothing overdue. Nice.":S.invoices.length?"No invoices match.":"No invoices yet. Create one from finished jobs above, or with New invoice."));
   else {
@@ -5049,6 +5068,9 @@ function itemSearch(q){
   return out.sort((a,b)=>a[0]-b[0]).slice(0,8).map(x=>x[1]);
 }
 const needsFullEditor=d=>d.kind==="deposit"||!!d.projectId||Number(d.discount)>0||Number(d.depositApplied)>0||Number(d.retainagePct)>0;
+// Store credit never takes the total below zero.
+function fitCredit(d,avail){ const cr=d.lines.find(l=>l.type==="credit"); if(!cr) return; const rest=d.lines.filter(l=>l!==cr&&l.type!=="fee");
+  const t=invTotals({...d,lines:rest}); cr.unitPrice=-r2(Math.max(0,Math.min(avail,t.total))); if (!cr.unitPrice) d.lines=d.lines.filter(l=>l!==cr); }
 function feeLineFor(d){ return (d.lines||[]).find(l=>l.type==="fee"); }
 // Card fee is a line of its own, worked out on everything else (after tax), so every screen and the client's copy agree.
 function applyCardFee(d){
@@ -5069,35 +5091,47 @@ function simpleInvoice(d){
     el("div",{class:"sino"},el("b",{},"INVOICE"),el("div",{},num),el("div",{class:"kv"},niceDate(d.issueDate||today()))));
   const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).concat(S.customers.map(c=>c.name)).filter(Boolean))].sort();
   const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",list:"siClients",placeholder:"Customer name",oninput:e=>{ d.client.name=e.target.value; },
-    onchange:e=>{ const ci=clientInfo(e.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]) d.client[k]=ci[k]; }); simpleInvoice(d); }});
-  const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off",...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
+    onchange:e=>{ if (normName(e.target.value)===extras._for) return; const ci=clientInfo(e.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]){ d.client[k]=ci[k]; const x=body.querySelector(".sigrid [data-k="+k+"]"); if(x){ x.value=ci[k]; x.closest("label").hidden=false; } } });
+      drawExtras(); }});
+  const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off","data-k":k,...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
   const addr=fld("Address","address",{});
   if (!d.client.address){ addr.hidden=true; }
   const who=el("div",{class:"sigrid"},el("label",{class:"f full"},"Bill to",nameIn,el("datalist",{id:"siClients"},clients.map(c=>el("option",{value:c})))),
     fld("Phone","phone",{type:"tel"}),fld("Email","email",{type:"email",placeholder:"To send the invoice"}),addr,
     addr.hidden?el("a",{href:"#",class:"kv full",onclick:e=>{ e.preventDefault(); addr.hidden=false; e.target.remove(); addr.querySelector("input").focus(); }},"+ Add their address"):null);
-  // Finished jobs for this customer, one tap each
+  // Finished jobs for this customer (one tap each) and any store credit they have. Redrawn when the name changes.
+  const extras=el("div",{});
+  function drawExtras(){
+  extras._for=normName(d.client.name);
   const avail=d.client.name?unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id)&&normName(j.client)===normName(d.client.name)):[];
   const jobsRow=avail.length?el("div",{class:"sijobs"},el("span",{class:"kv"},"Finished jobs for "+d.client.name+":"),
     avail.slice(0,8).map(j=>el("button",{type:"button",class:"chip",onclick:()=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); simpleInvoice(d); }},"+ "+(j.service||"Job")+" · "+niceDate(j.date)+" · "+money(j.price))),
     avail.length>1?el("button",{type:"button",class:"chip on",onclick:()=>{ avail.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); }); simpleInvoice(d); }},"Add all "+avail.length):null):null;
+  // Store credit from earlier returns
+  const credit=creditBalance(d.client.name), creditLine=d.lines.find(l=>l.type==="credit");
+  const creditRow=credit>0&&!creditLine?el("div",{class:"invnote"},d.client.name+" has "+money(credit)+" in store credit. ",el("a",{href:"#",onclick:e=>{ e.preventDefault();
+    d.lines.push({id:newId(),type:"credit",desc:"Store credit",qty:1,unitPrice:-0.01,taxable:false}); fitCredit(d,credit); simpleInvoice(d); }},"Use it on this invoice")):null;
+  extras.replaceChildren(...[jobsRow,creditRow].filter(Boolean));
+  }
   // Lines
   const lines=el("div",{class:"silines"});
   const tot=el("div",{class:"sitot"});
   const amtOf=l=>money(invLineAmt(l));
   function drawTot(){
+    const cr=d.lines.find(l=>l.type==="credit"); if (cr) fitCredit(d,creditBalance(d.client.name)+(-invLineAmt(cr))*(d.id?1:0));
     applyCardFee(d);
     const t=invTotals(d), fee=feeLineFor(d), core=r2(d.lines.filter(l=>l.type==="core").reduce((n,l)=>n+invLineAmt(l),0));
     const L=(a,v,c)=>el("div",{class:"trow"+(c?" "+c:"")},el("span",{},a),el("b",{},v));
     tot.replaceChildren(...[
-      L("Sub-total",money(t.subtotal-(fee?invLineAmt(fee):0))),
+      L("Sub-total",money(t.subtotal-(fee?invLineAmt(fee):0)-(cr?invLineAmt(cr):0))),
       core?L("  incl. core charges",money(core),"muted"):null,
       L(taxName()+" ("+rate+"%)",money(t.tax)),
+      cr?L("Store credit","\u2212"+money(-invLineAmt(cr)),"good"):null,
       fee?L(fee.desc,money(invLineAmt(fee)),"fee"):null,
       L("Total",money(t.total),"big")].filter(Boolean));
   }
   function lineRow(l){
-    if (l.type==="fee"||l.type==="core") return null;
+    if (l.type==="fee"||l.type==="core"||l.type==="credit") return null;
     const coreLine=d.lines.find(x=>x.type==="core"&&x.coreFor===l.id);
     const amt=el("span",{class:"siamt"},amtOf(l));
     const upd=()=>{ amt.textContent=amtOf(l); if (coreLine){ coreLine.qty=l.qty; } drawTot(); };
@@ -5153,7 +5187,7 @@ function simpleInvoice(d){
     if (!String(d.client.name||"").trim()) return err.textContent="Who is this for? Type the customer's name.";
     if (!d.lines.some(l=>l.type!=="fee")) return err.textContent="Add at least one item.";
     applyCardFee(d);
-    const t=invTotals(d); if (t.total<=0) return err.textContent="The total is zero. Check the prices.";
+    const t=invTotals(d); if (t.total<=0 && !d.lines.some(l=>l.type==="credit")) return err.textContent="The total is zero. Check the prices.";
     const was={status:d.status,sentAt:d.sentAt,payments:d.payments};
     if (mode!=="draft"){ d.status="sent"; d.sentAt=d.sentAt||Date.now(); }
     if (mode==="paid"){ d.terms="receipt"; d.dueDate=d.issueDate||today();
@@ -5167,7 +5201,8 @@ function simpleInvoice(d){
     else $("#invDlg").close();
   };
   const isPaidMode=d.payWith!=="later";
-  body.append(top,who,jobsRow||"",el("div",{class:"silhead"},el("span",{},"Description"),el("span",{}),el("span",{},"Price"),el("span",{},"Qty"),el("span",{},"Amount"),el("span",{})),lines,
+  drawExtras();
+  body.append(top,who,extras,el("div",{class:"silhead"},el("span",{},"Description"),el("span",{}),el("span",{},"Price"),el("span",{},"Qty"),el("span",{},"Amount"),el("span",{})),lines,
     el("div",{class:"sibottom"},el("div",{},el("div",{class:"lbl2"},"Paid by"),pays,due),tot),
     st.returnsNote?el("p",{class:"kv sinote"},st.returnsNote):null,
     err,
@@ -5179,6 +5214,132 @@ function simpleInvoice(d){
       el("button",{type:"button",class:"btn primary big",onclick:()=>go(isPaidMode?"paid":"send")},isPaidMode?"Save & print":"Save & send")));
   drawTot();
   setTimeout(()=>{ const f=d.client.name?$(".simpleinv .sinew input"):nameIn; if(f) f.focus(); },0);
+}
+
+/* ---- Returns and store credit on invoices ---- */
+const RETURNABLE=l=>!["fee","core","credit","deposit"].includes(l.type);
+const coreLineOf=(inv,l)=>(inv.lines||[]).find(x=>x.type==="core"&&x.coreFor===l.id);
+const retOf=(inv,l)=>(inv.returns||[]).filter(r=>r.lineId===l.id);
+const itemBackQty=(inv,l)=>retOf(inv,l).filter(r=>r.kind==="item"&&r.how!=="exchange").reduce((n,r)=>n+(r.qty||0),0);
+const coreOwedQty2=(inv,l)=>{ const c=coreLineOf(inv,l); if(!c) return 0; return Math.max(0,(Number(c.qty)||0)-retOf(inv,l).reduce((n,r)=>n+(r.coreQty||0),0)); };
+const withTaxIf=(amt,taxed,inv)=>r2(amt*(taxed?1+(Number(inv.taxRate)||0)/100:1));
+function creditBalance(name){
+  const k=normName(name); if(!k) return 0;
+  let n=0;
+  S.invoices.filter(i=>i.status!=="void"&&normName(i.client&&i.client.name)===k).forEach(i=>{
+    (i.returns||[]).forEach(r=>{ if (r.how==="credit") n+=Number(r.amount)||0; });
+    (i.lines||[]).forEach(l=>{ if (l.type==="credit") n+=invLineAmt(l); });   // credit lines are negative
+  });
+  return r2(Math.max(0,n));
+}
+function returnWindow(inv,l){
+  const st=invSettings(), days=Number(st.returnDays)||0;
+  const n=String(l.desc||"").toLowerCase();
+  if ((S.business||{}).category==="Auto Recycling" && /\b(ecm|bcm|bmc|tcm|pcm)\b|control module|computer|brain box/.test(n)) return {ok:false,why:"Computer modules are sold as is"};
+  if (!days) return {ok:true};
+  const ends=addDays(inv.issueDate||today(),days), left=Math.round((parseYmd(ends)-parseYmd(today()))/864e5);
+  return left<0?{ok:false,why:"Return window ended "+niceDate(ends)}:{ok:true,left,ends};
+}
+const lastPayMethod=inv=>{ const p=(inv.payments||[]).slice(-1)[0]; return p?String(p.method||""):""; };
+function returnsPanel(inv){
+  const cards=(inv.lines||[]).filter(RETURNABLE).map(l=>{
+    const w=returnWindow(inv,l), back=itemBackQty(inv,l), left=(Number(l.qty)||1)-back, owed=coreOwedQty2(inv,l), c=coreLineOf(inv,l);
+    const each=withTaxIf(Number(l.unitPrice)||0,l.taxable,inv)+(owed>0&&c?withTaxIf(Number(c.unitPrice)||0,c.taxable,inv):0);
+    const status=left<=0?el("span",{class:"pill"},"Returned"):w.ok?el("span",{class:"pill ok"},w.ends?"Return by "+niceDate(w.ends):"Can be returned"):el("span",{class:"pill bad"},w.why);
+    return el("div",{class:"bcard"+(left<=0&&!owed?" off":"")},
+      el("div",{class:"bhead"},el("div",{},el("b",{},l.desc||"Item"),el("div",{class:"kv"},money(l.unitPrice)+((Number(l.qty)||1)>1?" × "+l.qty:"")+(c?(owed?" · core "+money(c.unitPrice)+" still out":" · core back"):""))),status),
+      el("div",{class:"bbtns"},
+        left>0&&w.ok?el("button",{type:"button",class:"btn primary",onclick:()=>returnDlg(inv,l,"item")},el("span",{},"Return "+(c?"whole part":"it")),el("small",{},money(each)+(c&&owed?" incl. core":"")+" with tax"+((Number(l.qty)||1)>1?" each":""))):null,
+        owed>0?el("button",{type:"button",class:"btn corebtn",onclick:()=>returnDlg(inv,l,"core")},el("span",{},"Core only"),el("small",{},money(withTaxIf(Number(c.unitPrice)||0,c.taxable,inv))+" with tax")):null));
+  });
+  const hist=(inv.returns||[]).map(r=>el("div",{class:"kv"},niceDate(r.at)+": "+(r.kind==="core"?"core back, ":"returned ")+r.desc+((r.qty||r.coreQty)>1?" ×"+(r.qty||r.coreQty):"")+" · "+({refund:"refunded",credit:"store credit",exchange:"exchanged"}[r.how])+(r.how!=="exchange"?" "+money(r.amount):"")));
+  return el("div",{},el("div",{class:"blist"},cards.length?cards:el("div",{class:"empty"},"Nothing on this invoice can be returned.")),hist.length?el("div",{class:"rhist"},el("b",{},"History"),hist):null);
+}
+function returnDlg(inv0,l0,kind){
+  const inv=JSON.parse(JSON.stringify(inv0)), l=inv.lines.find(x=>x.id===l0.id), c=coreLineOf(inv,l);
+  const owed=coreOwedQty2(inv,l), left=(Number(l.qty)||1)-itemBackQty(inv,l), max=kind==="core"?owed:left;
+  let n=1;
+  const body=invDlg(); body.replaceChildren(); body.classList.remove("simpleinv");
+  const calc=()=>{ const coreQ=kind==="core"?n:Math.min(n,owed); const amt=r2((kind==="core"?0:withTaxIf((Number(l.unitPrice)||0)*n,l.taxable,inv))+(c?withTaxIf((Number(c.unitPrice)||0)*coreQ,c.taxable,inv):0)); return {coreQ,amt}; };
+  const sum=el("p",{style:"font-size:18px"});
+  const draw=()=>{ const x=calc(); sum.replaceChildren((kind==="core"?"Core for "+l.desc:l.desc)+(n>1?" × "+n:"")+(kind==="item"&&x.coreQ?" (with its core)":"")+": ",el("b",{},money(x.amt)),(l.taxable||c&&c.taxable)?" including tax":""); };
+  const done=how=>{
+    const x=calc();
+    const rec={id:newId(),lineId:l.id,desc:l.desc,kind,qty:kind==="item"?n:0,coreQty:how==="exchange"?0:x.coreQ,how,amount:how==="exchange"?0:x.amt,at:today(),method:how==="refund"?(lastPayMethod(inv)||"Cash"):""};
+    inv.returns=[...(inv.returns||[]),rec];
+    write(async()=>{ await saveInvoice(inv); $("#invDlg").close(); },how==="exchange"?"Exchange recorded":how==="credit"?money(rec.amount)+" store credit for "+(inv.client.name||"the customer"):"Refund "+money(rec.amount)+" recorded. Give it back "+(/card/i.test(rec.method)?"on their card":"in cash")+".");
+  };
+  const refundLbl=/card/i.test(lastPayMethod(inv))?"Refund to card":"Give cash back";
+  body.append(el("h2",{style:"margin:0 0 6px"},(kind==="core"?"Core returned":"Return")+": "+l.desc),
+    el("p",{class:"kv",style:"margin:0 0 10px"},inv.number+" · "+(inv.client.name||"")+" · "+niceDate(inv.issueDate)),
+    kind==="item"&&owed?el("p",{class:"kv"},"The core comes back with the part, so the core charge is included."):"",
+    max>1?el("label",{class:"f",style:"max-width:160px"},"How many",el("input",{type:"number",min:"1",max:String(max),value:"1",inputmode:"numeric",oninput:e=>{ n=Math.min(max,Math.max(1,parseInt(e.target.value)||1)); draw(); }})):"",
+    sum,
+    el("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:12px"},
+      el("button",{type:"button",class:"btn ghost",onclick:()=>{ $("#invDlg").close(); }},"Cancel"),el("span",{class:"grow"}),
+      kind==="item"?el("button",{type:"button",class:"btn",onclick:()=>done("exchange")},"Exchange for the same"):null,
+      el("button",{type:"button",class:"btn",onclick:()=>done("credit")},"Store credit"),
+      el("button",{type:"button",class:"btn primary",onclick:()=>done("refund")},refundLbl)));
+  draw();
+}
+function invSeg(){
+  const v=S.invView||"find";
+  return el("div",{class:"seg stseg invseg",role:"tablist"},[["find","Find"],["returns","Returns"],["today","Today"]].map(([id,l])=>
+    el("button",{type:"button",role:"tab","aria-selected":String(v===id),onclick:()=>{ S.invView=id; S.retInv=null; render(); }},l)));
+}
+function viewInvReturns(){
+  const frag=document.createDocumentFragment(); frag.append(invSeg());
+  const inv=S.retInv&&S.invoices.find(i=>i.id===S.retInv);
+  if (inv){
+    frag.append(el("div",{class:"panel"},el("div",{class:"row",style:"flex-wrap:wrap;gap:8px"},el("h2",{class:"grow",style:"margin:0"},inv.number+" · "+(inv.client.name||"")),
+      el("button",{type:"button",class:"btn ghost",onclick:()=>{ S.retInv=null; render(); }},"← Pick another"),el("button",{type:"button",class:"btn",onclick:()=>openInvoice(inv)},"See invoice")),
+      el("p",{class:"kv"},"Sold "+niceDate(inv.issueDate)+". Pick what's coming back."),returnsPanel(inv)));
+    return frag;
+  }
+  const list=el("div",{class:"rows"});
+  const q=el("input",{type:"search",class:"bigsearch",placeholder:"Invoice number, name or phone",value:S.retQ||"",autocomplete:"off",oninput:e=>{ S.retQ=e.target.value; draw(); },
+    onkeydown:e=>{ if(e.key==="Enter"){ const r=findInv(S.retQ); if(r.length===1){ S.retInv=r[0].id; render(); } } }});
+  function draw(){ const r=findInv(S.retQ).filter(i=>i.status==="sent"); list.replaceChildren(...(r.length?r.slice(0,30).map(i=>invRowBtn(i,()=>{ S.retInv=i.id; render(); })):[el("div",{class:"empty",style:"padding:16px"},"No invoice matches.")])); }
+  frag.append(el("div",{class:"panel"},el("h2",{},"Returns"),el("p",{class:"kv"},"Find the invoice, then pick the item. You can refund it, give store credit or swap it."+(Number(invSettings().returnDays)?" Returns are allowed for "+invSettings().returnDays+" days.":"")),q,list));
+  draw(); setTimeout(()=>q.focus(),0);
+  return frag;
+}
+function findInv(q){
+  q=String(q||"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
+  const all=S.invoices.filter(i=>i.status!=="void").slice().sort((a,b)=>(b.seq||0)-(a.seq||0));
+  if (!q) return all;
+  return all.filter(i=>{ const no=String(i.number||"").toLowerCase(); const ph=String((i.client||{}).phone||"").replace(/\D/g,"");
+    return no.includes(q)||no.replace(/\D/g,"")===qd&&qd||(qd.length>=3&&ph.includes(qd))||String((i.client||{}).name||"").toLowerCase().includes(q); });
+}
+function invRowBtn(i,onclick){
+  const t=invTotals(i), s=invStatus(i,t);
+  return el("button",{type:"button",class:"rowi",onclick},
+    el("span",{class:"rw"},el("b",{},i.number||"Draft"),el("span",{},niceDate(i.issueDate).replace(/,? \d{4}$/,"").replace(/^\w+, /,""))),
+    el("span",{class:"rm"},el("b",{},(i.client||{}).name||"—"),el("span",{},(i.lines||[]).filter(RETURNABLE).map(l=>l.desc).slice(0,3).join(", "))),
+    el("span",{class:"rp"},money(t.total),el("small",{class:"pill "+s.cls,style:"display:block;margin-top:2px"},s.id==="paid"?"Paid":s.label)),chevron());
+}
+function viewInvToday(){
+  const frag=document.createDocumentFragment(); frag.append(invSeg());
+  const d=S.invDay||today();
+  const issued=S.invoices.filter(i=>i.status==="sent"&&i.issueDate===d);
+  const pays=S.invoices.filter(i=>i.status!=="void").flatMap(i=>(i.payments||[]).filter(p=>p.date===d));
+  const by={}; pays.forEach(p=>{ const k=(p.method||"Other").replace(/^(Credit card|Card)$/i,"Card"); by[k]=r2((by[k]||0)+(Number(p.amount)||0)); });
+  const refunds=S.invoices.flatMap(i=>(i.returns||[]).filter(r=>r.at===d&&r.how==="refund")).reduce((n,r)=>n+r.amount,0);
+  const fees=issued.flatMap(i=>i.lines.filter(l=>l.type==="fee")).reduce((n,l)=>n+invLineAmt(l),0);
+  const tax=issued.reduce((n,i)=>n+invTotals(i).tax,0);
+  const took=r2(pays.reduce((n,p)=>n+(Number(p.amount)||0),0)-refunds);
+  const owes=S.invoices.filter(i=>i.status==="sent"&&invTotals(i).balance>0.004).sort((a,b)=>(a.dueDate||"").localeCompare(b.dueDate||""));
+  const stat=(v,l)=>el("div",{class:"stat"},el("div",{class:"l"},l),el("div",{class:"v"},v));
+  frag.append(el("div",{class:"row",style:"gap:10px;margin:0 0 12px"},el("h2",{class:"grow",style:"margin:0"},d===today()?"Today":niceDate(d)),
+      el("input",{type:"date",value:d,max:today(),style:"width:auto",onchange:e=>{ S.invDay=e.target.value||today(); render(); }})),
+    el("div",{class:"sum"},stat(money(took),"Taken in"),stat(String(issued.length),"Invoices"),stat(money(tax),taxName()),stat(money(fees),"Card fees")),
+    el("div",{class:"panel"},el("h3",{},"By how they paid"),
+      Object.keys(by).length?el("div",{class:"rows"},Object.entries(by).map(([k,v])=>el("div",{class:"rowi",style:"cursor:default"},el("span",{class:"rm"},el("b",{},k)),el("span",{class:"rp"},money(v)))))
+        :el("div",{class:"empty"},"No payments on this day."),
+      refunds?el("p",{class:"kv"},"Refunds given: −"+money(refunds)):null),
+    el("div",{class:"panel"},el("h3",{},"Invoices"),issued.length?el("div",{class:"rows"},issued.map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"No invoices on this day.")),
+    el("div",{class:"panel"},el("h3",{},"Still owe you ("+owes.length+")"),owes.length?el("div",{class:"rows"},owes.slice(0,15).map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"Nobody owes you. Nice.")));
+  return frag;
 }
 function invoiceDetail(d){
   const body=invDlg(); body.replaceChildren(); body.classList.remove("simpleinv");
@@ -5198,6 +5359,7 @@ function invoiceDetail(d){
     d.retainageReleased=true; d.dueDate=addDays(today(),(INV_TERMS.find(x=>x[0]===d.terms)||INV_TERMS[0])[2]);
     write(async()=>{ await saveInvoice(d); openSend(d); },"Retainage billed"); }},"Bill the retainage"));
   acts.append(el("button",{class:"btn",onclick:()=>printInvoice(d)},"Print or PDF"));
+  if (d.status==="sent" && (d.lines||[]).some(RETURNABLE)) acts.append(el("button",{class:"btn",onclick:()=>{ $("#invDlg").close(); S.invView="returns"; S.retInv=d.id; goTab("invoices"); }},"Return or refund"));
   if (d.status==="sent") acts.append(el("button",{class:"btn ghost",onclick:()=>invoiceEditor(d)},"Edit"));
   if (d.status==="sent" && !t.paid) acts.append(el("button",{class:"btn ghost danger",onclick:()=>{ if(!confirm("Void "+d.number+"? The client's link will show it as void, and its jobs can be billed again.")) return;
     d.status="void"; write(async()=>{ await releaseInvoiceCosts(d); await saveInvoice(d); $("#invDlg").close(); },"Invoice voided"); }},"Void"));
@@ -5540,6 +5702,9 @@ function invSetupPanel(){
       if (v<=used){ e.target.value=String(nextInvoiceSeq()); return toast("Invoice "+used+" is already used. Pick a higher number."); }
       invSave({startAt:v-1},flag); }})),
     el("p",{class:"kv",style:"margin:0;max-width:340px"},"Switching from a paper book? Start right after the last number you wrote."))));
+  p.append(sec("Returns",el("div",{class:"row",style:"gap:12px;flex-wrap:wrap"},
+    el("label",{class:"f",style:"max-width:200px"},"Allow returns for (days)",el("input",{type:"number",min:"0",step:"1",inputmode:"numeric",value:String(st.returnDays||""),placeholder:"No limit",onchange:e=>invSave({returnDays:Math.max(0,Math.floor(Number(e.target.value)||0))},flag)})),
+    el("p",{class:"kv",style:"margin:0;max-width:340px"},"After this many days the Return button turns off. Leave it empty for no limit."))));
   // 5. Returns / warranty note
   p.append(sec("Returns and warranty (printed on invoices)",el("textarea",{rows:"3",placeholder:"30-day warranty: exchange or store credit. Receipt required.",onchange:e=>invSave({returnsNote:e.target.value.trim()},flag)},st.returnsNote||""),
     el("p",{class:"kv"},"Leave it empty if you don't need it.")));
