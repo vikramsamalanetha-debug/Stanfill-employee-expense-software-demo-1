@@ -4,5 +4,6 @@ Disallow: /app
 Disallow: /invoice.html
 Disallow: /dashboard.html
 Disallow: /rightway/
+Disallow: /preview/
 
 Sitemap: https://dayzift.com/sitemap.xml
