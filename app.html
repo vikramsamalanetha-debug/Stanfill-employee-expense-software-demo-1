@@ -796,8 +796,8 @@ dialog:has(.simpleinv){width:min(920px,calc(100vw - 24px));max-width:none}
 .siacts{margin-top:16px;gap:8px;flex-wrap:wrap}
 @media (max-width:700px){
   .silhead{display:none}
-  .siline{grid-template-columns:minmax(0,1fr) 84px 54px 32px;grid-template-areas:"d d d x" "c p q a"}
-  .siline .sidesc{grid-area:d}.siline .sicorecell{grid-area:c}.siline .siprice{grid-area:p}.siline .siqty{grid-area:q}.siline .siamt{grid-area:a;grid-column:1/-1;grid-row:3}.siline .x{grid-area:x}
+  .siline{grid-template-columns:minmax(0,1fr) 76px 50px 76px;grid-template-areas:"d d d x" "c p q a"}
+  .siline .sidesc{grid-area:d}.siline .sicorecell{grid-area:c}.siline .siprice{grid-area:p}.siline .siqty{grid-area:q}.siline .siamt{grid-area:a}.siline .x{grid-area:x;justify-self:end}
   .sibottom{grid-template-columns:1fr}
   .sitop{flex-direction:column}.sino{text-align:left}
 }
@@ -1052,8 +1052,8 @@ dialog .acts.stickyacts{position:sticky;bottom:0;z-index:3;background:var(--surf
             <option>Electrical</option>
             <option>HVAC</option>
             <option>Roofing</option>
-          <option>Truck &amp; Equipment Repair</option>
             <option>Truck &amp; Equipment Repair</option>
+            <option>Auto Recycling</option>
             <option>Other</option>
           </select>
         </label>
@@ -1181,9 +1181,10 @@ const SERVICE_DEFAULTS = {
   "HVAC":["Service call","System install","Maintenance visit","Duct work","Estimate visit"],
   "Roofing":["Roof inspection","Repair","Full replacement","Gutters","Estimate visit"],
   "Truck & Equipment Repair":["Roadside repair","Diagnostics","Mobile tire service","DPF / DEF / EGR","Brakes & suspension","Preventive maintenance","Heavy equipment repair","Welding"],
+  "Auto Recycling":["Used part","Pull fee","Entry fee","Core charge"],
   "Other":["Standard service","Large job","Consultation"]
 };
-const CATEGORIES = ["Cleaning","Lawn Care","Handyman","Pet Care","Construction","Plumbing","Electrical","HVAC","Roofing","Truck & Equipment Repair","Other"];
+const CATEGORIES = ["Cleaning","Lawn Care","Handyman","Pet Care","Construction","Plumbing","Electrical","HVAC","Roofing","Truck & Equipment Repair","Auto Recycling","Other"];
 // Mobile mechanics and repair shops: trucks & equipment on file, work orders on each job, breakdown calls.
 // On by default for this type; any business can switch it on or off in Settings.
 const REPAIR_CAT = "Truck & Equipment Repair";
@@ -1489,9 +1490,11 @@ function draw(){
   else { S.tab="home"; v.append(viewHome()); }   // anything unknown goes Home, never Books
 }
 
+const isCounter=()=>((S.business||{}).category==="Auto Recycling");
 function plusAction(){
   const t=S.tab;
   if (t==="home" && hasRepair()) return ["Breakdown call",()=>openBreakdown()];
+  if (t==="home" && isCounter()) return ["New sale",()=>openInvoice(draftInvoice({}))];
   if (["home","board","requests"].includes(t)) return ["New job",()=>openJob()];
   if (t==="units") return ["Add truck or equipment",()=>openUnit()];
   if (t==="projects") return ["New project",()=>openProject()];
@@ -4786,7 +4789,7 @@ function publicCopy(inv){
     lines:(inv.lines||[]).map(l=>({desc:l.desc||"",qty:Number(l.qty)||0,unitPrice:Number(l.unitPrice)||0,amount:invLineAmt(l)})),
     subtotal:t.subtotal,discount:t.discount,taxRate:Number(inv.taxRate)||0,tax:t.tax,taxBase:t.subtotal?Math.round(t.taxable*(1-t.discount/t.subtotal)*100)/100:0,total:t.total,credit:t.credit,
     retainagePct:inv.kind==="deposit"?0:Number(inv.retainagePct)||0,held:t.held,dueNow:t.dueNow,paid:t.paid,balance:t.balance,dueNowBal:t.dueNowBal,
-    status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
+    status:inv.status==="void"?"void":t.balance<=0.004?"paid":"open",notes:inv.notes||"",returnsNote:st.returnsNote||"",payLink:st.payLink||"",payNote:st.payNote||"",footer:st.footer||"",
     country:bizCountry(),currency:bizCurrency(),taxName:taxName(),cardPay:cardPayOn(),
     viewedAt:(pubFor(inv)||{}).viewedAt||null,updatedAt:Date.now()};
 }
@@ -5545,6 +5548,7 @@ function invDocBuild(p,h){
   if (pays.length) left.append(el("div",{class:"iv-box"},el("h4",{},"Payment history"),el("table",{class:"iv-pay"},el("tbody",{},
     ...pays.map(x=>el("tr",{},el("td",{},niceDate(x.date)),el("td",{},x.method||""),el("td",{class:"n"},money(x.amount))))))));
   if (p.notes) left.append(el("div",{class:"iv-box"},el("h4",{},"Notes"),el("p",{},p.notes)));
+  if (p.returnsNote) left.append(el("div",{class:"iv-box"},el("h4",{},"Returns and warranty"),el("p",{},p.returnsNote)));
   inner.append(el("div",{class:"iv-sum"},left,T));
   inner.append(el("div",{class:"iv-thanks"},el("b",{},p.footer||"Thank you for your business!"),
     el("div",{class:"c"},"Questions? "+([b.phone,b.email].filter(Boolean).join(" or ")||"Contact "+(b.name||"us")))));
@@ -8133,6 +8137,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
     const data={name,category,email,phone,phoneNorm:normPhone(phone),city,state,country,currency,description,
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
+      ...(category==="Auto Recycling"?{invoice:{returnDays:30,returnsNote:"30-day warranty: exchange or store credit. Receipt required and parts must be marked.",payTypes:["cash","check","card"]}}:{}),
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
     if (!isPlatformAdmin) track("trial_start",{business_type:category});

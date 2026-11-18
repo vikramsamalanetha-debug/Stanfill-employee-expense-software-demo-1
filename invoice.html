@@ -201,6 +201,7 @@ function invDocBuild(p,h){
   if (pays.length) left.append(el("div",{class:"iv-box"},el("h4",{},"Payment history"),el("table",{class:"iv-pay"},el("tbody",{},
     ...pays.map(x=>el("tr",{},el("td",{},niceDate(x.date)),el("td",{},x.method||""),el("td",{class:"n"},money(x.amount))))))));
   if (p.notes) left.append(el("div",{class:"iv-box"},el("h4",{},"Notes"),el("p",{},p.notes)));
+  if (p.returnsNote) left.append(el("div",{class:"iv-box"},el("h4",{},"Returns and warranty"),el("p",{},p.returnsNote)));
   inner.append(el("div",{class:"iv-sum"},left,T));
   inner.append(el("div",{class:"iv-thanks"},el("b",{},p.footer||"Thank you for your business!"),
     el("div",{class:"c"},"Questions? "+([b.phone,b.email].filter(Boolean).join(" or ")||"Contact "+(b.name||"us")))));
