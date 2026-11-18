@@ -62,8 +62,11 @@ function invTotals(inv){
   inv.lines.forEach(l=>{ parts+=l.price*l.qty; if(l.coreCharged) cores+=l.core*l.qty; });
   parts=r2(parts); cores=r2(cores);
   const sub=r2(parts+cores), tax=r2(sub*rate), total=r2(sub+tax), credit=r2(inv.creditUsed||0);
-  return {parts,cores,sub,tax,total,credit,due:r2(Math.max(0,total-credit)),rate};
+  // Paying by credit card adds a card fee (3%) on what goes on the card: total after tax and store credit.
+  const before=r2(Math.max(0,total-credit)), feePct=inv.pay==="card"?Number(inv.cardFee)||0:0, fee=r2(before*feePct/100);
+  return {parts,cores,sub,tax,total,credit,fee,feePct,due:r2(before+fee),rate};
 }
+const cardFeePct=()=>DB.settings.cardFee??3;
 const coresOwed=inv=>inv.lines.filter(l=>l.coreCharged&&l.core>0&&!l.coreReturnedAt);
 const withTax=(amt,inv)=>r2(amt*(1+(inv.taxRate??DB.settings.taxRate)/100));
 const custKey=(name,phone)=>normPhone(phone)||String(name||"").trim().toLowerCase();
@@ -142,13 +145,14 @@ function viewSale(v){
   const head=h("div",{class:"lrow lhead"},h("span",{class:"c-desc"},"Description"),h("span",{class:"c-core"},"Core"),h("span",{class:"c-price"},"Price"),h("span",{class:"c-qty"},"Unit"),h("span",{class:"c-amt"},"Amount"),h("span",{class:"c-x"}));
   const totals=h("div",{class:"totals"});
   const drawTotals=()=>{
-    const t=invTotals({...s,taxRate:DB.settings.taxRate});
+    const t=invTotals({...s,taxRate:DB.settings.taxRate,cardFee:cardFeePct()});
     totals.replaceChildren(...[
       trow("Parts",money(t.parts)),
       t.cores?trow("Core charges",money(t.cores),"corecharge"):null,
       trow("Sub-total",money(t.sub)),
       trow("Tax ("+DB.settings.taxRate+"%)",money(t.tax)),
       t.credit?trow("Store credit used","−"+money(t.credit),"good"):null,
+      t.fee?trow("Card fee ("+t.feePct+"%)",money(t.fee),"corecharge"):null,
       trow("Total",money(t.due),"big")].filter(Boolean));
   };
   const drawLines=(focusNew)=>{
@@ -195,8 +199,8 @@ function viewSale(v){
     inp.addEventListener("blur",()=>setTimeout(()=>{ box.hidden=true; },150));
     return h("div",{class:"lrow newrow"},h("span",{class:"c-desc wide"},inp,box));
   }
-  const pays=h("div",{class:"pays"},["cash","check","card"].map(p=>h("button",{type:"button",class:"pay"+(s.pay===p?" on":""),onclick:e=>{ s.pay=p; pays.querySelectorAll(".pay").forEach(b=>b.classList.toggle("on",b===e.currentTarget)); chk.hidden=p!=="check"; }},
-    {cash:"Cash",check:"Check",card:"Credit card"}[p])));
+  const pays=h("div",{class:"pays"},["cash","check","card"].map(p=>h("button",{type:"button",class:"pay"+(s.pay===p?" on":""),onclick:e=>{ s.pay=p; pays.querySelectorAll(".pay").forEach(b=>b.classList.toggle("on",b===e.currentTarget)); chk.hidden=p!=="check"; drawTotals(); }},
+    p==="card"?["Credit card",h("small",{class:"fee"},"+"+cardFeePct()+"% fee")]:{cash:"Cash",check:"Check"}[p])));
   const chk=h("label",{class:"f chk",hidden:s.pay!=="check"},"Check #",h("input",{value:s.checkNo,inputmode:"numeric",oninput:e=>{ s.checkNo=e.target.value; }}));
 
   function field(label,key,props){ return h("label",{class:"f"},label,h("input",{value:s[key],...props,oninput:e=>{ s[key]=e.target.value; if(key==="soldTo"||key==="phone"){ s.creditUsed=0; drawCredit(); drawTotals(); } }})); }
@@ -215,7 +219,7 @@ function saveSale(){
   if (!s.lines.length) return toast("Add at least one part.");
   if (s.lines.some(l=>!(l.price>0)) && !confirm("Some parts have no price. Save anyway?")) return;
   const inv={no:DB.seq++,date:today(),createdAt:new Date().toISOString(),soldTo:s.soldTo.trim()||"Customer",phone:normPhone(s.phone),address:s.address.trim(),
-    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,taxRate:DB.settings.taxRate,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
+    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,taxRate:DB.settings.taxRate,cardFee:s.pay==="card"?cardFeePct():0,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
   if (inv.creditUsed) addCredit(inv.soldTo,inv.phone,-inv.creditUsed);
   DB.invoices.push(inv);
   if (inv.soldBy){ DB.settings.lastSoldBy=inv.soldBy; if(!DB.settings.staff.includes(inv.soldBy)) DB.settings.staff.push(inv.soldBy); }
@@ -260,6 +264,7 @@ function receipt(inv,kind){
         h("tr",{},h("th",{},"SUB-TOTAL"),h("td",{class:"num"},money(t.sub))),
         h("tr",{},h("th",{},"TAX"),h("td",{class:"num"},money(t.tax))),
         t.credit?h("tr",{},h("th",{},"STORE CREDIT"),h("td",{class:"num"},"−"+money(t.credit))):null,
+        t.fee?h("tr",{},h("th",{},"CARD FEE ("+t.feePct+"%)"),h("td",{class:"num"},money(t.fee))):null,
         h("tr",{class:"big"},h("th",{},"TOTAL"),h("td",{class:"num"},money(t.due)))))));
 }
 function printDoc(node){ const p=$("#print"); p.replaceChildren(node); window.print(); }
@@ -387,7 +392,8 @@ function viewToday(v){
       stat(String(list.length),"Invoices"),
       stat(money(sum("due")),"Total taken in"),
       stat(money(sum("tax")),"Sales tax"),
-      stat(money(sum("cores")),"Core charges")),
+      stat(money(sum("cores")),"Core charges"),
+      sum("fee")?stat(money(sum("fee")),"Card fees"):null),
     h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),
       coreBack?stat("−"+money(coreBack),"Core refunds given"):null),
     h("div",{class:"panel"},h("h3",{},"Invoices"),list.length?h("div",{class:"ilist"},list.map(i=>invRow(i,()=>go("find",{open:i.no})))):h("div",{class:"empty"},"No sales on this day.")),
