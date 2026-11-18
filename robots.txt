@@ -5,3 +5,4 @@ Disallow: /invoice.html
 Disallow: /dashboard.html
 
 Sitemap: https://dayzift.com/sitemap.xml
+Disallow: /rightway/
