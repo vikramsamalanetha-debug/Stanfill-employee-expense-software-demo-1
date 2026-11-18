@@ -746,7 +746,7 @@ h2.sect{font-size:17px;font-weight:600;margin:4px 4px 8px}
 .prow.core{grid-template-columns:minmax(0,1fr) 100px 90px 44px 40px}
 .prow:first-child{border-top:0}
 .prow input{min-height:40px;padding:6px 10px}
-.siline .x,.prow .x{border:0;background:transparent;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;width:36px;height:36px;border-radius:8px}
+.sisec .x,.siline .x,.prow .x{border:0;background:transparent;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;width:36px;height:36px;border-radius:8px}
 .prow .x:hover{background:#FBE7E4;color:#A3271B}
 .phead{background:#F7F8F5;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:10px 12px}
 .addpart{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:10px;margin-bottom:10px}
@@ -817,6 +817,19 @@ dialog:has(.simpleinv){width:min(920px,calc(100vw - 24px));max-width:none}
 .pill.bad{background:#FBE7E4;color:#A3271B}
 .sitot .trow.good{color:var(--ok,#1E6B45)}
 .rowi .rp small{font-weight:600}
+.sisec{margin-top:16px}
+.sisec h3{font-size:15px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.silab{display:grid;grid-template-columns:minmax(0,1fr) 140px 32px;gap:8px;align-items:center;margin-bottom:8px}
+.sipart{display:grid;grid-template-columns:minmax(0,1fr) 64px 110px 90px 32px;gap:8px;align-items:center;margin-bottom:8px}
+.sipart .sicore{grid-column:1/-1;justify-self:start;margin-top:-2px;white-space:nowrap;width:auto}
+.silab input,.sipart input{width:100%}
+.money{position:relative}
+.money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.money input{padding-left:24px;text-align:right}
+.linkbtn{border:0;background:transparent;color:var(--primary);font:inherit;font-weight:600;cursor:pointer;padding:6px 0}
+.siadders{display:flex;gap:18px;margin-top:10px}
+.silater{display:grid;grid-template-columns:minmax(0,1fr) 160px;gap:10px;margin-top:10px}
+@media (max-width:700px){ .sipart{grid-template-columns:56px minmax(0,1fr) 32px} .sipart>input:first-child{grid-column:1/-1} .sipart .siamt{display:none} .silab{grid-template-columns:minmax(0,1fr) 110px 28px} .silater{grid-template-columns:1fr} }
 .btn.plus{width:44px;height:44px;min-height:44px;padding:0;border-radius:22px;font-size:26px;font-weight:400;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 @media (max-width:999px){ header.top #bizNameHeader{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 110px)} header.top{align-items:center} }
 .rowi .rp{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
@@ -5088,84 +5101,82 @@ function applyCardFee(d){
 function simpleInvoice(d){
   if (needsFullEditor(d)) return invoiceEditor(d);
   const body=invDlg(); body.replaceChildren(); body.classList.add("simpleinv");
-  const st=invSettings(), b=S.business||{}, rate=Number(d.taxRate)||0;
+  const st=invSettings(), b=S.business||{}, rate=Number(d.taxRate)||0, laborTax=!!st.laborTaxed;
   const num=d.number||("INV-"+nextInvoiceSeq());
+  const counter=isCounter(), partsWord=["Cleaning","Lawn Care","Pet Care"].includes(b.category)?"Supplies":"Parts";
   d.payWith=d.payWith||(d.status==="sent"?"later":(payTypes()[0]||"cash"));
+  const isLabor=l=>l.type==="labor"||l.type==="job";
+  const isPart=l=>l.type==="item"||l.type==="material";
+  if (d._showParts==null) d._showParts=counter||d.lines.some(isPart);
+  if (d._showLabor==null) d._showLabor=!counter||d.lines.some(isLabor);
+  if (d._showLabor && !d.lines.some(isLabor)) d.lines.unshift({id:newId(),type:"labor",desc:"",qty:1,unitPrice:0,taxable:laborTax});
+  const redraw=()=>simpleInvoice(d);
+
+  // Who it's for
   const top=el("div",{class:"sitop"},
     el("div",{},el("b",{class:"sibiz"},b.name||"Your business"),el("div",{class:"kv"},[st.address,[b.city,b.state].filter(Boolean).join(", "),st.phone].filter(Boolean).join(" · "))),
     el("div",{class:"sino"},el("b",{},"INVOICE"),el("div",{},num),el("div",{class:"kv"},niceDate(d.issueDate||today()))));
   const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).concat(S.customers.map(c=>c.name)).filter(Boolean))].sort();
-  const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",list:"siClients",placeholder:"Customer name",oninput:e=>{ d.client.name=e.target.value; },
-    onchange:e=>{ if (normName(e.target.value)===extras._for) return; const ci=clientInfo(e.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]){ d.client[k]=ci[k]; const x=body.querySelector(".sigrid [data-k="+k+"]"); if(x){ x.value=ci[k]; x.closest("label").hidden=false; } } });
-      drawExtras(); }});
-  const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off","data-k":k,...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
-  const addr=fld("Address","address",{});
-  if (!d.client.address){ addr.hidden=true; }
-  const who=el("div",{class:"sigrid"},el("label",{class:"f full"},"Bill to",nameIn,el("datalist",{id:"siClients"},clients.map(c=>el("option",{value:c})))),
-    fld("Phone","phone",{type:"tel"}),fld("Email","email",{type:"email",placeholder:"To send the invoice"}),addr,
-    addr.hidden?el("a",{href:"#",class:"kv full",onclick:e=>{ e.preventDefault(); addr.hidden=false; e.target.remove(); addr.querySelector("input").focus(); }},"+ Add their address"):null);
-  // Finished jobs for this customer (one tap each) and any store credit they have. Redrawn when the name changes.
   const extras=el("div",{});
+  const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",list:"siClients",placeholder:"Customer name",oninput:e=>{ d.client.name=e.target.value; },
+    onchange:e=>{ if (normName(e.target.value)===extras._for) return; const ci=clientInfo(e.target.value);
+      ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]){ d.client[k]=ci[k]; const x=body.querySelector("[data-k="+k+"]"); if(x) x.value=ci[k]; } }); drawExtras(); }});
+  const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off","data-k":k,...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
+  const who=el("div",{class:"sigrid"},el("label",{class:"f"},"Customer",nameIn,el("datalist",{id:"siClients"},clients.map(c=>el("option",{value:c})))),fld("Phone","phone",{type:"tel"}));
+
+  // A finished job for this customer fills the labor in one tap; store credit shows when they have some.
   function drawExtras(){
-  extras._for=normName(d.client.name);
-  const avail=d.client.name?unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id)&&normName(j.client)===normName(d.client.name)):[];
-  const jobsRow=avail.length?el("div",{class:"sijobs"},el("span",{class:"kv"},"Finished jobs for "+d.client.name+":"),
-    avail.slice(0,8).map(j=>el("button",{type:"button",class:"chip",onclick:()=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); simpleInvoice(d); }},"+ "+(j.service||"Job")+" · "+niceDate(j.date)+" · "+money(j.price))),
-    avail.length>1?el("button",{type:"button",class:"chip on",onclick:()=>{ avail.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); }); simpleInvoice(d); }},"Add all "+avail.length):null):null;
-  // Store credit from earlier returns
-  const credit=creditBalance(d.client.name), creditLine=d.lines.find(l=>l.type==="credit");
-  const creditRow=credit>0&&!creditLine?el("div",{class:"invnote"},d.client.name+" has "+money(credit)+" in store credit. ",el("a",{href:"#",onclick:e=>{ e.preventDefault();
-    d.lines.push({id:newId(),type:"credit",desc:"Store credit",qty:1,unitPrice:-0.01,taxable:false}); fitCredit(d,credit); simpleInvoice(d); }},"Use it on this invoice")):null;
-  extras.replaceChildren(...[jobsRow,creditRow].filter(Boolean));
+    extras._for=normName(d.client.name);
+    const avail=d.client.name?unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id)&&normName(j.client)===normName(d.client.name)):[];
+    const credit=creditBalance(d.client.name), hasCredit=d.lines.some(l=>l.type==="credit");
+    extras.replaceChildren(...[
+      avail.length?el("div",{class:"sijobs"},el("span",{class:"kv"},"Finished work for "+d.client.name+":"),avail.slice(0,6).map(j=>el("button",{type:"button",class:"chip",onclick:()=>{
+        d.lines=d.lines.filter(l=>!(l.type==="labor"&&!String(l.desc||"").trim()&&!Number(l.unitPrice)));
+        const jl=jobLine(j); d.lines.push(jl); d.lines.push(...costLines(j)); if (costLines(j).length) d._showParts=true; d._showLabor=true; redraw(); }},"+ "+(j.service||"Job")+" · "+niceDate(j.date).replace(/,? \d{4}$/,"")+" · "+money(j.price)))):null,
+      credit>0&&!hasCredit?el("div",{class:"invnote"},d.client.name+" has "+money(credit)+" store credit. ",el("a",{href:"#",onclick:e=>{ e.preventDefault();
+        d.lines.push({id:newId(),type:"credit",desc:"Store credit",qty:1,unitPrice:-0.01,taxable:false}); fitCredit(d,credit); redraw(); }},"Use it")):null].filter(Boolean));
   }
-  // Lines
-  const lines=el("div",{class:"silines"});
+
+  // LABOR: what was done and what it costs
   const tot=el("div",{class:"sitot"});
-  const amtOf=l=>money(invLineAmt(l));
-  function drawTot(){
-    const cr=d.lines.find(l=>l.type==="credit"); if (cr) fitCredit(d,creditBalance(d.client.name)+(-invLineAmt(cr))*(d.id?1:0));
-    applyCardFee(d);
-    const t=invTotals(d), fee=feeLineFor(d), core=r2(d.lines.filter(l=>l.type==="core").reduce((n,l)=>n+invLineAmt(l),0));
-    const L=(a,v,c)=>el("div",{class:"trow"+(c?" "+c:"")},el("span",{},a),el("b",{},v));
-    tot.replaceChildren(...[
-      L("Sub-total",money(t.subtotal-(fee?invLineAmt(fee):0)-(cr?invLineAmt(cr):0))),
-      core?L("  incl. core charges",money(core),"muted"):null,
-      L(taxName()+" ("+rate+"%)",money(t.tax)),
-      cr?L("Store credit","\u2212"+money(-invLineAmt(cr)),"good"):null,
-      fee?L(fee.desc,money(invLineAmt(fee)),"fee"):null,
-      L("Total",money(t.total),"big")].filter(Boolean));
+  const laborBox=el("section",{class:"sisec"});
+  if (d._showLabor){
+    laborBox.append(el("h3",{},"Labor"));
+    d.lines.filter(isLabor).forEach(l=>{
+      laborBox.append(el("div",{class:"silab"},
+        el("input",{value:l.desc||"",placeholder:counter?"e.g. Pull fee":"What you did, e.g. Deep cleaning, 3 bedrooms","aria-label":"Labor description",oninput:e=>{ l.desc=e.target.value; }}),
+        el("div",{class:"money"},el("span",{},cs()),el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",value:l.unitPrice?String(r2(invLineAmt(l))):"",placeholder:"0.00","aria-label":"Labor amount",
+          oninput:e=>{ l.qty=1; l.unitPrice=Number(e.target.value)||0; drawTot(); }})),
+        d.lines.filter(isLabor).length>1?el("button",{type:"button",class:"x","aria-label":"Remove",onclick:()=>{ d.lines=d.lines.filter(x=>x!==l); redraw(); }},"×"):el("span",{})));
+    });
+    laborBox.append(el("button",{type:"button",class:"linkbtn",onclick:()=>{ d.lines.splice(d.lines.filter(isLabor).length,0,{id:newId(),type:"labor",desc:"",qty:1,unitPrice:0,taxable:laborTax}); redraw(); }},"+ More labor"));
   }
-  function lineRow(l){
-    if (l.type==="fee"||l.type==="core"||l.type==="credit") return null;
-    const coreLine=d.lines.find(x=>x.type==="core"&&x.coreFor===l.id);
-    const amt=el("span",{class:"siamt"},amtOf(l));
-    const upd=()=>{ amt.textContent=amtOf(l); if (coreLine){ coreLine.qty=l.qty; } drawTot(); };
-    const coreBox=l.core>0?el("label",{class:"sicore"+(coreLine?" on":""),title:"Tick when the customer did NOT bring the old part back"},
-      el("input",{type:"checkbox",checked:!!coreLine,onchange:e=>{ if (e.target.checked) d.lines.splice(d.lines.indexOf(l)+1,0,{id:newId(),type:"core",coreFor:l.id,desc:"Core charge, "+l.desc,qty:l.qty,unitPrice:l.core,taxable:l.taxable!==false});
-        else d.lines=d.lines.filter(x=>!(x.type==="core"&&x.coreFor===l.id)); simpleInvoice(d); }}),
-      "Core "+money(l.core*(l.qty||1))):null;
-    return el("div",{class:"siline"},
-      el("div",{class:"sidesc"},el("input",{value:l.desc||"","aria-label":"Description",oninput:e=>{ l.desc=e.target.value; if(coreLine) coreLine.desc="Core charge, "+l.desc; }}),
-        l.type==="job"?el("small",{class:"kv"},"Finished job"):null,
-        rate>0&&l.type!=="job"?el("label",{class:"sitax"},el("input",{type:"checkbox",checked:!!l.taxable,onchange:e=>{ l.taxable=e.target.checked; drawTot(); }}),"taxed"):null),
-      el("div",{class:"sicorecell"},coreBox),
-      el("input",{class:"siprice",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:String(l.unitPrice??""),"aria-label":"Price",oninput:e=>{ l.unitPrice=Number(e.target.value)||0; upd(); }}),
-      el("input",{class:"siqty",type:"number",min:"1",step:"1",inputmode:"numeric",value:String(l.qty??1),"aria-label":"Quantity",oninput:e=>{ l.qty=Math.max(1,Number(e.target.value)||1); upd(); }}),
-      amt,
-      el("button",{type:"button",class:"x","aria-label":"Remove "+(l.desc||"line"),onclick:()=>{ d.lines=d.lines.filter(x=>x!==l&&!(x.type==="core"&&x.coreFor===l.id)); simpleInvoice(d); }},"×"));
-  }
-  function newRow(){
-    const inp=el("input",{placeholder:d.lines.some(l=>l.type!=="fee")?"Type the next item…":(priceList().length?"Start typing, e.g. “"+(priceList()[0].n.split(" ")[0].slice(0,3).toLowerCase())+"”":"Type what you're billing for"),autocomplete:"off","aria-label":"Add an item"});
+
+  // PARTS / SUPPLIES: only when there are some
+  const partsBox=el("section",{class:"sisec"});
+  if (d._showParts){
+    partsBox.append(el("h3",{},partsWord));
+    d.lines.filter(isPart).forEach(l=>{
+      const c=coreLineOf(d,l), amt=el("b",{class:"siamt"},money(invLineAmt(l)));
+      partsBox.append(el("div",{class:"sipart"},
+        el("input",{value:l.desc||"","aria-label":"Part",oninput:e=>{ l.desc=e.target.value; if(c) c.desc="Core charge, "+l.desc; }}),
+        el("input",{class:"siqty",type:"number",min:"1",step:"1",inputmode:"numeric",value:String(l.qty??1),"aria-label":"How many",title:"How many",oninput:e=>{ l.qty=Math.max(1,Number(e.target.value)||1); if(c) c.qty=l.qty; amt.textContent=money(invLineAmt(l)); drawTot(); }}),
+        el("div",{class:"money"},el("span",{},cs()),el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",value:String(l.unitPrice??""),"aria-label":"Price each",oninput:e=>{ l.unitPrice=Number(e.target.value)||0; amt.textContent=money(invLineAmt(l)); drawTot(); }})),
+        amt,
+        el("button",{type:"button",class:"x","aria-label":"Remove "+(l.desc||"part"),onclick:()=>{ d.lines=d.lines.filter(x=>x!==l&&!(x.type==="core"&&x.coreFor===l.id)); redraw(); }},"×"),
+        l.core>0?el("label",{class:"sicore"+(c?" on":""),title:"Tick when the customer did NOT bring the old part back"},el("input",{type:"checkbox",checked:!!c,onchange:e=>{
+          if (e.target.checked) d.lines.splice(d.lines.indexOf(l)+1,0,{id:newId(),type:"core",coreFor:l.id,desc:"Core charge, "+l.desc,qty:l.qty,unitPrice:l.core,taxable:true});
+          else d.lines=d.lines.filter(x=>!(x.type==="core"&&x.coreFor===l.id)); redraw(); }}),"Core charge "+money(l.core*(l.qty||1))):null));
+    });
+    // type to add: the price list suggests as you type
+    const inp=el("input",{placeholder:"Type a "+(partsWord==="Supplies"?"supply":"part")+" to add"+(priceList().length?", e.g. “"+priceList()[0].n.split(" ")[0].slice(0,3).toLowerCase()+"”":""),autocomplete:"off","aria-label":"Add "+partsWord.toLowerCase()});
     const box=el("div",{class:"sisugg",hidden:true}); let items=[],sel=0;
-    const add=(x,typed)=>{ const it={id:newId(),type:"item",desc:x?x.n:typed,qty:1,unitPrice:x?x.p:0,taxable:x?x.t!==false&&rate>0:rate>0&&!isServiceCat(),core:x&&x.c>0?x.c:0};
-      d.lines.push(it);
-      if (it.core>0) d.lines.push({id:newId(),type:"core",coreFor:it.id,desc:"Core charge, "+it.desc,qty:1,unitPrice:it.core,taxable:it.taxable});
-      simpleInvoice(d);
-      setTimeout(()=>{ const n=x?$(".simpleinv .sinew input"):[...document.querySelectorAll(".simpleinv .siprice")].pop(); if(n){ n.focus(); if(n.select) n.select(); } },0); };
-    const draw=()=>{ items=itemSearch(inp.value); sel=0; box.replaceChildren();
+    const add=(x,typed)=>{ const it={id:newId(),type:"item",desc:x?x.n:typed,qty:1,unitPrice:x?x.p:0,taxable:x?x.t!==false:true,core:x&&x.c>0?x.c:0};
+      d.lines.push(it); if (it.core>0) d.lines.push({id:newId(),type:"core",coreFor:it.id,desc:"Core charge, "+it.desc,qty:1,unitPrice:it.core,taxable:true});
+      redraw(); setTimeout(()=>{ const n=x?$(".simpleinv .sinew input"):[...document.querySelectorAll(".simpleinv .sipart .money input")].pop(); if(n){ n.focus(); if(n.select) n.select(); } },0); };
+    const draw=()=>{ items=itemSearch(inp.value).filter(x=>x.p>0||priceList().length); sel=0; box.replaceChildren();
       if (!inp.value.trim()){ box.hidden=true; return; }
-      items.forEach((x,i)=>box.append(el("button",{type:"button",class:"opt"+(i===sel?" on":""),onmousedown:e=>{ e.preventDefault(); add(x); }},
-        el("span",{},x.n),el("span",{class:"pp"},x.p?money(x.p):"",x.c>0?el("em",{}," + core "+money(x.c)):null))));
+      items.forEach((x,i)=>box.append(el("button",{type:"button",class:"opt"+(i===sel?" on":""),onmousedown:e=>{ e.preventDefault(); add(x); }},el("span",{},x.n),el("span",{class:"pp"},x.p?money(x.p):"",x.c>0?el("em",{}," + core "+money(x.c)):null))));
       box.append(el("button",{type:"button",class:"opt add",onmousedown:e=>{ e.preventDefault(); add(null,inp.value.trim()); }},"+ Add “"+inp.value.trim()+"”"));
       box.hidden=false; };
     const hi=()=>[...box.querySelectorAll(".opt")].forEach((o,i)=>o.classList.toggle("on",i===sel));
@@ -5173,54 +5184,73 @@ function simpleInvoice(d){
     inp.addEventListener("keydown",e=>{ if(e.key==="ArrowDown"){ e.preventDefault(); sel=Math.min(sel+1,items.length); hi(); } else if(e.key==="ArrowUp"){ e.preventDefault(); sel=Math.max(0,sel-1); hi(); }
       else if(e.key==="Enter"){ e.preventDefault(); if(!inp.value.trim()) return; if(sel<items.length) add(items[sel]); else add(null,inp.value.trim()); } else if(e.key==="Escape") box.hidden=true; });
     inp.addEventListener("blur",()=>setTimeout(()=>{ box.hidden=true; },150));
-    return el("div",{class:"sinew"},inp,box);
+    partsBox.append(el("div",{class:"sinew"},inp,box));
   }
-  d.lines.forEach(l=>{ const r=lineRow(l); if(r) lines.append(r); });
-  lines.append(newRow());
-  // Paid by
+  const adders=el("div",{class:"siadders"},
+    !d._showLabor?el("button",{type:"button",class:"linkbtn",onclick:()=>{ d._showLabor=true; redraw(); }},"+ Add labor"):null,
+    !d._showParts?el("button",{type:"button",class:"linkbtn",onclick:()=>{ d._showParts=true; redraw(); setTimeout(()=>{ const n=$(".simpleinv .sinew input"); if(n) n.focus(); },0); }},"+ Add "+partsWord.toLowerCase()):null);
+
+  // TOTALS: labor, parts, tax on parts, card fee
+  function drawTot(){
+    d.lines.forEach(l=>{ if (isLabor(l)) l.taxable=laborTax; });
+    const cr=d.lines.find(l=>l.type==="credit"); if (cr) fitCredit(d,creditBalance(d.client.name)+(-invLineAmt(cr))*(d.id?1:0));
+    applyCardFee(d);
+    const t=invTotals(d), fee=feeLineFor(d);
+    const sum=f=>r2(d.lines.filter(f).reduce((n,l)=>n+invLineAmt(l),0));
+    const labor=sum(isLabor), parts=sum(l=>isPart(l)||l.type==="core");
+    const L=(a,v,c)=>el("div",{class:"trow"+(c?" "+c:"")},el("span",{},a),el("b",{},v));
+    tot.replaceChildren(...[
+      d._showLabor?L("Labor",money(labor)):null,
+      d._showParts?L(partsWord,money(parts)):null,
+      L(taxName()+(rate?" ("+rate+"%"+(laborTax?"":" on "+partsWord.toLowerCase())+")":""),money(t.tax)),
+      cr?L("Store credit","−"+money(-invLineAmt(cr)),"good"):null,
+      fee?L(fee.desc,money(invLineAmt(fee)),"fee"):null,
+      L("Total",money(t.total),"big")].filter(Boolean));
+  }
+
+  // PAID BY
   const opts=[...payTypes(),"later"];
-  const pays=el("div",{class:"sipays"},opts.map(p=>el("button",{type:"button",class:"sipay"+(d.payWith===p?" on":""),onclick:()=>{ d.payWith=p; simpleInvoice(d); }},
+  const pays=el("div",{class:"sipays"},opts.map(p=>el("button",{type:"button",class:"sipay"+(d.payWith===p?" on":""),onclick:()=>{ d.payWith=p; redraw(); }},
     p==="later"?"Not paid yet":PAY_LABEL[p]||p, p==="card"&&cardFeeOn()?el("small",{},"+"+cardFeePct()+"% fee"):null)));
-  const due=d.payWith==="later"?el("div",{class:"row",style:"gap:10px;flex-wrap:wrap;margin-top:10px"},
+  const later=d.payWith==="later"?el("div",{class:"silater"},fld("Email it to","email",{type:"email",placeholder:"customer@email.com"}),
     el("label",{class:"f"},"Due",el("select",{onchange:e=>{ d.terms=e.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); d.dueDate=addDays(d.issueDate||today(),t?t[2]:0); }},
-      INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===d.terms},l)))),
-    el("p",{class:"kv",style:"margin:18px 0 0"},d.client.email?"We'll email it to "+d.client.email+" with a link to pay.":"Add their email above to send it, or print it.")):null;
+      INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===d.terms},l))))):null;
+
   const err=el("div",{class:"gate-msg"});
   const go=async(mode)=>{
     if (viewOnlyBlocked()) return;
-    d.lines=d.lines.filter(l=>l.type==="fee"||String(l.desc||"").trim());
+    d.lines=d.lines.filter(l=>l.type==="fee"||l.type==="credit"||l.type==="core"||(String(l.desc||"").trim()||Number(l.unitPrice)));
+    d.lines.forEach(l=>{ if (l.type==="labor"&&!String(l.desc||"").trim()) l.desc="Labor"; });
     if (!String(d.client.name||"").trim()) return err.textContent="Who is this for? Type the customer's name.";
-    if (!d.lines.some(l=>l.type!=="fee")) return err.textContent="Add at least one item.";
+    if (!d.lines.some(l=>isLabor(l)||isPart(l))) return err.textContent="Add the labor or a "+(partsWord==="Supplies"?"supply":"part")+".";
     applyCardFee(d);
-    const t=invTotals(d); if (t.total<=0 && !d.lines.some(l=>l.type==="credit")) return err.textContent="The total is zero. Check the prices.";
+    const t=invTotals(d); if (t.total<=0 && !d.lines.some(l=>l.type==="credit")) return err.textContent="The total is zero. Add the amount.";
     const was={status:d.status,sentAt:d.sentAt,payments:d.payments};
     if (mode!=="draft"){ d.status="sent"; d.sentAt=d.sentAt||Date.now(); }
     if (mode==="paid"){ d.terms="receipt"; d.dueDate=d.issueDate||today();
       const paid=r2((d.payments||[]).reduce((n,x)=>n+(Number(x.amount)||0),0)), left=r2(t.total-paid);
       if (left>0.004) d.payments=[...(d.payments||[]),{id:newId(),amount:left,date:today(),method:PAY_LABEL[d.payWith]||d.payWith,note:"",at:Date.now()}]; }
-    const payWith=d.payWith; delete d.payWith;
-    try { await saveInvoice(d); } catch(e){ console.warn(e); Object.assign(d,was); d.payWith=payWith; return err.textContent="That didn't save. Everything is still here; check your connection and tap again."; }
+    const keep={payWith:d.payWith,_showParts:d._showParts,_showLabor:d._showLabor}; delete d.payWith; delete d._showParts; delete d._showLabor;
+    try { await saveInvoice(d); } catch(e){ console.warn(e); Object.assign(d,was,keep); return err.textContent="That didn't save. Everything is still here; check your connection and tap again."; }
     toast(mode==="paid"?d.number+" saved as paid":mode==="send"?d.number+" ready to send":"Draft saved");
     if (mode==="paid"){ $("#invDlg").close(); setTimeout(()=>printInvoice(d),150); }
     else if (mode==="send") openSend(d);
     else $("#invDlg").close();
   };
-  const isPaidMode=d.payWith!=="later";
+  const paidMode=d.payWith!=="later";
   drawExtras();
-  body.append(top,who,extras,el("div",{class:"silhead"},el("span",{},"Description"),el("span",{}),el("span",{},"Price"),el("span",{},"Qty"),el("span",{},"Amount"),el("span",{})),lines,
-    el("div",{class:"sibottom"},el("div",{},el("div",{class:"lbl2"},"Paid by"),pays,due),tot),
-    st.returnsNote?el("p",{class:"kv sinote"},st.returnsNote):null,
+  body.append(top,who,extras,laborBox,partsBox,adders,
+    el("div",{class:"sibottom"},el("div",{},el("div",{class:"lbl2"},"Paid by"),pays,later),tot),
     err,
     el("div",{class:"row siacts"},
-      el("a",{href:"#",class:"kv",onclick:e=>{ e.preventDefault(); delete d.payWith; d.lines=d.lines.filter(l=>l.type!=="fee"); invoiceEditor(d); }},"More options (discount, deposit, terms, notes)"),
+      el("a",{href:"#",class:"kv",onclick:e=>{ e.preventDefault(); ["payWith","_showParts","_showLabor"].forEach(k=>delete d[k]); d.lines=d.lines.filter(l=>l.type!=="fee"); invoiceEditor(d); }},"More options"),
       el("span",{class:"grow"}),
       el("button",{type:"button",class:"btn ghost",onclick:()=>$("#invDlg").close()},"Cancel"),
       d.status!=="sent"?el("button",{type:"button",class:"btn",onclick:()=>go("draft")},"Save draft"):null,
-      el("button",{type:"button",class:"btn primary big",onclick:()=>go(isPaidMode?"paid":"send")},isPaidMode?"Save & print":"Save & send")));
+      el("button",{type:"button",class:"btn primary big",onclick:()=>go(paidMode?"paid":"send")},paidMode?"Save & print":"Save & send")));
   drawTot();
-  setTimeout(()=>{ const f=d.client.name?$(".simpleinv .sinew input"):nameIn; if(f) f.focus(); },0);
+  setTimeout(()=>{ const f=!d.client.name?nameIn:(d._showLabor?body.querySelector(".silab input"):body.querySelector(".sinew input")); if(f) f.focus(); },0);
 }
-
 /* ---- Returns and store credit on invoices ---- */
 const RETURNABLE=l=>!["fee","core","credit","deposit"].includes(l.type);
 const coreLineOf=(inv,l)=>(inv.lines||[]).find(x=>x.type==="core"&&x.coreFor===l.id);
@@ -5688,6 +5718,8 @@ function invSetupPanel(){
     el("div",{class:"addrgrid"},el("label",{class:"f full"},"Street",street),el("label",{class:"f"},"City",city),el("label",{class:"f"},isUS()?"State":"State / region",state),el("label",{class:"f"},isUS()?"ZIP":"Postcode",zip)),
     taxBox));
   drawTax();
+  p.append(sec("Tax on labor",el("label",{class:"row",style:"gap:12px;font-weight:600"},el("input",{type:"checkbox",class:"switch",checked:!!st.laborTaxed,onchange:e=>invSave({laborTaxed:e.target.checked},flag)}),"Charge sales tax on labor too"),
+    el("p",{class:"kv"},"Off: tax goes on parts and supplies only. Some work is taxed on labor too (in Tennessee, repairing cars and equipment is); check with your accountant.")));
   // 2. Card fee
   const feeIn=el("input",{type:"number",min:"0.5",max:"3",step:"0.1",inputmode:"decimal",value:String(cardFeePct()),class:"feein","aria-label":"Card fee percent",
     onchange:e=>{ let v=Number(e.target.value)||0; if (v>3){ v=3; toast("Card fees can't be more than 3%."); } if (v<0) v=0; e.target.value=String(v); invSave({cardFee:v},flag); }});
@@ -8182,7 +8214,6 @@ async function routeUser(user){
     else if (acct.role==="crew") showCrewWaiting(user.email);
     else showBizOnboard(acct.plannedCategory, acct.plannedBusinessName, acct.email||user.email, acct.phone);
 }
-
 /* ---- PREVIEW BUILD: demo data only. It never signs in, so it can't touch a real business. ---- */
 (function(){
   const qs=new URLSearchParams(location.search);
