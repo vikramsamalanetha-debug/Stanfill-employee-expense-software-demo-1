@@ -5267,10 +5267,13 @@ function creditBalance(name){
   });
   return r2(Math.max(0,n));
 }
+// Auto parts: electronics (computers, modules, radios, clusters, sensors...) can't come back.
+const ELEC_PARTS=/\b(ecm|bcm|bmc|tcm|pcm)\b|computer|module|brain box|radio|cd changer|amplifier|subwoofer|navigation|video screen|camera|sensor|cluster|gauges|tachometer|speedo|ballast|ignitor|immobilizer|key fob|keyless|alarm|relay|voltage regulator|clock spring|cruise control box/i;
 function returnWindow(inv,l){
   const st=invSettings(), days=Number(st.returnDays)||0;
   const n=String(l.desc||"").toLowerCase();
-  if ((S.business||{}).category==="Auto Recycling" && /\b(ecm|bcm|bmc|tcm|pcm)\b|control module|computer|brain box/.test(n)) return {ok:false,why:"Computer modules are sold as is"};
+  if (isCounter() && (l.type==="labor"||l.type==="job")) return {ok:false,why:"Labor isn't refundable"};
+  if (isCounter() && (l.elec||ELEC_PARTS.test(n))) return {ok:false,why:"Electronic part: not returnable"};
   if (!days) return {ok:true};
   const ends=addDays(inv.issueDate||today(),days), left=Math.round((parseYmd(ends)-parseYmd(today()))/864e5);
   return left<0?{ok:false,why:"Return window ended "+niceDate(ends)}:{ok:true,left,ends};
@@ -8171,7 +8174,7 @@ $("#bizRegBtn").addEventListener("click", async ()=>{
     const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(S.myEmail);
     const data={name,category,email,phone,phoneNorm:normPhone(phone),city,state,country,currency,description,
       ownerUid:S.myUserId,ownerUids:[S.myUserId],ownerEmails:[(S.myEmail||"").toLowerCase()],createdAt:Date.now(),
-      ...(category==="Auto Recycling"?{invoice:{returnDays:30,returnsNote:"30-day warranty: exchange or store credit. Receipt required and parts must be marked.",payTypes:["cash","check","card"]}}:{}),
+      ...(category==="Auto Recycling"?{invoice:{returnDays:30,returnsNote:"30-day warranty: exchange or store credit. Receipt required and parts must be marked. Not returnable: electronic parts (computers, modules, radios, clusters, sensors) and any labor, such as pulling a part for you.",payTypes:["cash","check","card"]}}:{}),
       status: isPlatformAdmin ? "active" : "pending"};
     await db.doc("businesses/"+id).set(data);
     if (!isPlatformAdmin) track("trial_start",{business_type:category});
@@ -8222,7 +8225,7 @@ async function routeUser(user){
   const counter=()=>{ startDemo("Handyman"); const b=S.business;
     Object.assign(b,{category:"Auto Recycling",name:"Rightway Auto Recycling",city:"Decaturville",state:"TN",services:SERVICE_DEFAULTS["Auto Recycling"].slice()});
     b.invoice={...b.invoice,address:"7945 TN-100",zip:"38329",phone:"731-549-3179",taxRate:9.75,taxSource:"Outside city limits, Decatur County",returnDays:30,
-      returnsNote:"30-day warranty: exchange or store credit. Receipt required and parts must be marked. ECM, BCM, TCM and PCM are not covered.",payTypes:["cash","check","card"],cardFeeOn:true,cardFee:3};
+      returnsNote:"30-day warranty: exchange or store credit. Receipt required and parts must be marked. Not returnable: electronic parts (computers, modules, radios, clusters, sensors) and any labor, such as pulling a part for you.",payTypes:["cash","check","card"],cardFeeOn:true,cardFee:3};
     if (typeof PRICE_LIST!=="undefined") b.priceList=PRICE_LIST.filter(x=>x[1]>0).map(x=>({n:x[0],p:x[1],c:x[2],t:true}));
     S.tab="invoices"; S.invView="find"; render(); toast("Now showing an auto parts counter"); };
   const bar=document.createElement("div");

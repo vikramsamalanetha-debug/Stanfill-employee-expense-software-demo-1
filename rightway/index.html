@@ -144,8 +144,11 @@ input:focus{outline:3px solid #BFDCCB;border-color:var(--brand)}
 .stat span{color:var(--muted);font-size:15px}
 input[type=date]{width:auto}
 .plist{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}
-.prow{display:grid;grid-template-columns:minmax(0,1fr) 120px 120px;gap:10px;align-items:center;padding:6px 12px;border-top:1px solid var(--line)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 110px 110px 90px;gap:10px;align-items:center;padding:6px 12px;border-top:1px solid var(--line)}
 .prow:first-child{border-top:0}
+.prow .nr{display:flex;justify-content:center}
+.prow .nr input{width:22px;height:22px;min-height:0}
+.addlabor{margin-top:8px}
 .prow input{min-height:40px;padding:6px 10px}
 .phead{background:#F7F8F5;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:10px 12px}
 .addpart{display:grid;grid-template-columns:minmax(0,1fr) 120px 120px auto;gap:10px}
@@ -205,7 +208,7 @@ footer a{color:var(--brand);font-weight:600}
   .itags{display:none}
   .stats,.stats.three{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addpart{grid-template-columns:1fr 1fr}
-  .prow{grid-template-columns:minmax(0,1fr) 84px 84px}
+  .prow{grid-template-columns:minmax(0,1fr) 76px 70px 56px}
   .ptop{flex-direction:column}
   .invno{text-align:left}
 }

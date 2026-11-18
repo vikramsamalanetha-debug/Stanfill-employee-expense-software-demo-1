@@ -54,6 +54,8 @@ function load(){ try{ DB=JSON.parse(localStorage.getItem(KEY)); }catch(e){ DB=nu
   DB.invoices.forEach(inv=>{ inv.returns=(inv.returns||[]).map(r=>r.kind?r:{...r,kind:"part",how:r.type==="exchange"?"exchange":"credit",coreQty:0});
     inv.lines.forEach((l,idx)=>{ if(l.coreReturnedAt){ inv.returns.push({idx,name:l.name,kind:"core",qty:0,coreQty:l.qty,how:l.coreRefundHow==="credit"?"credit":"refund",amount:l.coreRefund||0,at:l.coreReturnedAt}); delete l.coreReturnedAt; } }); }); }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast("Couldn't save on this computer."); } }
+const ELEC=/\b(ecm|bcm|bmc|tcm|pcm)\b|computer|module|brain box|radio|cd changer|amplifier|subwoofer|navigation|video screen|camera|sensor|cluster|gauges|tachometer|speedo|ballast|ignitor|immobilizer|key fob|keyless|alarm|relay|voltage regulator|clock spring|cruise control box/i;
+const isElec=p=>p.elec!=null?!!p.elec:ELEC.test(p.name||"");
 const prices=()=>DB.prices||PRICE_LIST.map(p=>({name:p[0],price:p[1],core:p[2],note:p[3]||""}));
 function setPrices(list){ DB.prices=list; save(); }
 
@@ -61,12 +63,13 @@ function setPrices(list){ DB.prices=list; save(); }
 function invTotals(inv){
   const rate=(inv.taxRate??DB.settings.taxRate)/100;
   let parts=0,cores=0;
-  inv.lines.forEach(l=>{ parts+=l.price*l.qty; if(l.coreCharged) cores+=l.core*l.qty; });
-  parts=r2(parts); cores=r2(cores);
-  const sub=r2(parts+cores), tax=r2(sub*rate), total=r2(sub+tax), credit=r2(inv.creditUsed||0);
+  let labor=0;
+  inv.lines.forEach(l=>{ if (l.labor){ labor+=l.price*l.qty; return; } parts+=l.price*l.qty; if(l.coreCharged) cores+=l.core*l.qty; });
+  parts=r2(parts); cores=r2(cores); labor=r2(labor);
+  const sub=r2(parts+cores+labor), tax=r2((parts+cores)*rate), total=r2(sub+tax), credit=r2(inv.creditUsed||0);
   // Paying by credit card adds a card fee (3%) on what goes on the card: total after tax and store credit.
   const before=r2(Math.max(0,total-credit)), feePct=inv.pay==="card"?Number(inv.cardFee)||0:0, fee=r2(before*feePct/100);
-  return {parts,cores,sub,tax,total,credit,fee,feePct,due:r2(before+fee),rate};
+  return {parts,cores,labor,sub,tax,total,credit,fee,feePct,due:r2(before+fee),rate};
 }
 const cardFeePct=()=>DB.settings.cardFee??3;
 // How many cores are still out on a line, and how many of the parts have come back (refund or credit; an exchange keeps the sale).
@@ -81,7 +84,8 @@ function addCredit(name,phone,amt){ const k=custKey(name,phone); if(!k) return; 
 /* Warranty: 30 days, exchange or store credit, no refunds. Computer modules aren't covered; glass is void if broken. */
 function warranty(inv,line){
   const n=line.name.toLowerCase(), days=DB.settings.warrantyDays, ends=addDays(inv.date.slice(0,10),days), left=daysBetween(today(),ends);
-  if (/\b(ecm|bcm|bmc|tcm|pcm)\b|control module|computer|brain box/.test(n)) return {ok:false,why:"Not covered: computer modules (ECM, BCM, TCM, PCM) are sold as is.",ends};
+  if (line.labor) return {ok:false,why:"Labor isn't refundable.",ends};
+  if (line.elec||(line.elec==null&&ELEC.test(n))) return {ok:false,why:"Electronic part: not returnable.",ends};
   if (left<0) return {ok:false,why:"Warranty ended "+longDate(ends)+".",ends};
   return {ok:true,left,ends,glass:/glass|windshield/.test(n)};
 }
@@ -154,6 +158,7 @@ function viewSale(v){
     totals.replaceChildren(...[
       trow("Parts",money(t.parts)),
       t.cores?trow("Core charges",money(t.cores),"corecharge"):null,
+      t.labor?trow("Labor (no tax)",money(t.labor)):null,
       trow("Sub-total",money(t.sub)),
       trow("Tax ("+DB.settings.taxRate+"%)",money(t.tax)),
       t.credit?trow("Store credit used","−"+money(t.credit),"good"):null,
@@ -170,7 +175,8 @@ function viewSale(v){
     const upd=()=>{ amt.textContent=money(l.price*l.qty+(l.coreCharged?l.core*l.qty:0)); drawTotals(); };
     return h("div",{class:"lrow"},
       h("span",{class:"c-desc"},h("input",{value:l.name,"aria-label":"Description",oninput:e=>{ l.name=e.target.value; }}),
-        l.note?h("small",{class:"warn"},l.note):null),
+        l.note?h("small",{class:"warn"},l.note):null,
+        l.labor?h("small",{class:"warn"},"Labor: no tax, not refundable"):l.elec?h("small",{class:"warn"},"Electronic: not returnable"):null),
       h("span",{class:"c-core"},l.core>0?h("label",{class:"core"+(l.coreCharged?" on":""),title:"Tick when the customer did NOT bring the old part back"},
         h("input",{type:"checkbox",checked:l.coreCharged,onchange:e=>{ l.coreCharged=e.target.checked; e.target.parentNode.classList.toggle("on",l.coreCharged); upd(); }}),
         h("span",{},"Core "+money(l.core))):h("span",{class:"muted"},"—")),
@@ -184,7 +190,7 @@ function viewSale(v){
     const box=h("div",{class:"sugg",hidden:true});
     let items=[],sel=0;
     const pick=p=>{ if(!p) return;
-      s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||""});
+      s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||"",elec:isElec(p)});
       drawLines(true); };
     const custom=()=>{ const n=inp.value.trim(); if(!n) return; s.lines.push({name:n,price:0,qty:1,core:0,coreCharged:false}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } };
     const draw=()=>{ items=searchParts(inp.value); sel=0; box.replaceChildren();
@@ -202,7 +208,8 @@ function viewSale(v){
       else if (e.key==="Escape"){ box.hidden=true; }
     });
     inp.addEventListener("blur",()=>setTimeout(()=>{ box.hidden=true; },150));
-    return h("div",{class:"lrow newrow"},h("span",{class:"c-desc wide"},inp,box));
+    const labor=h("button",{type:"button",class:"btn small ghost addlabor",onclick:()=>{ s.lines.push({name:"Labor: pulling the part",price:0,qty:1,core:0,coreCharged:false,labor:true}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } }},"+ Labor (we pull it)");
+    return h("div",{class:"lrow newrow"},h("span",{class:"c-desc wide"},inp,box),labor);
   }
   const pays=h("div",{class:"pays"},["cash","check","card"].map(p=>h("button",{type:"button",class:"pay"+(s.pay===p?" on":""),onclick:e=>{ s.pay=p; pays.querySelectorAll(".pay").forEach(b=>b.classList.toggle("on",b===e.currentTarget)); chk.hidden=p!=="check"; drawTotals(); }},
     p==="card"?["Credit card",h("small",{class:"fee"},"+"+cardFeePct()+"% fee")]:{cash:"Cash",check:"Check"}[p])));
@@ -238,7 +245,7 @@ function receipt(inv,kind){
   const t=invTotals(inv);
   const lines=[];
   inv.lines.forEach(l=>{
-    lines.push(h("tr",{},h("td",{},l.name),h("td",{class:"num"},money(l.price)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.price*l.qty))));
+    lines.push(h("tr",{},h("td",{},l.name+(l.labor||l.elec||(l.elec==null&&ELEC.test(l.name))?"  *":"")),h("td",{class:"num"},money(l.price)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.price*l.qty))));
     if (l.coreCharged&&l.core>0) lines.push(h("tr",{class:"coreline"},h("td",{},"   Core charge, "+l.name+(coreOwedQty(inv,inv.lines.indexOf(l))?" (refunded when core is returned)":" (core returned)")),
       h("td",{class:"num"},money(l.core)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.core*l.qty))));
   });
@@ -262,7 +269,8 @@ function receipt(inv,kind){
     h("div",{class:"rfoot"},
       h("div",{class:"rnote"},
         h("p",{},h("b",{},"30-day warranty: exchange or store credit. No refunds."),
-          " Receipt required and parts must be marked. ECM, BCM, TCM and PCM are not covered. Glass is void if returned broken."),
+          " Receipt required and parts must be marked. Glass is void if returned broken."),
+        h("p",{},h("b",{},"* Not returnable: "),"electronic parts (computers and modules like ECM, BCM, TCM, PCM, radios, clusters, sensors) and any labor, such as pulling a part for you."),
         after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null,
         h("div",{class:"sig"},"Signature ",h("span",{}))),
       h("table",{class:"rtot"},h("tbody",{},
@@ -420,10 +428,11 @@ function viewPrices(v){
   const draw=()=>{
     const all=prices(); const ql=q.toLowerCase().trim();
     const shown=ql?searchParts(q).length?all.filter(p=>searchParts(q).includes(p)||p.name.toLowerCase().includes(ql)):all.filter(p=>p.name.toLowerCase().includes(ql)):all;
-    list.replaceChildren(h("div",{class:"prow phead"},h("span",{},"Part"),h("span",{},"Price"),h("span",{},"Core")),
+    list.replaceChildren(h("div",{class:"prow phead"},h("span",{},"Part"),h("span",{},"Price"),h("span",{},"Core"),h("span",{title:"Electronic: not returnable"},"No returns")),
       ...shown.slice(0,ql?80:600).map(p=>h("div",{class:"prow"},h("span",{},p.name,p.note?h("small",{class:"muted"}," · "+p.note):null),
         h("input",{type:"number",min:"0",step:"0.01",value:p.price,"aria-label":"Price of "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.price=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" now "+money(x.price)); }}),
-        h("input",{type:"number",min:"0",step:"0.01",value:p.core,"aria-label":"Core charge for "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.core=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" core now "+money(x.core)); }}))));
+        h("input",{type:"number",min:"0",step:"0.01",value:p.core,"aria-label":"Core charge for "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.core=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" core now "+money(x.core)); }}),
+        h("label",{class:"nr"},h("input",{type:"checkbox",checked:isElec(p),"aria-label":p.name+" is not returnable",onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.elec=e.target.checked; setPrices(l); toast(p.name+(x.elec?" can't be returned":" can be returned")); }})))));
   };
   const add=h("form",{class:"addpart",onsubmit:e=>{ e.preventDefault(); const f=new FormData(e.target); const n=String(f.get("n")||"").trim(); if(!n) return;
     const l=prices(); if(l.some(x=>x.name.toLowerCase()===n.toLowerCase())) return toast("That part is already on the list.");
