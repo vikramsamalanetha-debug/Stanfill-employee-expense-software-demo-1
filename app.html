@@ -715,6 +715,92 @@ h2.sect{font-size:17px;font-weight:600;margin:4px 4px 8px}
 .unitpick .newunit:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
 .unitpick .newunit .f{min-width:0}
 .unitpick .newunit input,.unitpick .newunit select{width:100%;min-width:0;box-sizing:border-box}
+.setup>.sub{margin:6px 0 4px}
+.setup textarea{width:100%}
+.setup .suset{border-top:1px solid var(--line);padding:16px 0 4px}
+.setup .suset:first-of-type{border-top:0}
+.setup h3{font-size:16px;margin:0 0 10px}
+.savedflag{font-size:14px;font-weight:600;color:var(--ok,#1E6B45);opacity:0;transition:opacity .2s}
+.savedflag.on{opacity:1}
+.addrgrid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px}
+.addrgrid .full{grid-column:1/-1}
+.taxopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:6px 0 10px}
+.taxopt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit;color:inherit}
+.taxopt b{font-size:22px}
+.taxopt small{color:var(--muted);font-size:13px}
+.taxopt.on{border-color:var(--primary);background:var(--primary-soft)}
+.taxother{max-width:200px}
+.lbl2{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.feerow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.feerow.off .feepct{opacity:.4;pointer-events:none}
+.feein{width:90px;font-size:20px;font-weight:700;text-align:center}
+.switch{appearance:none;-webkit-appearance:none;width:52px;height:30px;border-radius:15px;background:#C9CFCB;position:relative;cursor:pointer;margin:0;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s}
+.switch:checked{background:var(--primary)}
+.switch:checked::after{left:25px}
+.invlook>summary{cursor:pointer;list-style:none}
+.invlook[open]>summary{margin-bottom:14px}
+.plist{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:12px}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 110px 44px 40px;gap:10px;align-items:center;padding:6px 12px;border-top:1px solid var(--line)}
+.prow.core{grid-template-columns:minmax(0,1fr) 100px 90px 44px 40px}
+.prow:first-child{border-top:0}
+.prow input{min-height:40px;padding:6px 10px}
+.siline .x,.prow .x{border:0;background:transparent;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;width:36px;height:36px;border-radius:8px}
+.prow .x:hover{background:#FBE7E4;color:#A3271B}
+.phead{background:#F7F8F5;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;padding:10px 12px}
+.addpart{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:10px;margin-bottom:10px}
+.addpart:has(input[name=c]){grid-template-columns:minmax(0,1fr) 100px 90px auto}
+@media (max-width:700px){ .addrgrid{grid-template-columns:1fr 1fr} .addrgrid .f:first-child{grid-column:1/-1} .prow,.prow.core{grid-template-columns:minmax(0,1fr) 84px 36px 36px} .prow.core>input:nth-of-type(2){display:none} .phead.core>span:nth-child(3){display:none} .addpart{grid-template-columns:1fr 1fr} }
+.simpleinv{max-width:880px}
+dialog:has(.simpleinv){width:min(920px,calc(100vw - 24px));max-width:none}
+.sitop{display:flex;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+.sibiz{font-size:18px}
+.sino{text-align:right}
+.sino b{font-size:20px;letter-spacing:.04em}
+.sigrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.sijobs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0 0}
+.silhead,.siline{display:grid;grid-template-columns:minmax(0,1fr) 120px 84px 56px 84px 32px;gap:8px;align-items:center}
+.silhead{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 4px;padding:0 4px}
+.silines{border:1px solid var(--line);border-radius:12px}
+.siline{padding:8px;border-bottom:1px solid var(--line)}
+.sidesc{min-width:0}
+.sidesc input,.sinew input{width:100%}
+.sigrid .full{grid-column:1/-1}
+.sigrid [hidden]{display:none}
+.sidesc small{display:block;margin-top:2px}
+.sitax{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-top:3px}
+.sitax input{width:auto;margin:0}
+.siamt{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.sicore{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:0 8px;min-height:40px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.sicore input{width:18px;height:18px;margin:0;accent-color:#8A5A00}
+.sicore.on{background:#FFF4D6;border-color:#E9C877;color:#8A5A00}
+.sinew{position:relative;padding:8px}
+.sinew input{border-style:dashed}
+.sisugg{position:absolute;left:8px;right:8px;top:calc(100% - 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(20,30,25,.16);z-index:30;padding:6px;max-height:360px;overflow:auto}
+.sisugg .opt{display:flex;justify-content:space-between;gap:12px;width:100%;border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:9px;cursor:pointer;font:inherit}
+.sisugg .opt.on,.sisugg .opt:hover{background:var(--primary-soft)}
+.sisugg .opt.add{color:var(--primary);font-weight:600;border-top:1px solid var(--line)}
+.sisugg em{font-style:normal;color:#8A5A00;font-size:13px}
+.sibottom{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-top:16px;align-items:start}
+.sipays{display:flex;flex-wrap:wrap;gap:8px}
+.sipay{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start}
+.sipay small{font-size:11px;color:#8A5A00}
+.sipay.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.sitot{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sitot .trow{display:flex;justify-content:space-between;padding:9px 12px;border-top:1px solid var(--line)}
+.sitot .trow:first-child{border-top:0}
+.sitot .trow.muted{color:var(--muted);font-size:14px;padding-top:4px}
+.sitot .trow.fee{color:#8A5A00}
+.sitot .trow.big{font-size:20px;background:#F7F8F5}
+.sinote{margin:12px 0 0}
+.siacts{margin-top:16px;gap:8px;flex-wrap:wrap}
+@media (max-width:700px){
+  .silhead{display:none}
+  .siline{grid-template-columns:minmax(0,1fr) 84px 54px 32px;grid-template-areas:"d d d x" "c p q a"}
+  .siline .sidesc{grid-area:d}.siline .sicorecell{grid-area:c}.siline .siprice{grid-area:p}.siline .siqty{grid-area:q}.siline .siamt{grid-area:a;grid-column:1/-1;grid-row:3}.siline .x{grid-area:x}
+  .sibottom{grid-template-columns:1fr}
+  .sitop{flex-direction:column}.sino{text-align:left}
+}
 .btn.plus{width:44px;height:44px;min-height:44px;padding:0;border-radius:22px;font-size:26px;font-weight:400;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 @media (max-width:999px){ header.top #bizNameHeader{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 110px)} header.top{align-items:center} }
 .rowi .rp{font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
@@ -2726,12 +2812,12 @@ function settingsBusiness(){
 function viewSettings(){
   const frag=document.createDocumentFragment();
   const secs=S.isOwner&&S.business
-    ?[["business","Business"],["calendar","Booking calendar"],["invoices","Invoices"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
+    ?[["business","Business"],["calendar","Booking calendar"],["invoices","Invoicing"],["pricelist","Price list"],["notify","Notifications"],["access","Owners & invites"],...(hasRewards()?[["rewards","Rewards"]]:[]),["account","Account"]]
     :[["account","Account"]];
   if(!secs.some(x=>x[0]===S.setTab)) S.setTab=secs[0][0];
-  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
+  const body={calendar:settingsCalendar,business:settingsBusiness,invoices:settingsInvoices,pricelist:settingsPriceList,notify:settingsNotify,access:settingsAccess,rewards:settingsRewards,account:settingsAccount}[S.setTab];
   if (!isDesktop() && secs.length>1){   // phones: a plain list of settings, one page each
-    const hint={business:"Name, services, country and currency",calendar:"Your public booking page",invoices:"Numbers, terms, tax and payment info",notify:"Who gets texts and emails",
+    const hint={business:"Name, services, country and currency",calendar:"Your public booking page",invoices:"Tax, card fee, invoice numbers and how you get paid",pricelist:"What you sell, suggested as you type",notify:"Who gets texts and emails",
       access:"Other owners and crew invites",rewards:"Points for repeat clients",account:"Password, sign out, delete account"};
     if (!S.setOpen){
       frag.append(el("div",{class:"rows"},secs.map(([id,label])=>el("button",{type:"button",class:"rowi",onclick:()=>{S.setTab=id;S.setOpen=true;render();toTop();}},
@@ -4803,12 +4889,12 @@ function viewInvoices(){
 function openInvoice(inv){
   const d=JSON.parse(JSON.stringify(inv));
   if (d.status==="sent"||d.status==="void") return invoiceDetail(d);
-  invoiceEditor(d);
+  simpleInvoice(d);
 }
 function invDlg(){ const dl=$("#invDlg"); if (!dl.open) dl.showModal(); return $("#invBody"); }
 let invMoreOpen=false;   // remembers whether "More options" was open while the editor redraws
 function invoiceEditor(d){
-  const body=invDlg(); body.replaceChildren();
+  const body=invDlg(); body.replaceChildren(); body.classList.remove("simpleinv");
   const isNew=!d.id, st=invSettings();
   const num=d.number||("INV-"+nextInvoiceSeq());
   const hdr=el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},(d.kind==="deposit"?"Deposit invoice ":"Invoice ")+num),
@@ -4944,8 +5030,158 @@ function invoiceEditor(d){
     el("button",{type:"button",class:"btn primary",onclick:()=>go(true)},d.status==="sent"?"Save changes":"Send invoice")));
 }
 
+
+/* ---- The simple invoice: one screen like a paper invoice ----
+   Type a part or service and the price list suggests it. Parts with a core get a tick box (the core charge is its
+   own line). Pick how they paid, or "Not paid yet" to send it. Deposits, retainage, discounts and terms live
+   behind "More options", which opens the full editor with everything kept. */
+const PAY_LABEL={cash:"Cash",check:"Check",card:"Card",online:"Online / Zelle"};
+function itemSearch(q){
+  q=String(q||"").toLowerCase().trim(); if(!q) return [];
+  const toks=q.replace(/a\/c/g,"ac").replace(/[^a-z0-9]+/g," ").trim().split(" ").filter(Boolean); if(!toks.length) return [];
+  const items=priceList().length?priceList():SERVICES.map(n=>({n,p:0,c:0,t:!isServiceCat()}));
+  const out=[];
+  items.forEach(x=>{
+    const low=x.n.toLowerCase(), words=low.replace(/a\/c/g,"ac air conditioning").replace(/w\//g,"with ").replace(/\bassy\b/g,"assy assembly").replace(/[^a-z0-9]+/g," ").trim().split(" ");
+    if (!toks.every(t=>words.some(w=>w.startsWith(t)))) return;
+    out.push([(low.startsWith(q)?0:words[0].startsWith(toks[0])?1:2)+low.length/1000,x]);
+  });
+  return out.sort((a,b)=>a[0]-b[0]).slice(0,8).map(x=>x[1]);
+}
+const needsFullEditor=d=>d.kind==="deposit"||!!d.projectId||Number(d.discount)>0||Number(d.depositApplied)>0||Number(d.retainagePct)>0;
+function feeLineFor(d){ return (d.lines||[]).find(l=>l.type==="fee"); }
+// Card fee is a line of its own, worked out on everything else (after tax), so every screen and the client's copy agree.
+function applyCardFee(d){
+  d.lines=(d.lines||[]).filter(l=>l.type!=="fee");
+  if (d.payWith==="card" && cardFeeOn()){
+    const t=invTotals(d), pct=cardFeePct(), amt=r2(t.total*pct/100);
+    if (amt>0) d.lines.push({id:newId(),type:"fee",desc:"Card fee ("+pct+"%)",qty:1,unitPrice:amt,taxable:false});
+  }
+}
+function simpleInvoice(d){
+  if (needsFullEditor(d)) return invoiceEditor(d);
+  const body=invDlg(); body.replaceChildren(); body.classList.add("simpleinv");
+  const st=invSettings(), b=S.business||{}, rate=Number(d.taxRate)||0;
+  const num=d.number||("INV-"+nextInvoiceSeq());
+  d.payWith=d.payWith||(d.status==="sent"?"later":(payTypes()[0]||"cash"));
+  const top=el("div",{class:"sitop"},
+    el("div",{},el("b",{class:"sibiz"},b.name||"Your business"),el("div",{class:"kv"},[st.address,[b.city,b.state].filter(Boolean).join(", "),st.phone].filter(Boolean).join(" · "))),
+    el("div",{class:"sino"},el("b",{},"INVOICE"),el("div",{},num),el("div",{class:"kv"},niceDate(d.issueDate||today()))));
+  const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).concat(S.customers.map(c=>c.name)).filter(Boolean))].sort();
+  const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",list:"siClients",placeholder:"Customer name",oninput:e=>{ d.client.name=e.target.value; },
+    onchange:e=>{ const ci=clientInfo(e.target.value); ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]) d.client[k]=ci[k]; }); simpleInvoice(d); }});
+  const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off",...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
+  const addr=fld("Address","address",{});
+  if (!d.client.address){ addr.hidden=true; }
+  const who=el("div",{class:"sigrid"},el("label",{class:"f full"},"Bill to",nameIn,el("datalist",{id:"siClients"},clients.map(c=>el("option",{value:c})))),
+    fld("Phone","phone",{type:"tel"}),fld("Email","email",{type:"email",placeholder:"To send the invoice"}),addr,
+    addr.hidden?el("a",{href:"#",class:"kv full",onclick:e=>{ e.preventDefault(); addr.hidden=false; e.target.remove(); addr.querySelector("input").focus(); }},"+ Add their address"):null);
+  // Finished jobs for this customer, one tap each
+  const avail=d.client.name?unbilledJobs(d.id).filter(j=>!d.lines.some(l=>l.jobId===j.id)&&normName(j.client)===normName(d.client.name)):[];
+  const jobsRow=avail.length?el("div",{class:"sijobs"},el("span",{class:"kv"},"Finished jobs for "+d.client.name+":"),
+    avail.slice(0,8).map(j=>el("button",{type:"button",class:"chip",onclick:()=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); simpleInvoice(d); }},"+ "+(j.service||"Job")+" · "+niceDate(j.date)+" · "+money(j.price))),
+    avail.length>1?el("button",{type:"button",class:"chip on",onclick:()=>{ avail.forEach(j=>{ d.lines.push(jobLine(j)); d.lines.push(...costLines(j)); }); simpleInvoice(d); }},"Add all "+avail.length):null):null;
+  // Lines
+  const lines=el("div",{class:"silines"});
+  const tot=el("div",{class:"sitot"});
+  const amtOf=l=>money(invLineAmt(l));
+  function drawTot(){
+    applyCardFee(d);
+    const t=invTotals(d), fee=feeLineFor(d), core=r2(d.lines.filter(l=>l.type==="core").reduce((n,l)=>n+invLineAmt(l),0));
+    const L=(a,v,c)=>el("div",{class:"trow"+(c?" "+c:"")},el("span",{},a),el("b",{},v));
+    tot.replaceChildren(...[
+      L("Sub-total",money(t.subtotal-(fee?invLineAmt(fee):0))),
+      core?L("  incl. core charges",money(core),"muted"):null,
+      L(taxName()+" ("+rate+"%)",money(t.tax)),
+      fee?L(fee.desc,money(invLineAmt(fee)),"fee"):null,
+      L("Total",money(t.total),"big")].filter(Boolean));
+  }
+  function lineRow(l){
+    if (l.type==="fee"||l.type==="core") return null;
+    const coreLine=d.lines.find(x=>x.type==="core"&&x.coreFor===l.id);
+    const amt=el("span",{class:"siamt"},amtOf(l));
+    const upd=()=>{ amt.textContent=amtOf(l); if (coreLine){ coreLine.qty=l.qty; } drawTot(); };
+    const coreBox=l.core>0?el("label",{class:"sicore"+(coreLine?" on":""),title:"Tick when the customer did NOT bring the old part back"},
+      el("input",{type:"checkbox",checked:!!coreLine,onchange:e=>{ if (e.target.checked) d.lines.splice(d.lines.indexOf(l)+1,0,{id:newId(),type:"core",coreFor:l.id,desc:"Core charge, "+l.desc,qty:l.qty,unitPrice:l.core,taxable:l.taxable!==false});
+        else d.lines=d.lines.filter(x=>!(x.type==="core"&&x.coreFor===l.id)); simpleInvoice(d); }}),
+      "Core "+money(l.core*(l.qty||1))):null;
+    return el("div",{class:"siline"},
+      el("div",{class:"sidesc"},el("input",{value:l.desc||"","aria-label":"Description",oninput:e=>{ l.desc=e.target.value; if(coreLine) coreLine.desc="Core charge, "+l.desc; }}),
+        l.type==="job"?el("small",{class:"kv"},"Finished job"):null,
+        rate>0&&l.type!=="job"?el("label",{class:"sitax"},el("input",{type:"checkbox",checked:!!l.taxable,onchange:e=>{ l.taxable=e.target.checked; drawTot(); }}),"taxed"):null),
+      el("div",{class:"sicorecell"},coreBox),
+      el("input",{class:"siprice",type:"number",min:"0",step:"0.01",inputmode:"decimal",value:String(l.unitPrice??""),"aria-label":"Price",oninput:e=>{ l.unitPrice=Number(e.target.value)||0; upd(); }}),
+      el("input",{class:"siqty",type:"number",min:"1",step:"1",inputmode:"numeric",value:String(l.qty??1),"aria-label":"Quantity",oninput:e=>{ l.qty=Math.max(1,Number(e.target.value)||1); upd(); }}),
+      amt,
+      el("button",{type:"button",class:"x","aria-label":"Remove "+(l.desc||"line"),onclick:()=>{ d.lines=d.lines.filter(x=>x!==l&&!(x.type==="core"&&x.coreFor===l.id)); simpleInvoice(d); }},"×"));
+  }
+  function newRow(){
+    const inp=el("input",{placeholder:d.lines.some(l=>l.type!=="fee")?"Type the next item…":(priceList().length?"Start typing, e.g. “"+(priceList()[0].n.split(" ")[0].slice(0,3).toLowerCase())+"”":"Type what you're billing for"),autocomplete:"off","aria-label":"Add an item"});
+    const box=el("div",{class:"sisugg",hidden:true}); let items=[],sel=0;
+    const add=(x,typed)=>{ const it={id:newId(),type:"item",desc:x?x.n:typed,qty:1,unitPrice:x?x.p:0,taxable:x?x.t!==false&&rate>0:rate>0&&!isServiceCat(),core:x&&x.c>0?x.c:0};
+      d.lines.push(it);
+      if (it.core>0) d.lines.push({id:newId(),type:"core",coreFor:it.id,desc:"Core charge, "+it.desc,qty:1,unitPrice:it.core,taxable:it.taxable});
+      simpleInvoice(d);
+      setTimeout(()=>{ const n=x?$(".simpleinv .sinew input"):[...document.querySelectorAll(".simpleinv .siprice")].pop(); if(n){ n.focus(); if(n.select) n.select(); } },0); };
+    const draw=()=>{ items=itemSearch(inp.value); sel=0; box.replaceChildren();
+      if (!inp.value.trim()){ box.hidden=true; return; }
+      items.forEach((x,i)=>box.append(el("button",{type:"button",class:"opt"+(i===sel?" on":""),onmousedown:e=>{ e.preventDefault(); add(x); }},
+        el("span",{},x.n),el("span",{class:"pp"},x.p?money(x.p):"",x.c>0?el("em",{}," + core "+money(x.c)):null))));
+      box.append(el("button",{type:"button",class:"opt add",onmousedown:e=>{ e.preventDefault(); add(null,inp.value.trim()); }},"+ Add “"+inp.value.trim()+"”"));
+      box.hidden=false; };
+    const hi=()=>[...box.querySelectorAll(".opt")].forEach((o,i)=>o.classList.toggle("on",i===sel));
+    inp.addEventListener("input",draw);
+    inp.addEventListener("keydown",e=>{ if(e.key==="ArrowDown"){ e.preventDefault(); sel=Math.min(sel+1,items.length); hi(); } else if(e.key==="ArrowUp"){ e.preventDefault(); sel=Math.max(0,sel-1); hi(); }
+      else if(e.key==="Enter"){ e.preventDefault(); if(!inp.value.trim()) return; if(sel<items.length) add(items[sel]); else add(null,inp.value.trim()); } else if(e.key==="Escape") box.hidden=true; });
+    inp.addEventListener("blur",()=>setTimeout(()=>{ box.hidden=true; },150));
+    return el("div",{class:"sinew"},inp,box);
+  }
+  d.lines.forEach(l=>{ const r=lineRow(l); if(r) lines.append(r); });
+  lines.append(newRow());
+  // Paid by
+  const opts=[...payTypes(),"later"];
+  const pays=el("div",{class:"sipays"},opts.map(p=>el("button",{type:"button",class:"sipay"+(d.payWith===p?" on":""),onclick:()=>{ d.payWith=p; simpleInvoice(d); }},
+    p==="later"?"Not paid yet":PAY_LABEL[p]||p, p==="card"&&cardFeeOn()?el("small",{},"+"+cardFeePct()+"% fee"):null)));
+  const due=d.payWith==="later"?el("div",{class:"row",style:"gap:10px;flex-wrap:wrap;margin-top:10px"},
+    el("label",{class:"f"},"Due",el("select",{onchange:e=>{ d.terms=e.target.value; const t=INV_TERMS.find(x=>x[0]===d.terms); d.dueDate=addDays(d.issueDate||today(),t?t[2]:0); }},
+      INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===d.terms},l)))),
+    el("p",{class:"kv",style:"margin:18px 0 0"},d.client.email?"We'll email it to "+d.client.email+" with a link to pay.":"Add their email above to send it, or print it.")):null;
+  const err=el("div",{class:"gate-msg"});
+  const go=async(mode)=>{
+    if (viewOnlyBlocked()) return;
+    d.lines=d.lines.filter(l=>l.type==="fee"||String(l.desc||"").trim());
+    if (!String(d.client.name||"").trim()) return err.textContent="Who is this for? Type the customer's name.";
+    if (!d.lines.some(l=>l.type!=="fee")) return err.textContent="Add at least one item.";
+    applyCardFee(d);
+    const t=invTotals(d); if (t.total<=0) return err.textContent="The total is zero. Check the prices.";
+    const was={status:d.status,sentAt:d.sentAt,payments:d.payments};
+    if (mode!=="draft"){ d.status="sent"; d.sentAt=d.sentAt||Date.now(); }
+    if (mode==="paid"){ d.terms="receipt"; d.dueDate=d.issueDate||today();
+      const paid=r2((d.payments||[]).reduce((n,x)=>n+(Number(x.amount)||0),0)), left=r2(t.total-paid);
+      if (left>0.004) d.payments=[...(d.payments||[]),{id:newId(),amount:left,date:today(),method:PAY_LABEL[d.payWith]||d.payWith,note:"",at:Date.now()}]; }
+    const payWith=d.payWith; delete d.payWith;
+    try { await saveInvoice(d); } catch(e){ console.warn(e); Object.assign(d,was); d.payWith=payWith; return err.textContent="That didn't save. Everything is still here; check your connection and tap again."; }
+    toast(mode==="paid"?d.number+" saved as paid":mode==="send"?d.number+" ready to send":"Draft saved");
+    if (mode==="paid"){ $("#invDlg").close(); setTimeout(()=>printInvoice(d),150); }
+    else if (mode==="send") openSend(d);
+    else $("#invDlg").close();
+  };
+  const isPaidMode=d.payWith!=="later";
+  body.append(top,who,jobsRow||"",el("div",{class:"silhead"},el("span",{},"Description"),el("span",{}),el("span",{},"Price"),el("span",{},"Qty"),el("span",{},"Amount"),el("span",{})),lines,
+    el("div",{class:"sibottom"},el("div",{},el("div",{class:"lbl2"},"Paid by"),pays,due),tot),
+    st.returnsNote?el("p",{class:"kv sinote"},st.returnsNote):null,
+    err,
+    el("div",{class:"row siacts"},
+      el("a",{href:"#",class:"kv",onclick:e=>{ e.preventDefault(); delete d.payWith; d.lines=d.lines.filter(l=>l.type!=="fee"); invoiceEditor(d); }},"More options (discount, deposit, terms, notes)"),
+      el("span",{class:"grow"}),
+      el("button",{type:"button",class:"btn ghost",onclick:()=>$("#invDlg").close()},"Cancel"),
+      d.status!=="sent"?el("button",{type:"button",class:"btn",onclick:()=>go("draft")},"Save draft"):null,
+      el("button",{type:"button",class:"btn primary big",onclick:()=>go(isPaidMode?"paid":"send")},isPaidMode?"Save & print":"Save & send")));
+  drawTot();
+  setTimeout(()=>{ const f=d.client.name?$(".simpleinv .sinew input"):nameIn; if(f) f.focus(); },0);
+}
 function invoiceDetail(d){
-  const body=invDlg(); body.replaceChildren();
+  const body=invDlg(); body.replaceChildren(); body.classList.remove("simpleinv");
   const t=invTotals(d), s=invStatus(d,t), pub=pubFor(d);
   const proj=d.projectId&&S.projects.find(p=>p.id===d.projectId);
   body.append(el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},(d.kind==="deposit"?"Deposit invoice ":"Invoice ")+(d.number||"")),el("span",{class:"pill "+s.cls},s.label)),
@@ -5208,6 +5444,180 @@ function previewInvoiceLook(look){
     el("div",{class:"row",style:"margin-top:14px"},el("span",{class:"kv grow"},"Sample only. Save to use this look on your invoices."),el("button",{class:"btn primary",onclick:()=>$("#invDlg").close()},"Close")));
   if (!$("#invDlg").open) $("#invDlg").showModal();
 }
+
+/* ---- Set up invoicing: tax from the business address, card fee, payment types, invoice numbers, return policy ---- */
+// Tennessee: 7% state + the local rate where the business sits. Inside city limits the city's rate applies,
+// outside them the county's. Other US states: the state rate is filled in and the owner adds the local part.
+const TN_CITY_TAX={"adams":["Robertson",9.75],"alamo":["Crockett",9.75],"alcoa":["Blount",9.75],"alexandria":["DeKalb",9.75],"algood":["Putnam",9.75],"allardt":["Fentress",9.5],"altamont":["Grundy",9.25],"arlington":["Shelby",9.75],"ashland city":["Cheatham",9.75],"athens":["McMinn",9.75],"atoka":["Tipton",9.75],"atwood":["Carroll",9.75],"auburntown":["Cannon",9.75],"baileyton":["Greene",9.75],"baneberry":["Jefferson",9.75],"bartlett":["Shelby",9.75],"baxter":["Putnam",9.75],"beersheba springs":["Grundy",9.25],"bell buckle":["Bedford",9.75],"belle meade":["Davidson",9.75],"bells":["Crockett",9.75],"benton":["Polk",9.75],"berry hill":["Davidson",9.75],"bethel springs":["McNairy",9.25],"big sandy":["Benton",9.75],"blaine":["Grainger",9.75],"bluff city":["Sullivan",9.25],"bolivar":["Hardeman",9.75],"braden":["Fayette",9.25],"bradford":["Gibson",9.75],"brentwood":["Williamson",9.75],"brighton":["Tipton",9.25],"bristol":["Sullivan",9.25],"brownsville":["Haywood",9.75],"bruceton":["Carroll",9.75],"bulls gap":["Hawkins",9.75],"burlison":["Tipton",9.25],"burns":["Dickson",9.75],"byrdstown":["Pickett",9.75],"calhoun":["McMinn",9.75],"camden":["Benton",9.75],"carthage":["Smith",9.75],"caryville":["Campbell",9.25],"cedar hill":["Robertson",9.75],"celina":["Clay",9.75],"centertown":["Warren",9.75],"centerville":["Hickman",9.75],"chapel hill":["Marshall",9.25],"charleston":["Bradley",9.75],"charlotte":["Dickson",9.75],"chattanooga":["Hamilton",9.25],"church hill":["Hawkins",9.75],"clarksburg":["Carroll",9.75],"clarksville":["Montgomery",9.5],"cleveland":["Bradley",9.75],"clifton":["Wayne",9.75],"clinton":["Anderson",9.75],"coalmont":["Grundy",9.25],"collegedale":["Hamilton",9.25],"collierville":["Shelby",9.75],"collinwood":["Wayne",9.75],"columbia":["Maury",9.75],"cookeville":["Putnam",9.75],"coopertown":["Robertson",9.75],"copperhill":["Polk",9.75],"cornersville":["Marshall",9.25],"cottage grove":["Henry",9.75],"covington":["Tipton",9.75],"cowan":["Franklin",9.25],"crab orchard":["Cumberland",9.75],"cross plains":["Robertson",9.75],"crossville":["Cumberland",9.75],"crump":["Hardin",9.75],"cumberland city":["Stewart",9.25],"cumberland gap":["Claiborne",9.25],"dandridge":["Jefferson",9.75],"dayton":["Rhea",9.75],"decatur":["Meigs",9.0],"decaturville":["Decatur",9.5],"decherd":["Franklin",9.25],"dickson":["Dickson",9.75],"dover":["Stewart",9.75],"dowelltown":["DeKalb",9.75],"doyle":["White",9.25],"dresden":["Weakley",9.75],"ducktown":["Polk",9.75],"dunlap":["Sequatchie",9.75],"dyer":["Gibson",9.75],"dyersburg":["Dyer",9.75],"eagleville":["Rutherford",9.75],"east ridge":["Hamilton",9.25],"eastview":["McNairy",9.25],"elizabethton":["Carter",9.75],"elkton":["Giles",9.75],"englewood":["McMinn",9.75],"erin":["Houston",9.75],"erwin":["Unicoi",9.75],"estill springs":["Franklin",9.25],"ethridge":["Lawrence",9.75],"etowah":["McMinn",9.75],"fairview":["Williamson",9.75],"fayetteville":["Lincoln",9.5],"finger":["McNairy",9.25],"forest hills":["Davidson",9.75],"franklin":["Williamson",9.75],"friendship":["Crockett",9.75],"friendsville":["Blount",9.75],"gadsden":["Crockett",9.75],"gainesboro":["Jackson",9.75],"gallatin":["Sumner",9.75],"gallaway":["Fayette",9.25],"garland":["Tipton",9.25],"gates":["Lauderdale",9.75],"gatlinburg":["Sevier",9.75],"germantown":["Shelby",9.75],"gibson":["Gibson",9.75],"gilt edge":["Tipton",9.25],"gleason":["Weakley",9.75],"gordonsville":["Smith",9.75],"graysville":["Rhea",9.75],"greenback":["Loudon",9.0],"greenbrier":["Robertson",9.75],"greeneville":["Greene",9.75],"greenfield":["Weakley",9.75],"gruetli-laager":["Grundy",9.25],"guys":["McNairy",9.25],"halls":["Lauderdale",9.75],"harriman":["Roane",9.5],"harrogate":["Claiborne",9.25],"henderson":["Chester",9.75],"hendersonville":["Sumner",9.75],"henning":["Lauderdale",9.75],"henry":["Henry",9.75],"hickory valley":["Hardeman",9.75],"hohenwald":["Lewis",9.75],"hollow rock":["Carroll",9.75],"hornbeak":["Obion",9.75],"hornsby":["Hardeman",9.75],"huntingdon":["Carroll",9.75],"huntland":["Franklin",9.25],"huntsville":["Scott",9.25],"jacksboro":["Campbell",9.25],"jackson":["Madison",9.75],"jamestown":["Fentress",9.5],"jasper":["Marion",9.75],"jefferson city":["Jefferson",9.75],"jellico":["Campbell",9.25],"jonesborough":["Washington",9.5],"kimball":["Marion",9.75],"kingston":["Roane",9.5],"kingston springs":["Cheatham",9.75],"knoxville":["Knox",9.25],"la follette":["Campbell",9.25],"la grange":["Fayette",9.25],"la vergne":["Rutherford",9.75],"lafayette":["Macon",9.75],"lakeland":["Shelby",9.75],"lakesite":["Hamilton",9.25],"lawrenceburg":["Lawrence",9.75],"lebanon":["Wilson",9.75],"lenoir city":["Loudon",9.0],"lewisburg":["Marshall",9.25],"lexington":["Henderson",9.75],"liberty":["DeKalb",9.75],"linden":["Perry",9.5],"livingston":["Overton",9.5],"lobelville":["Perry",9.5],"lookout mountain":["Hamilton",9.25],"loretto":["Lawrence",9.75],"loudon":["Loudon",9.5],"louisville":["Blount",9.75],"luttrell":["Union",9.25],"lynchburg":["Moore",9.5],"lynnville":["Giles",9.75],"madisonville":["Monroe",9.25],"manchester":["Coffee",9.75],"martin":["Weakley",9.75],"maryville":["Blount",9.75],"mason":["Tipton",9.25],"maury city":["Crockett",9.75],"maynardville":["Union",9.25],"mcewen":["Humphreys",9.75],"mclemoresville":["Carroll",9.75],"mcminnville":["Warren",9.75],"medina":["Gibson",9.75],"medon":["Madison",9.75],"memphis":["Shelby",9.75],"michie":["McNairy",9.25],"middleton":["Hardeman",9.75],"milan":["Gibson",9.75],"millington":["Shelby",9.75],"minor hill":["Giles",9.75],"mitchellville":["Sumner",9.25],"monterey":["Putnam",9.75],"morrison":["Warren",9.75],"morristown":["Hamblen",9.75],"moscow":["Fayette",9.25],"mosheim":["Greene",9.75],"mount carmel":["Hawkins",9.75],"mount juliet":["Wilson",9.75],"mount pleasant":["Maury",9.75],"mountain city":["Johnson",9.0],"munford":["Tipton",9.75],"murfreesboro":["Rutherford",9.75],"nashville":["Davidson",9.75],"new hope":["Marion",9.75],"new johnsonville":["Humphreys",9.75],"new market":["Jefferson",9.75],"new tazewell":["Claiborne",9.25],"newbern":["Dyer",9.75],"newport":["Cocke",9.75],"niota":["McMinn",9.75],"nolensville":["Williamson",9.75],"normandy":["Bedford",9.75],"norris":["Anderson",9.75],"oak hill":["Davidson",9.75],"oakdale":["Morgan",9.0],"oakland":["Fayette",9.75],"obion":["Obion",9.75],"oneida":["Scott",9.25],"orlinda":["Robertson",9.75],"orme":["Marion",9.75],"palmer":["Grundy",9.25],"paris":["Henry",9.75],"parkers crossroads":["Henderson",9.75],"parrottsville":["Cocke",9.75],"parsons":["Decatur",9.5],"pegram":["Cheatham",9.75],"philadelphia":["Loudon",9.0],"pigeon forge":["Sevier",9.75],"pikeville":["Bledsoe",9.25],"piperton":["Fayette",9.75],"pittman center":["Sevier",9.75],"plainview":["Union",9.25],"pleasant hill":["Cumberland",9.75],"pleasant view":["Cheatham",9.25],"powells crossroads":["Marion",9.75],"pulaski":["Giles",9.75],"puryear":["Henry",9.75],"ramer":["McNairy",9.25],"red bank":["Hamilton",9.25],"red boiling springs":["Macon",9.75],"ridgely":["Lake",9.75],"ridgeside":["Hamilton",9.25],"ripley":["Lauderdale",9.75],"rives":["Obion",9.75],"rockford":["Blount",9.75],"rockwood":["Roane",9.5],"rogersville":["Hawkins",9.75],"rossville":["Fayette",9.75],"rutherford":["Gibson",9.75],"rutledge":["Grainger",9.75],"saltillo":["Hardin",9.75],"samburg":["Obion",9.75],"sardis":["Henderson",9.75],"saulsbury":["Hardeman",9.75],"savannah":["Hardin",9.75],"selmer":["McNairy",9.25],"sevierville":["Sevier",9.75],"sharon":["Weakley",9.75],"shelbyville":["Bedford",9.75],"signal mountain":["Hamilton",9.25],"slayden":["Dickson",9.75],"smithville":["DeKalb",9.75],"smyrna":["Rutherford",9.75],"sneedville":["Hancock",9.0],"soddy-daisy":["Hamilton",9.25],"somerville":["Fayette",9.75],"south carthage":["Smith",9.0],"south fulton":["Obion",9.75],"south pittsburg":["Marion",9.75],"sparta":["White",9.75],"spencer":["Van Buren",9.75],"spring city":["Rhea",9.75],"springfield":["Robertson",9.75],"st. joseph":["Lawrence",9.75],"stanton":["Haywood",9.75],"stantonville":["McNairy",9.25],"sunbright":["Morgan",9.75],"surgoinsville":["Hawkins",9.75],"tazewell":["Claiborne",9.25],"tellico plains":["Monroe",9.25],"tennessee ridge":["Houston",9.75],"thompsons station":["Williamson",9.75],"three way":["Madison",9.75],"tiptonville":["Lake",9.75],"toone":["Hardeman",9.75],"townsend":["Blount",9.75],"tracy city":["Grundy",9.25],"trenton":["Gibson",9.75],"trezevant":["Carroll",9.75],"troy":["Obion",9.75],"tusculum":["Greene",9.75],"unicoi":["Unicoi",9.75],"union city":["Obion",9.75],"vanleer":["Dickson",9.75],"viola":["Warren",9.75],"vonore":["Monroe",9.25],"walden":["Hamilton",9.25],"wartburg":["Morgan",9.75],"wartrace":["Bedford",9.75],"watertown":["Wilson",9.75],"waverly":["Humphreys",9.75],"waynesboro":["Wayne",9.75],"westmoreland":["Sumner",9.25],"white bluff":["Dickson",9.75],"whiteville":["Hardeman",9.75],"whitwell":["Marion",9.75],"williston":["Fayette",9.25],"winchester":["Franklin",9.25],"winfield":["Scott",9.25],"woodbury":["Cannon",9.75],"woodland mills":["Obion",9.75],"yorkville":["Gibson",9.75]};
+const TN_COUNTY_TAX={"anderson":9.75,"bedford":9.75,"benton":9.75,"bledsoe":9.75,"blount":9.75,"bradley":9.75,"campbell":9.75,"cannon":9.75,"carroll":9.75,"carter":9.75,"cheatham":9.75,"chester":9.75,"claiborne":9.25,"clay":9.75,"cocke":9.75,"coffee":9.75,"crockett":9.75,"cumberland":9.75,"davidson":9.75,"dekalb":9.75,"decatur":9.75,"dickson":9.75,"dyer":9.75,"fayette":9.75,"fentress":9.75,"franklin":9.75,"gibson":9.75,"giles":9.75,"grainger":9.75,"greene":9.75,"grundy":9.75,"hamblen":9.75,"hamilton":9.75,"hancock":9.75,"hardeman":9.75,"hardin":9.75,"hawkins":9.75,"haywood":9.75,"henderson":9.75,"henry":9.75,"hickman":9.75,"houston":9.75,"humphreys":9.75,"jackson":9.75,"jefferson":9.75,"johnson":9.75,"knox":9.75,"lake":9.75,"lauderdale":9.75,"lawrence":9.75,"lewis":9.75,"lincoln":9.75,"loudon":9.75,"macon":9.75,"madison":9.75,"marion":9.75,"marshall":9.75,"maury":9.75,"mcminn":9.75,"mcnairy":9.75,"meigs":9.75,"monroe":9.75,"montgomery":9.75,"moore":9.5,"morgan":9.75,"obion":9.75,"overton":9.75,"perry":9.75,"pickett":9.75,"polk":9.75,"putnam":9.75,"rhea":9.75,"roane":9.75,"robertson":9.75,"rutherford":9.75,"scott":9.25,"sequatchie":9.75,"sevier":9.75,"shelby":9.75,"smith":9.75,"stewart":9.75,"sullivan":9.75,"sumner":9.75,"tipton":9.75,"trousdale":9.75,"unicoi":9.75,"union":9.75,"van buren":9.75,"warren":9.75,"washington":9.75,"wayne":9.75,"weakley":9.75,"white":9.75,"williamson":9.75,"wilson":9.75};
+
+const US_STATE_TAX={AL:4,AK:0,AZ:5.6,AR:6.5,CA:7.25,CO:2.9,CT:6.35,DE:0,DC:6,FL:6,GA:4,HI:4,ID:6,IL:6.25,IN:7,IA:6,KS:6.5,KY:6,LA:5,ME:5.5,MD:6,MA:6.25,MI:6,MN:6.875,MS:7,MO:4.225,MT:0,NE:5.5,NV:6.85,NH:0,NJ:6.625,NM:4.875,NY:4,NC:4.75,ND:5,OH:5.75,OK:4.5,OR:0,PA:6,RI:7,SC:6,SD:4.2,TN:7,TX:6.25,UT:4.85,VT:6,VA:5.3,WA:6.5,WV:6,WI:5,WY:4};
+const STATE_ABBR={tennessee:"TN",kentucky:"KY",mississippi:"MS",alabama:"AL",georgia:"GA",arkansas:"AR",missouri:"MO",texas:"TX",florida:"FL",california:"CA","north carolina":"NC",virginia:"VA",illinois:"IL",indiana:"IN",ohio:"OH"};
+const stateCode=s=>{ s=String(s||"").trim(); if (/^[a-z]{2}$/i.test(s)) return s.toUpperCase(); return STATE_ABBR[s.toLowerCase()]||""; };
+const TN_REV_LINK="https://www.tn.gov/revenue/taxes/sales-and-use-tax/local-sales-tax/local-sales-tax-rates-map.html";
+// The choices to offer for this address, best guess first.
+function taxChoices(city,state){
+  const st=stateCode(state), c=String(city||"").trim().toLowerCase().replace(/^st\.? /,"st. ");
+  if (st==="TN"){
+    const hit=TN_CITY_TAX[c]||TN_CITY_TAX[c.replace(/^st\. /,"st ")];
+    const county=hit?hit[0]:null, out=[];
+    if (hit) out.push({rate:hit[1],label:"Inside "+cap1(city.trim())+" city limits",note:"Tennessee 7% + "+cap1(city.trim())+" "+r2(hit[1]-7)+"%"});
+    if (county && TN_COUNTY_TAX[county.toLowerCase()]!=null) out.push({rate:TN_COUNTY_TAX[county.toLowerCase()],label:"Outside city limits, "+county+" County",note:"Tennessee 7% + "+county+" County "+r2(TN_COUNTY_TAX[county.toLowerCase()]-7)+"%"});
+    if (!out.length) out.push({rate:9.75,label:"Most of Tennessee",note:"Tennessee 7% + local 2.75%. Some places charge 2.25% or 2.5%."});
+    return {state:"TN",choices:out,check:TN_REV_LINK};
+  }
+  if (st && US_STATE_TAX[st]!=null) return {state:st,choices:[],base:US_STATE_TAX[st]};
+  return {state:st,choices:[]};
+}
+async function saveBiz(patch){
+  if (!S.demo) await firebase.firestore().doc("businesses/"+S.businessId).update(patch);
+  Object.assign(S.business,patch);
+}
+// Each setting saves the moment it changes; a small "Saved" shows it went through.
+function invSave(patch,flag){
+  return write(async()=>{ const invoice={...(S.business.invoice||{}),...patch}; await saveBiz({invoice}); if (flag){ flag.textContent="Saved ✓"; flag.classList.add("on"); clearTimeout(flag._t); flag._t=setTimeout(()=>flag.classList.remove("on"),1600); } },null);
+}
+const cardFeeOn=()=>{ const st=invSettings(); return !!st.cardFeeOn && Number(st.cardFee)>0; };
+const cardFeePct=()=>Math.min(3,Math.max(0,Number(invSettings().cardFee)||3));
+const payTypes=()=>{ const t=invSettings().payTypes; return Array.isArray(t)&&t.length?t:["cash","check","card"]; };
+function invSetupPanel(){
+  const st=invSettings(), b=S.business;
+  const flag=el("span",{class:"savedflag"});
+  const p=el("div",{class:"panel setup",style:"max-width:720px"},el("div",{class:"row"},el("h2",{class:"grow",style:"margin:0"},"Set up invoicing"),flag),
+    el("div",{class:"sub"},"Set this once. Every change saves right away."));
+  const sec=(t,...kids)=>el("section",{class:"suset"},el("h3",{},t),...kids);
+  // 1. Address → tax
+  const street=el("input",{value:st.address||"",placeholder:"7945 TN-100",autocomplete:"off"});
+  const city=el("input",{value:b.city||"",placeholder:"Decaturville",autocomplete:"off"});
+  const state=el("input",{value:b.state||"",placeholder:isUS()?"TN":"",maxlength:"20",autocomplete:"off",style:"text-transform:uppercase"});
+  const zip=el("input",{value:st.zip||"",placeholder:"38329",inputmode:"numeric",maxlength:"10",autocomplete:"off"});
+  const taxBox=el("div",{class:"taxbox"});
+  const pickRate=(rate,label)=>{ invSave({taxRate:r2(rate),taxSource:label||"",setupAt:st.setupAt||Date.now()},flag).then(()=>drawTax()); };
+  function drawTax(){
+    const cur=Number(invSettings().taxRate)||0, src=invSettings().taxSource||"";
+    taxBox.replaceChildren();
+    if (!isUS()){ taxBox.append(el("label",{class:"f"},taxName()+" %",el("input",{type:"number",min:"0",step:"0.001",value:String(cur),onchange:e=>pickRate(Number(e.target.value)||0,"Typed in")}))); return; }
+    const g=taxChoices(city.value,state.value);
+    const opts=g.choices.map(c=>el("button",{type:"button",class:"taxopt"+(Math.abs(cur-c.rate)<0.001&&src===c.label?" on":""),onclick:()=>pickRate(c.rate,c.label)},
+      el("b",{},c.rate+"%"),el("span",{},c.label),el("small",{},c.note)));
+    const other=el("input",{type:"number",min:"0",max:"20",step:"0.001",inputmode:"decimal",value:g.choices.some(c=>Math.abs(cur-c.rate)<0.001&&src===c.label)?"":String(cur||""),placeholder:g.base!=null?String(g.base):"9.75",
+      onchange:e=>pickRate(Number(e.target.value)||0,"Typed in")});
+    taxBox.append(el("div",{class:"lbl2"},taxName()+" rate for this address"),
+      opts.length?el("div",{class:"taxopts"},opts):null,
+      g.base!=null&&!g.choices.length?el("p",{class:"kv"},stateCode(state.value)+" state rate is "+g.base+"%. Add your city or county rate and type the total below."):null,
+      !g.state?el("p",{class:"kv"},"Type your city and state above and DayZift fills this in."):null,
+      el("label",{class:"f taxother"},opts.length?"Or type the rate":"Total rate %",other),
+      el("p",{class:"kv"},"Now charging ",el("b",{},cur+"%"),src&&src!=="Typed in"?" ("+src+")":"",". ",
+        g.check?el("a",{href:g.check,target:"_blank",rel:"noopener"},"Check the rate with Tennessee"):null,
+        " Not sure? Your accountant or a recent receipt from your own counter will have it."));
+  }
+  const saveAddr=()=>{
+    write(async()=>{ const invoice={...(S.business.invoice||{}),address:street.value.trim(),zip:zip.value.trim()}; await saveBiz({invoice,city:city.value.trim(),state:stateCode(state.value)||state.value.trim()}); flag.textContent="Saved ✓"; flag.classList.add("on"); setTimeout(()=>flag.classList.remove("on"),1600); },null); };
+  [street,city,state,zip].forEach(x=>x.addEventListener("change",saveAddr));
+  city.addEventListener("input",()=>{ clearTimeout(city._t); city._t=setTimeout(drawTax,300); });
+  state.addEventListener("input",()=>{ clearTimeout(state._t); state._t=setTimeout(drawTax,300); });
+  p.append(sec("Your business address",
+    el("div",{class:"addrgrid"},el("label",{class:"f full"},"Street",street),el("label",{class:"f"},"City",city),el("label",{class:"f"},isUS()?"State":"State / region",state),el("label",{class:"f"},isUS()?"ZIP":"Postcode",zip)),
+    taxBox));
+  drawTax();
+  // 2. Card fee
+  const feeIn=el("input",{type:"number",min:"0.5",max:"3",step:"0.1",inputmode:"decimal",value:String(cardFeePct()),class:"feein","aria-label":"Card fee percent",
+    onchange:e=>{ let v=Number(e.target.value)||0; if (v>3){ v=3; toast("Card fees can't be more than 3%."); } if (v<0) v=0; e.target.value=String(v); invSave({cardFee:v},flag); }});
+  const feeSw=el("input",{type:"checkbox",class:"switch",checked:!!st.cardFeeOn,"aria-label":"Add a card fee",onchange:e=>{ invSave({cardFeeOn:e.target.checked,cardFee:Number(feeIn.value)||3},flag); feeRow.classList.toggle("off",!e.target.checked); }});
+  const feeRow=el("div",{class:"feerow"+(st.cardFeeOn?"":" off")},el("label",{class:"row",style:"gap:12px;font-weight:600"},feeSw,"Add a fee when a customer pays by card"),el("div",{class:"row feepct"},feeIn,el("b",{},"%")));
+  p.append(sec("Card fee",feeRow,el("p",{class:"kv"},"Change it any time; new sales use it straight away. Card rules: no more than 3%, not on debit cards, and put up a sign at the counter.")));
+  // 3. Payment types
+  const types=[["cash","Cash"],["check","Check"],["card","Card"],["online","Online / Zelle"]];
+  const cur=new Set(payTypes());
+  p.append(sec("How customers pay you",el("div",{class:"chips"},types.map(([id,l])=>el("button",{type:"button",class:"chip","aria-pressed":String(cur.has(id)),onclick:e=>{
+    if (cur.has(id)){ if (cur.size===1) return toast("Keep at least one."); cur.delete(id); } else cur.add(id);
+    e.currentTarget.setAttribute("aria-pressed",String(cur.has(id))); invSave({payTypes:[...cur]},flag); }},l)))));
+  // 4. Invoice numbers
+  const nextNo=nextInvoiceSeq();
+  p.append(sec("Invoice numbers",el("div",{class:"row",style:"gap:12px;flex-wrap:wrap"},
+    el("label",{class:"f",style:"max-width:200px"},"Next invoice number",el("input",{type:"number",min:"1",step:"1",inputmode:"numeric",value:String(nextNo),onchange:e=>{
+      const v=Math.floor(Number(e.target.value)||0); const used=Math.max(0,...S.invoices.map(i=>Number(i.seq)||0));
+      if (v<=used){ e.target.value=String(nextInvoiceSeq()); return toast("Invoice "+used+" is already used. Pick a higher number."); }
+      invSave({startAt:v-1},flag); }})),
+    el("p",{class:"kv",style:"margin:0;max-width:340px"},"Switching from a paper book? Start right after the last number you wrote."))));
+  // 5. Returns / warranty note
+  p.append(sec("Returns and warranty (printed on invoices)",el("textarea",{rows:"3",placeholder:"30-day warranty: exchange or store credit. Receipt required.",onchange:e=>invSave({returnsNote:e.target.value.trim()},flag)},st.returnsNote||""),
+    el("p",{class:"kv"},"Leave it empty if you don't need it.")));
+  p.append(el("div",{class:"row",style:"gap:10px;margin-top:6px"},el("button",{type:"button",class:"btn",onclick:()=>{ S.setTab="pricelist"; S.setOpen=true; render(); toTop(); }},"Next: your price list →")));
+  return p;
+}
+
+/* ---- Price list: what the business sells, suggested as you type on an invoice ---- */
+const priceList=()=>Array.isArray(S.business&&S.business.priceList)?S.business.priceList:[];
+async function savePriceList(list){ list=list.slice().sort((a,b)=>a.n.localeCompare(b.n)); await saveBiz({priceList:list}); return list; }
+function parsePriceLines(text){
+  const out=[];
+  String(text||"").split(/\r?\n/).forEach(line=>{
+    line=line.trim(); if (!line) return;
+    const parts=line.split(/\t|,(?=\s*\$?\d)|\s{2,}|\|/).map(x=>x.trim()).filter(Boolean);
+    if (parts.length<2) return;
+    const name=parts[0].replace(/^"|"$/g,""), price=Number(String(parts[1]).replace(/[$,]/g,"")), core=parts[2]?Number(String(parts[2]).replace(/[$,]/g,"")):0;
+    if (!name || !(price>=0) || isNaN(price) || /^(part|item|name|description)$/i.test(name)) return;
+    out.push({n:name.slice(0,80),p:r2(price),c:r2(core||0),t:true});
+  });
+  return out;
+}
+function settingsPriceList(){
+  const frag=document.createDocumentFragment();
+  let q="";
+  const list=el("div",{class:"plist"});
+  const draw=()=>{
+    const all=priceList(), ql=q.trim().toLowerCase();
+    const shown=ql?all.filter(x=>x.n.toLowerCase().includes(ql)):all;
+    const core=hasCores();
+    list.replaceChildren(el("div",{class:"prow phead"+(core?" core":"")},el("span",{},"Item"),el("span",{},"Price"),core?el("span",{},"Core"):null,el("span",{title:"Charge sales tax"},"Tax"),el("span",{})));
+    if (!all.length) list.append(el("div",{class:"empty",style:"padding:16px"},"Nothing here yet. Add items below, paste a list, or start from your services."));
+    shown.slice(0,ql?150:400).forEach(x=>{
+      const upd=patch=>write(async()=>{ const l=priceList().map(y=>y.n===x.n?{...y,...patch}:y); await savePriceList(l); },null);
+      list.append(el("div",{class:"prow"+(core?" core":"")},el("span",{},x.n),
+        el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",value:String(x.p),"aria-label":"Price of "+x.n,onchange:e=>upd({p:r2(Number(e.target.value)||0)})}),
+        core?el("input",{type:"number",min:"0",step:"0.01",inputmode:"decimal",value:String(x.c||0),"aria-label":"Core charge for "+x.n,onchange:e=>upd({c:r2(Number(e.target.value)||0)})}):null,
+        el("input",{type:"checkbox",checked:x.t!==false,"aria-label":"Charge sales tax on "+x.n,style:"width:auto",onchange:e=>upd({t:e.target.checked})}),
+        el("button",{type:"button",class:"x","aria-label":"Remove "+x.n,onclick:()=>write(async()=>{ await savePriceList(priceList().filter(y=>y.n!==x.n)); render(); },"Removed")},"×")));
+    });
+    if (shown.length>(ql?150:400)) list.append(el("div",{class:"kv",style:"padding:10px"},"Showing the first "+(ql?150:400)+". Search to find the rest."));
+  };
+  const add=el("form",{class:"addpart",onsubmit:e=>{ e.preventDefault(); const f=new FormData(e.target); const n=String(f.get("n")||"").trim(); if(!n) return;
+    if (priceList().some(x=>x.n.toLowerCase()===n.toLowerCase())) return toast("That's already on the list.");
+    const item={n,p:r2(Number(f.get("p"))||0),c:r2(Number(f.get("c"))||0),t:true};
+    write(async()=>{ await savePriceList([...priceList(),item]); e.target.reset(); draw(); },n+" added"); }},
+    el("input",{name:"n",placeholder:"New item, e.g. Deep cleaning",autocomplete:"off"}),el("input",{name:"p",type:"number",step:"0.01",min:"0",placeholder:"Price",inputmode:"decimal"}),
+    hasCores()?el("input",{name:"c",type:"number",step:"0.01",min:"0",placeholder:"Core",inputmode:"decimal"}):null,el("button",{class:"btn primary"},"Add"));
+  const paste=el("textarea",{rows:"5",placeholder:"One per line: name, price"+(hasCores()?", core":"")+"\nAlternator, 40, 5\nDeep cleaning, 250"});
+  const importBox=el("details",{class:"invmore"},el("summary",{},el("b",{},"Add many at once"),el("span",{class:"kv"}," · paste a list or upload a spreadsheet (CSV)")),
+    el("div",{style:"display:grid;gap:10px;margin-top:10px"},paste,
+      el("div",{class:"row",style:"gap:10px;flex-wrap:wrap"},
+        el("button",{type:"button",class:"btn primary",onclick:()=>importItems(parsePriceLines(paste.value))},"Add these"),
+        el("label",{class:"btn"},"Upload CSV",el("input",{type:"file",accept:".csv,text/csv,text/plain",hidden:true,onchange:async e=>{ const f=e.target.files[0]; if(!f) return; importItems(parsePriceLines(await f.text())); }})),
+        S.jobs.length?el("button",{type:"button",class:"btn ghost",onclick:()=>importItems(servicesAsItems())},"Start from my services"):null)));
+  function importItems(items){
+    if (!items.length) return toast("Couldn't find any “name, price” lines.");
+    const have=new Map(priceList().map(x=>[x.n.toLowerCase(),x]));
+    let added=0,updated=0; items.forEach(x=>{ const k=x.n.toLowerCase(); if (have.has(k)){ have.set(k,{...have.get(k),p:x.p,c:x.c||have.get(k).c||0}); updated++; } else { have.set(k,x); added++; } });
+    write(async()=>{ await savePriceList([...have.values()]); paste.value=""; render(); },added+" added"+(updated?", "+updated+" updated":""));
+  }
+  frag.append(el("div",{class:"panel",style:"max-width:820px"},
+    el("h2",{},"Price list ("+priceList().length+")"),
+    el("div",{class:"sub"},"Start typing on an invoice and these come up with the price filled in. Changes here are used on the next invoice."),
+    el("input",{type:"search",placeholder:"Find an item",style:"margin:0 0 12px",oninput:e=>{ q=e.target.value; draw(); }}),
+    add,importBox,list));
+  draw();
+  return frag;
+}
+// "Start from my services": each service with the price it usually goes for.
+function servicesAsItems(){
+  const by={}; S.jobs.filter(j=>j.service&&Number(j.price)>0).forEach(j=>{ (by[j.service] ||= []).push(Number(j.price)); });
+  const svc=new Set([...SERVICES,...Object.keys(by)]);
+  return [...svc].map(n=>{ const ps=(by[n]||[]).sort((a,b)=>a-b); return {n,p:ps.length?ps[Math.floor(ps.length/2)]:0,c:0,t:!isServiceCat()}; });
+}
+const isServiceCat=()=>!["Auto Recycling"].includes((S.business||{}).category);
+const hasCores=()=>((S.business||{}).category==="Auto Recycling")||priceList().some(x=>Number(x.c)>0);
+
 function settingsInvoices(){
   const st=invSettings(), b=S.business;
   const f=el("form",{class:"panel",style:"max-width:720px;"});
@@ -5230,11 +5640,9 @@ function settingsInvoices(){
         el("span",{class:"kv",style:"font-weight:400"},"Shown at the top of invoices and receipts. Without one, your initials are used.")),
       el("div",{class:"f full"},"Brand colour",el("div",{class:"row",style:"gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px"},colorIn,swatches)),
       el("label",{class:"f full"},"Website on invoices (optional)",el("input",{name:"website",value:st.website||"",placeholder:"www.yourbusiness.com",autocomplete:"off"})),
-      el("label",{class:"f full"},"Street address on invoices",el("input",{name:"address",value:st.address,placeholder:"123 Main St",autocomplete:"off"})),
       el("label",{class:"f"},"Email on invoices (client replies go here)",el("input",{name:"email",type:"email",value:st.email})),
       el("label",{class:"f"},"Phone on invoices",el("input",{name:"phone",type:"tel",value:st.phone})),
       el("label",{class:"f"},"Usual payment terms",el("select",{name:"terms"},INV_TERMS.map(([id,l])=>el("option",{value:id,selected:id===st.terms},l)))),
-      el("label",{class:"f"},taxName()+" % (on taxable lines)",el("input",{name:"taxRate",type:"number",min:"0",step:"0.001",inputmode:"decimal",value:String(st.taxRate||0)})),
       el("label",{class:"f"},"Markup on billed materials %",el("input",{name:"markup",type:"number",min:"0",step:"1",inputmode:"decimal",value:String(st.markup||0)})),
       hasProjects()?el("label",{class:"f"},"Retainage on project invoices %",el("input",{name:"retainage",type:"number",min:"0",max:"50",step:"0.5",inputmode:"decimal",value:String(st.retainage||0)})):null,
       el("label",{class:"f full"},"Online payment link (optional)",el("input",{name:"payLink",type:"url",value:st.payLink,placeholder:"Your Stripe, Square or PayPal payment link"})),
@@ -5247,14 +5655,16 @@ function settingsInvoices(){
   f.onsubmit=e=>{ e.preventDefault(); const d=Object.fromEntries(new FormData(f));
     const link=(d.payLink||"").trim();
     if (link && !/^https:\/\//i.test(link)) return toast("The payment link should start with https://");
-    const invoice={...(b.invoice||{}),address:d.address.trim(),email:d.email.trim(),phone:d.phone.trim(),terms:d.terms,taxRate:Math.max(0,Number(d.taxRate)||0),markup:Math.max(0,Number(d.markup)||0),
+    const invoice={...(b.invoice||{}),email:d.email.trim(),phone:d.phone.trim(),terms:d.terms,markup:Math.max(0,Number(d.markup)||0),
       retainage:Math.max(0,Math.min(50,Number(d.retainage)||0)),payLink:link,payNote:d.payNote.trim(),footer:d.footer.trim(),autoRemind:!!f.querySelector("[name=autoRemind]").checked,
       color:/^#[0-9a-f]{6}$/i.test(d.color||"")?d.color:"",logo,website:(d.website||"").trim()};
     write(async()=>{ await firebase.firestore().doc("businesses/"+S.businessId).update({invoice}); S.business.invoice=invoice; S.invLook=null;
       // Invoices already sent show the new look, contact details and payment notes too.
       if (bizVerified()) await publishSentInvoices();
       render(); },"Invoice settings saved"); };
-  const fr=document.createDocumentFragment(); fr.append(CARD_PAY_READY||S.isPlatformAdmin?cardPayPanel():null,f); return fr;
+  const look=el("details",{class:"panel invlook",style:"max-width:720px"},el("summary",{},el("b",{},"Invoice look and extras"),el("span",{class:"kv"}," · logo, colour, contact details, terms, payment link")),f);
+  f.classList.remove("panel"); f.style.padding="0"; f.style.boxShadow="none";
+  const fr=document.createDocumentFragment(); fr.append(invSetupPanel(),CARD_PAY_READY||S.isPlatformAdmin?cardPayPanel():null,look); return fr;
 }
 
 // ---- Card payments (Stripe Connect). The business links its own Stripe account; clients pay from the invoice. ----
