@@ -40,17 +40,19 @@ function seed(){
   const a=P("Alternator"), b=P("Battery"); b.coreCharged=false;
   const s=P("Starter");
   const c=P("Instrument Cluster"), d=P("Dash Pad"), e=P("Radio Bezel"); e.qty=2;
-  const tr=P("Transmission - FWD/AWD"); tr.coreReturnedAt=addDays(t,-38); tr.coreRefund=r2(50*1.0975); tr.coreRefundHow="cash";
+  const tr=P("Transmission - FWD/AWD");
   return {seq:1005, settings:{taxRate:9.75,warrantyDays:30,staff:["Mike","Dana"]},
     prices:null, credits:{},
     invoices:[
-      inv(1001,addDays(t,-40),"Tommy Ray","7315550142","Mike","cash",[tr]),
+      {...inv(1001,addDays(t,-40),"Tommy Ray","7315550142","Mike","cash",[tr]),returns:[{idx:0,name:tr.name,kind:"core",qty:0,coreQty:1,how:"refund",amount:r2(50*1.0975),at:addDays(t,-38)}]},
       inv(1002,addDays(t,-12),"Carla Jones","7315550188","Dana","card",[s]),
       inv(1003,addDays(t,-5),"Customer","","Mike","cash",[c,d,e]),
       inv(1004,t,"John Carter","7315550101","Dana","cash",[a,b])
     ]};
 }
-function load(){ try{ DB=JSON.parse(localStorage.getItem(KEY)); }catch(e){ DB=null; } if(!DB||!DB.invoices) DB=seed(); }
+function load(){ try{ DB=JSON.parse(localStorage.getItem(KEY)); }catch(e){ DB=null; } if(!DB||!DB.invoices) DB=seed();
+  DB.invoices.forEach(inv=>{ inv.returns=(inv.returns||[]).map(r=>r.kind?r:{...r,kind:"part",how:r.type==="exchange"?"exchange":"credit",coreQty:0});
+    inv.lines.forEach((l,idx)=>{ if(l.coreReturnedAt){ inv.returns.push({idx,name:l.name,kind:"core",qty:0,coreQty:l.qty,how:l.coreRefundHow==="credit"?"credit":"refund",amount:l.coreRefund||0,at:l.coreReturnedAt}); delete l.coreReturnedAt; } }); }); }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast("Couldn't save on this computer."); } }
 const prices=()=>DB.prices||PRICE_LIST.map(p=>({name:p[0],price:p[1],core:p[2],note:p[3]||""}));
 function setPrices(list){ DB.prices=list; save(); }
@@ -67,7 +69,10 @@ function invTotals(inv){
   return {parts,cores,sub,tax,total,credit,fee,feePct,due:r2(before+fee),rate};
 }
 const cardFeePct=()=>DB.settings.cardFee??3;
-const coresOwed=inv=>inv.lines.filter(l=>l.coreCharged&&l.core>0&&!l.coreReturnedAt);
+// How many cores are still out on a line, and how many of the parts have come back (refund or credit; an exchange keeps the sale).
+const coreOwedQty=(inv,idx)=>{ const l=inv.lines[idx]; if(!(l.coreCharged&&l.core>0)) return 0; return Math.max(0,l.qty-(inv.returns||[]).filter(r=>r.idx===idx).reduce((n,r)=>n+(r.coreQty||0),0)); };
+const partBackQty=(inv,idx)=>(inv.returns||[]).filter(r=>r.idx===idx&&r.kind==="part"&&r.how!=="exchange").reduce((n,r)=>n+r.qty,0);
+const coresOwed=inv=>inv.lines.map((l,idx)=>({l,idx,n:coreOwedQty(inv,idx)})).filter(x=>x.n>0);
 const withTax=(amt,inv)=>r2(amt*(1+(inv.taxRate??DB.settings.taxRate)/100));
 const custKey=(name,phone)=>normPhone(phone)||String(name||"").trim().toLowerCase();
 const creditFor=(name,phone)=>{ const k=custKey(name,phone); return k&&DB.credits[k]?r2(DB.credits[k].amount):0; };
@@ -234,14 +239,14 @@ function receipt(inv,kind){
   const lines=[];
   inv.lines.forEach(l=>{
     lines.push(h("tr",{},h("td",{},l.name),h("td",{class:"num"},money(l.price)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.price*l.qty))));
-    if (l.coreCharged&&l.core>0) lines.push(h("tr",{class:"coreline"},h("td",{},"   Core charge, "+l.name+(l.coreReturnedAt?" (core returned "+niceDate(l.coreReturnedAt)+")":" (refunded when core is returned)")),
+    if (l.coreCharged&&l.core>0) lines.push(h("tr",{class:"coreline"},h("td",{},"   Core charge, "+l.name+(coreOwedQty(inv,inv.lines.indexOf(l))?" (refunded when core is returned)":" (core returned)")),
       h("td",{class:"num"},money(l.core)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.core*l.qty))));
   });
   while (lines.length<8) lines.push(h("tr",{class:"blank"},h("td",{}," "),h("td",{}),h("td",{}),h("td",{})));
   const box=(on,label)=>h("span",{class:"pbox"},h("i",{},on?"✔":""),label);
   const after=[];
-  inv.lines.forEach(l=>{ if(l.coreReturnedAt) after.push("Core returned "+niceDate(l.coreReturnedAt)+": "+l.name+", "+(l.coreRefundHow==="credit"?"store credit ":"refunded ")+money(l.coreRefund)); });
-  (inv.returns||[]).forEach(r=>after.push((r.type==="exchange"?"Exchanged ":"Returned for store credit ")+niceDate(r.at)+": "+r.name+(r.qty>1?" ×"+r.qty:"")+(r.type==="credit"?", credit "+money(r.amount):"")));
+  const howTxt={refund:"refunded",credit:"store credit",exchange:"exchanged"};
+  (inv.returns||[]).forEach(r=>after.push(niceDate(r.at)+": "+(r.kind==="core"?"Core returned, "+r.name+(r.coreQty>1?" ×"+r.coreQty:""):"Part returned, "+r.name+(r.qty>1?" ×"+r.qty:"")+(r.coreQty?" with core":""))+" · "+howTxt[r.how]+(r.how!=="exchange"?" "+money(r.amount):"")));
   return h("div",{class:"receipt"},
     h("div",{class:"rhead"},
       h("div",{class:"rlogo"},h("div",{class:"rw"},"RIGHTWAY"),h("div",{class:"ar"},"♻ Auto Recycling")),
@@ -269,31 +274,14 @@ function receipt(inv,kind){
 }
 function printDoc(node){ const p=$("#print"); p.replaceChildren(node); window.print(); }
 
-/* Invoice page: receipt + what you can do with it */
+/* Invoice page: receipt + bring-backs */
 function showInvoice(inv,justSaved){ go("find",{open:inv.no}); if(justSaved) setTimeout(()=>printDoc(receipt(inv)),250); }
 function invoicePage(v,inv){
-  const owed=coresOwed(inv);
   const acts=h("div",{class:"acts left"},
     h("button",{type:"button",class:"btn primary",onclick:()=>printDoc(receipt(inv))},"Print invoice"),
-    h("button",{type:"button",class:"btn",onclick:()=>go("returns",{retInv:inv.no})},"Return or exchange a part"),
     h("button",{type:"button",class:"btn ghost",onclick:()=>go(TAB,{open:null})},"← Back"));
-  const coreP=owed.length?h("div",{class:"panel corepanel"},h("h3",{},"Cores still owed"),
-    owed.map(l=>h("div",{class:"crow"},h("div",{},h("b",{},l.name),h("span",{class:"muted"}," core "+money(l.core)+(l.qty>1?" × "+l.qty:"")+" + tax = "),h("b",{},money(withTax(l.core*l.qty,inv)))),
-      h("button",{type:"button",class:"btn primary",onclick:()=>coreReturn(inv,l)},"Core returned")))):null;
-  v.append(h("div",{class:"invpage"},acts,coreP,h("div",{class:"sheet"},receipt(inv))));
+  v.append(h("div",{class:"invpage"},acts,backPanel(inv),h("div",{class:"sheet"},receipt(inv))));
 }
-function coreReturn(inv,l){
-  const amt=withTax(l.core*l.qty,inv);
-  const d=h("dialog",{class:"dlg"});
-  const done=how=>{ l.coreReturnedAt=today(); l.coreRefund=amt; l.coreRefundHow=how; if(how==="credit") addCredit(inv.soldTo,inv.phone,amt); save(); d.close(); d.remove(); toast(how==="credit"?"Core returned. "+money(amt)+" added to store credit.":"Core returned. Give the customer "+money(amt)+"."); render(); };
-  d.append(h("h3",{},"Core returned: "+l.name),
-    h("p",{},"Core charge "+money(l.core*l.qty)+" plus tax. The customer gets back ",h("b",{},money(amt)),"."),
-    h("div",{class:"acts"},h("button",{type:"button",class:"btn ghost",onclick:()=>{ d.close(); d.remove(); }},"Cancel"),
-      h("button",{type:"button",class:"btn",onclick:()=>done("credit")},"Store credit"),
-      h("button",{type:"button",class:"btn primary",onclick:()=>done(inv.pay==="card"?"card":"cash")},inv.pay==="card"?"Refund to card":"Give cash back")));
-  document.body.append(d); d.showModal();
-}
-
 /* ===== Find invoice ===== */
 function findInvoices(q){
   q=q.trim().toLowerCase(); const qd=q.replace(/\D/g,"");
@@ -318,62 +306,83 @@ function viewFind(v){
   v.append(h("div",{class:"panel"},h("h2",{},"Find an invoice"),q,list)); draw(); setTimeout(()=>q.focus(),0);
 }
 
-/* ===== Returns ===== */
+/* ===== Returns: the whole part (with its core), or just the core ===== */
 function viewReturns(v){
   const inv=STATE.retInv!=null?DB.invoices.find(i=>i.no===STATE.retInv):null;
   if (!inv){
     const list=h("div",{class:"ilist"});
     const draw=()=>{ const r=findInvoices(STATE.retQ); list.replaceChildren(...(r.length?r.slice(0,30).map(i=>invRow(i,()=>go("returns",{retInv:i.no}))):[h("div",{class:"empty"},"No invoice matches.")])); };
-    const q=h("input",{class:"search",type:"search",placeholder:"Invoice number, phone or name",value:STATE.retQ,autocomplete:"off",oninput:e=>{ STATE.retQ=e.target.value; draw(); }});
-    v.append(h("div",{class:"panel"},h("h2",{},"Return or exchange a part"),
-      h("p",{class:"muted"},"Find the customer's invoice. Parts can be exchanged or turned into store credit within "+DB.settings.warrantyDays+" days. No refunds."),q,list));
+    const q=h("input",{class:"search",type:"search",placeholder:"Invoice number, phone or name",value:STATE.retQ,autocomplete:"off",oninput:e=>{ STATE.retQ=e.target.value; draw(); },
+      onkeydown:e=>{ if(e.key==="Enter"){ const r=findInvoices(STATE.retQ); if(r.length===1) go("returns",{retInv:r[0].no}); } }});
+    v.append(h("div",{class:"panel"},h("h2",{},"Returns"),
+      h("p",{class:"muted"},"Find the invoice. A part can come back whole (with its core) within "+DB.settings.warrantyDays+" days, or the customer can bring back just the core."),q,list));
     draw(); setTimeout(()=>q.focus(),0); return;
   }
-  const picks=new Map();
-  const rows=inv.lines.map((l,idx)=>{
-    const w=warranty(inv,l), done=(inv.returns||[]).filter(r=>r.idx===idx).reduce((n,r)=>n+r.qty,0), left=l.qty-done;
-    const status=left<=0?h("span",{class:"tag"},"Already returned")
-      :w.ok?h("span",{class:"tag good"},"In warranty · "+w.left+" day"+(w.left===1?"":"s")+" left")
-      :h("span",{class:"tag bad"},w.why);
-    const can=w.ok&&left>0;
-    return h("label",{class:"rrow"+(can?"":" off")},
-      h("input",{type:"checkbox",disabled:!can,onchange:e=>{ if(e.target.checked) picks.set(idx,1); else picks.delete(idx); }}),
-      h("span",{class:"rname"},h("b",{},l.name),h("small",{},money(l.price)+(l.qty>1?" × "+l.qty:"")+(w.glass&&can?" · glass: check it isn't broken":""))),
-      status);
-  });
-  const go2=type=>{
-    if(!picks.size) return toast("Tick the part being brought back.");
-    const recs=[];
-    for (const idx of picks.keys()){
-      const l=inv.lines[idx];
-      let amt=0;
-      if (type==="credit"){ amt=l.price; if(l.coreCharged&&!l.coreReturnedAt){ amt+=l.core; l.coreReturnedAt=today(); l.coreRefund=withTax(l.core,inv); l.coreRefundHow="credit"; } amt=withTax(amt,inv); }
-      recs.push({idx,name:l.name,qty:1,type,amount:amt,at:today()});
-    }
-    inv.returns=(inv.returns||[]).concat(recs);
-    const credit=r2(recs.reduce((n,r)=>n+r.amount,0));
-    if (type==="credit") addCredit(inv.soldTo,inv.phone,credit);
-    save();
-    toast(type==="credit"?money(credit)+" store credit for "+(inv.soldTo||"the customer"):"Exchange recorded");
-    printDoc(returnSlip(inv,recs,type,credit));
-    go("find",{open:inv.no,retInv:null});
-  };
-  v.append(h("div",{class:"panel"},
-    h("div",{class:"row"},h("h2",{class:"grow"},"Invoice #"+inv.no+" · "+(inv.soldTo||"Customer")),h("button",{type:"button",class:"btn ghost",onclick:()=>go("returns",{retInv:null})},"← Pick another")),
-    h("p",{class:"muted"},"Sold "+longDate(inv.date)+". Tick what's coming back."),
-    h("div",{class:"rlist"},rows),
-    h("div",{class:"note"},"Store policy: no refunds. Exchange the part, or give store credit for the price plus tax. Store credit is saved to this customer and comes up the next time you sell to them."),
-    h("div",{class:"acts"},h("button",{type:"button",class:"btn",onclick:()=>go2("exchange")},"Exchange for same part"),h("button",{type:"button",class:"btn primary",onclick:()=>go2("credit")},"Give store credit"))));
+  v.append(h("div",{class:"acts left"},h("button",{type:"button",class:"btn ghost",onclick:()=>go("returns",{retInv:null})},"← Pick another invoice"),
+    h("button",{type:"button",class:"btn",onclick:()=>go("find",{open:inv.no})},"See invoice")),backPanel(inv,true));
 }
-function returnSlip(inv,recs,type,credit){
+// One card per part on the invoice: "Return whole part" and, when a core is still out, "Core only".
+function backPanel(inv,big){
+  const cards=inv.lines.map((l,idx)=>{
+    const w=warranty(inv,l), back=partBackQty(inv,idx), left=l.qty-back, owed=coreOwedQty(inv,idx);
+    const status=left<=0?h("span",{class:"tag"},"Returned")
+      :w.ok?h("span",{class:"tag good"},"Return by "+niceDate(w.ends)+" · "+w.left+" day"+(w.left===1?"":"s")+" left")
+      :h("span",{class:"tag bad"},w.why);
+    const coreIn=Math.min(1,owed), wholeAmt=withTax(l.price+(coreIn?l.core:0),inv);
+    const btns=h("div",{class:"bbtns"},
+      left>0&&w.ok?h("button",{type:"button",class:"btn primary",onclick:()=>returnDialog(inv,idx,"part")},
+        h("span",{},"Return whole part"),h("small",{},money(l.price)+(coreIn?" + core "+money(l.core):"")+" + tax = "+money(wholeAmt)+(l.qty>1?" each":""))):null,
+      owed>0?h("button",{type:"button",class:"btn core-btn",onclick:()=>returnDialog(inv,idx,"core")},
+        h("span",{},"Core only"),h("small",{},"core "+money(l.core)+" + tax = "+money(withTax(l.core,inv))+(owed>1?" each · "+owed+" out":""))):null);
+    return h("div",{class:"bcard"+(left<=0&&!owed?" off":"")},
+      h("div",{class:"bhead"},h("div",{},h("b",{},l.name),h("div",{class:"muted"},money(l.price)+(l.qty>1?" × "+l.qty:"")+(l.coreCharged&&l.core>0?(owed?" · core "+money(l.core)+" still out":" · core back"):"")+(w.glass&&left>0?" · glass: check it isn't broken":""))),status),
+      btns.childNodes.length?btns:null);
+  });
+  return h("div",{class:"panel"+(big?"":" backpanel")},h("h3",{},big?"Invoice #"+inv.no+" · "+(inv.soldTo||"Customer")+" · sold "+niceDate(inv.date):"Bring back a part or core"),
+    h("div",{class:"blist"},cards));
+}
+function returnDialog(inv,idx,kind){
+  const l=inv.lines[idx], owed=coreOwedQty(inv,idx), left=l.qty-partBackQty(inv,idx);
+  const max=kind==="core"?owed:left;
+  let n=1;
+  const d=h("dialog",{class:"dlg"});
+  const close=()=>{ d.close(); d.remove(); };
+  const calc=()=>{ const coreQ=kind==="core"?n:Math.min(n,owed); const base=kind==="core"?l.core*n:l.price*n+l.core*coreQ; return {coreQ,amt:withTax(base,inv),base}; };
+  const sum=h("p",{});
+  const draw=()=>{ const c=calc(); sum.replaceChildren(kind==="core"?"Core "+money(l.core)+(n>1?" × "+n:""):money(l.price)+(n>1?" × "+n:"")+(c.coreQ?" + core "+money(l.core*c.coreQ):""), " + tax = ",h("b",{},money(c.amt))); };
+  const qty=max>1?h("label",{class:"f qtyf"},"How many",h("input",{type:"number",min:"1",max:String(max),value:"1",inputmode:"numeric",oninput:e=>{ n=Math.min(max,Math.max(1,parseInt(e.target.value)||1)); draw(); }})):null;
+  const done=how=>{
+    const c=calc();
+    const rec={idx,name:l.name,kind,qty:kind==="part"?n:0,coreQty:c.coreQ,how,amount:how==="exchange"?0:c.amt,at:today()};
+    if (how==="exchange" && kind==="part") rec.coreQty=0;   // the customer keeps a part, so the core stays as it was
+    inv.returns=(inv.returns||[]).concat(rec);
+    if (how==="credit") addCredit(inv.soldTo,inv.phone,rec.amount);
+    save(); close();
+    toast(how==="exchange"?"Exchange recorded":how==="credit"?money(rec.amount)+" store credit for "+(inv.soldTo||"the customer"):"Give the customer "+money(rec.amount)+(inv.pay==="card"?" back on their card":" back"));
+    printDoc(returnSlip(inv,rec));
+    render();
+  };
+  const refundLbl=inv.pay==="card"?"Refund to card":inv.pay==="check"?"Refund (cash)":"Give cash back";
+  d.append(...[h("h3",{},(kind==="core"?"Core returned: ":"Return whole part: ")+l.name),
+    kind==="part"&&owed?h("p",{class:"muted"},"The core comes back with the part, so the core charge is included."):null,
+    qty,sum,
+    h("div",{class:"acts"},h("button",{type:"button",class:"btn ghost",onclick:close},"Cancel"),
+      kind==="part"?h("button",{type:"button",class:"btn",onclick:()=>done("exchange")},"Exchange for same part"):null,
+      h("button",{type:"button",class:"btn",onclick:()=>done("credit")},"Store credit"),
+      h("button",{type:"button",class:"btn primary",onclick:()=>done("refund")},refundLbl))].filter(Boolean));
+  draw();
+  document.body.append(d); d.showModal();
+}
+function returnSlip(inv,r){
+  const title=r.how==="exchange"?"EXCHANGE":r.how==="credit"?"STORE CREDIT":"REFUND";
   return h("div",{class:"receipt slip"},
     h("div",{class:"rhead"},h("div",{class:"rlogo"},h("div",{class:"rw"},"RIGHTWAY"),h("div",{class:"ar"},"♻ Auto Recycling")),
       h("div",{class:"rbiz"},h("b",{},BIZ.name),h("div",{},BIZ.addr+"  |  "+BIZ.city),h("div",{},BIZ.phone)),
-      h("div",{class:"rtitle"},h("b",{},type==="credit"?"STORE CREDIT":"EXCHANGE"),h("div",{},"For invoice "+inv.no),h("div",{},"Date "+niceDate(today())))),
+      h("div",{class:"rtitle"},h("b",{},title),h("div",{},"For invoice "+inv.no),h("div",{},"Date "+niceDate(r.at)))),
     h("p",{},h("b",{},inv.soldTo||"Customer"),inv.phone?" · "+fmtPhone(inv.phone):""),
-    h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"PART"),h("th",{},type==="credit"?"CREDIT (WITH TAX)":"")) ),
-      h("tbody",{},recs.map(r=>h("tr",{},h("td",{},r.name),h("td",{class:"num"},type==="credit"?money(r.amount):"Exchanged"))))),
-    type==="credit"?h("p",{class:"big"},"Store credit: ",h("b",{},money(credit)),". Balance now ",h("b",{},money(creditFor(inv.soldTo,inv.phone))),"."):null,
+    h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"RETURNED"),h("th",{},"QTY"),h("th",{},r.how==="exchange"?"":"AMOUNT (WITH TAX)"))),
+      h("tbody",{},h("tr",{},h("td",{},(r.kind==="core"?"Core, ":"")+r.name+(r.kind==="part"&&r.coreQty?" (with core)":"")),h("td",{class:"num"},String(r.kind==="core"?r.coreQty:r.qty)),h("td",{class:"num"},r.how==="exchange"?"Exchanged":money(r.amount))))),
+    r.how==="credit"?h("p",{class:"big"},"Store credit: ",h("b",{},money(r.amount)),". Balance now ",h("b",{},money(creditFor(inv.soldTo,inv.phone))),"."):null,
     h("div",{class:"sig"},"Signature ",h("span",{})));
 }
 
@@ -383,8 +392,8 @@ function viewToday(v){
   const list=DB.invoices.filter(i=>i.date===d).sort((a,b)=>b.no-a.no);
   const sum=k=>r2(list.reduce((n,i)=>n+invTotals(i)[k],0));
   const byPay=p=>r2(list.filter(i=>i.pay===p).reduce((n,i)=>n+invTotals(i).due,0));
-  const owed=DB.invoices.flatMap(i=>coresOwed(i).map(l=>({i,l}))).sort((a,b)=>a.i.no-b.i.no);
-  const coreBack=DB.invoices.flatMap(i=>i.lines.filter(l=>l.coreReturnedAt===d).map(l=>l.coreRefund||0)).reduce((a,b)=>a+b,0);
+  const owed=DB.invoices.flatMap(i=>coresOwed(i).map(x=>({i,...x}))).sort((a,b)=>a.i.no-b.i.no);
+  const coreBack=r2(DB.invoices.flatMap(i=>(i.returns||[]).filter(r=>r.at===d&&r.how==="refund").map(r=>r.amount)).reduce((a,b)=>a+b,0));
   v.append(
     h("div",{class:"row"},h("h2",{class:"grow"},d===today()?"Today":longDate(d)),
       h("input",{type:"date",value:d,max:today(),onchange:e=>{ STATE.day=e.target.value||today(); render(); }})),
@@ -395,11 +404,11 @@ function viewToday(v){
       stat(money(sum("cores")),"Core charges"),
       sum("fee")?stat(money(sum("fee")),"Card fees"):null),
     h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),
-      coreBack?stat("−"+money(coreBack),"Core refunds given"):null),
+      coreBack?stat("−"+money(coreBack),"Refunds given"):null),
     h("div",{class:"panel"},h("h3",{},"Invoices"),list.length?h("div",{class:"ilist"},list.map(i=>invRow(i,()=>go("find",{open:i.no})))):h("div",{class:"empty"},"No sales on this day.")),
     h("div",{class:"panel"},h("h3",{},"Cores still out ("+owed.length+")"),
-      owed.length?owed.map(({i,l})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
-        h("div",{class:"row"},h("b",{class:"num"},money(withTax(l.core*l.qty,i))),h("button",{type:"button",class:"btn small primary",onclick:()=>coreReturn(i,l)},"Core returned"))))
+      owed.length?owed.map(({i,l,idx,n})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name+(n>1?" ×"+n:"")),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
+        h("div",{class:"row"},h("b",{class:"num"},money(withTax(l.core*n,i))),h("button",{type:"button",class:"btn small primary",onclick:()=>returnDialog(i,idx,"core")},"Core returned"))))
       :h("div",{class:"empty"},"Every core is back.")));
 }
 const stat=(v,l)=>h("div",{class:"stat"},h("b",{},v),h("span",{},l));
