@@ -3,6 +3,6 @@ Allow: /
 Disallow: /app
 Disallow: /invoice.html
 Disallow: /dashboard.html
+Disallow: /rightway/
 
 Sitemap: https://dayzift.com/sitemap.xml
-Disallow: /rightway/
