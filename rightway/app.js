@@ -52,6 +52,7 @@ function seed(){
   for (let day=60; day>=1; day--){ const n=Math.floor(rnd()*4)+(day%7===0?0:1);
     for (let k=0;k<n;k++){ const lines=[]; const cnt=1+Math.floor(rnd()*2.2);
       for (let j=0;j<cnt;j++){ const nm=popular[Math.floor(Math.pow(rnd(),1.8)*popular.length)]; const x=P(nm); if (rnd()<0.4) x.coreCharged=false; if (/Tires|Wheel/.test(nm)&&rnd()<0.5) x.qty=2+Math.floor(rnd()*3); lines.push(x); }
+      if (rnd()<0.55) lines.unshift({name:"Entry",price:2,qty:1+Math.floor(rnd()*1.6),core:0,coreCharged:false,notax:true});
       const pay=["cash","cash","card","check"][Math.floor(rnd()*4)];
       hist.push({...inv(no++,addDays(t,-day),names[Math.floor(rnd()*names.length)],"","Mike",pay,lines),cardFee:pay==="card"?3:0}); } }
   hist.forEach(i=>i.lines.forEach((l,idx)=>{ if (l.coreCharged&&rnd()<0.7) i.returns.push({idx,name:l.name,kind:"core",qty:0,coreQty:l.qty,how:"refund",amount:r2(l.core*l.qty*1.0975),at:addDays(i.date,2)}); }));
@@ -429,6 +430,22 @@ function returnSlip(inv,r){
 }
 
 /* ===== Today ===== */
+// Entry: how many people paid to come in, and on which days
+function entryReport(list,days,P){
+  const isE=l=>/^entry$/i.test(l.name);
+  const perDay={}; let count=0, money_=0, sales=0;
+  list.forEach(i=>{ const e=i.lines.filter(isE); if(!e.length) return; sales++;
+    e.forEach(l=>{ count+=l.qty; money_+=l.price*l.qty; perDay[i.date]=(perDay[i.date]||0)+l.qty; }); });
+  const max=Math.max(1,...Object.values(perDay));
+  const busiest=Object.entries(perDay).sort((a,b)=>b[1]-a[1])[0];
+  return h("div",{class:"panel"},h("h3",{},"Entry · "+P.label),
+    h("div",{class:"stats",style:"margin:6px 0 12px"},
+      stat(String(count),"Entries sold"),stat(money(money_),"Entry money"),
+      stat(days.length>1?(count/days.length).toFixed(1):String(count),"Per day"),
+      stat(busiest?niceDate(busiest[0])+" ("+busiest[1]+")":"—","Busiest day")),
+    days.length>1&&days.length<=92&&count?h("div",{class:"dchart",style:"height:80px"},days.map(d=>h("div",{class:"dcol",title:longDate(d)+": "+(perDay[d]||0)+" entries"},h("i",{style:"height:"+Math.round((perDay[d]||0)/max*100)+"%;background:#C08A1E"})))):null,
+    !count?h("div",{class:"empty"},"No entries sold in this period."):null);
+}
 /* ===== Sales: totals for any period, best sellers (to set prices by demand), cores still out ===== */
 function salesPeriod(){
   const t=today(), P=STATE.per||"today";
@@ -452,7 +469,7 @@ function viewToday(v){
     h("input",{type:"date",value:P.from,max:P.to,onchange:e=>{ STATE.pf=e.target.value; render(); }}),"to",h("input",{type:"date",value:P.to,max:today(),onchange:e=>{ STATE.pt=e.target.value; render(); }})):null;
   // Best sellers: how many sold, how much money, how often it comes back, and the price now (change it right here)
   const by={};
-  list.forEach(i=>i.lines.forEach((l,idx)=>{ if (l.labor) return; const k=l.name; const x=by[k]||(by[k]={name:k,qty:0,money:0,sales:0,back:0});
+  list.forEach(i=>i.lines.forEach((l,idx)=>{ if (l.labor||/^entry$/i.test(l.name)) return; const k=l.name; const x=by[k]||(by[k]={name:k,qty:0,money:0,sales:0,back:0});
     x.qty+=l.qty; x.money+=l.price*l.qty; x.sales++;
     x.back+=(i.returns||[]).filter(r=>r.idx===idx&&r.kind==="part"&&r.how!=="exchange").reduce((n,r)=>n+r.qty,0); }));
   const sortBy=STATE.sortBy||"qty";
@@ -487,7 +504,7 @@ function viewToday(v){
       stat(list.length?money(sum("due")/list.length):"$0.00","Average sale"),
       stat(money(sum("tax")),"Sales tax collected")),
     h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),stat(money(sum("fee")),"Card fees")),
-    chart,best,
+    chart,entryReport(list,days,P),best,
     h("div",{class:"panel"},h("h3",{},"Cores still out ("+owed.length+")"),
       owed.length?owed.slice(0,STATE.allCores?500:8).map(({i,l,idx,n})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name+(n>1?" ×"+n:"")),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
         h("div",{class:"row"},h("b",{class:"num"},money(withTax(l.core*n,i))),h("button",{type:"button",class:"btn small primary",onclick:()=>returnDialog(i,idx,"core")},"Core returned"))))
