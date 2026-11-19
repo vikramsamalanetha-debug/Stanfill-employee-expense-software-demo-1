@@ -298,8 +298,7 @@ function receipt(inv,kind){
       h("div",{class:"rnote"},
         h("p",{},h("b",{},"All sales are final. No returns or exchanges."),
           " Core charges are refunded when the core is brought back with this invoice."),
-        after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null,
-        h("div",{class:"sig"},"Signature ",h("span",{}))),
+        after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null),
       h("table",{class:"rtot"},h("tbody",{},
         h("tr",{},h("th",{},"SUB-TOTAL"),h("td",{class:"num"},money(t.sub))),
         h("tr",{},h("th",{},inv.taxExempt?"TAX EXEMPT":"TAX"),h("td",{class:"num"},money(t.tax))),
@@ -426,8 +425,7 @@ function returnSlip(inv,r){
     h("p",{},h("b",{},inv.soldTo||"Customer"),inv.phone?" · "+fmtPhone(inv.phone):""),
     h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"RETURNED"),h("th",{},"QTY"),h("th",{},r.how==="exchange"?"":"AMOUNT (WITH TAX)"))),
       h("tbody",{},h("tr",{},h("td",{},(r.kind==="core"?"Core, ":"")+r.name+(r.kind==="part"&&r.coreQty?" (with core)":"")),h("td",{class:"num"},String(r.kind==="core"?r.coreQty:r.qty)),h("td",{class:"num"},r.how==="exchange"?"Exchanged":money(r.amount))))),
-    r.how==="credit"?h("p",{class:"big"},"Store credit: ",h("b",{},money(r.amount)),". Balance now ",h("b",{},money(creditFor(inv.soldTo,inv.phone))),"."):null,
-    h("div",{class:"sig"},"Signature ",h("span",{})));
+    r.how==="credit"?h("p",{class:"big"},"Store credit: ",h("b",{},money(r.amount)),". Balance now ",h("b",{},money(creditFor(inv.soldTo,inv.phone))),"."):null);
 }
 
 /* ===== Today ===== */
