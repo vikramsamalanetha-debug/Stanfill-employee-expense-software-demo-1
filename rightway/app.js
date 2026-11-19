@@ -443,7 +443,7 @@ function viewToday(v){
   const best=h("div",{class:"panel"},
     h("div",{class:"row",style:"flex-wrap:wrap;gap:8px"},h("h3",{class:"grow",style:"margin:0"},"Best sellers · "+P.label),
       h("div",{class:"seg"},[["qty","Most sold"],["money","Most money"]].map(([id,l])=>h("button",{type:"button",class:sortBy===id?"on":"",onclick:()=>{ STATE.sortBy=id; render(); }},l)))),
-    h("p",{class:"muted",style:"margin:6px 0 12px"},"Parts that sell fast may be priced too low; parts that never sell may be too high. Change a price here and new sales use it."),
+    h("div",{style:"height:12px"}),
     rows.length?h("div",{class:"btable"},
       h("div",{class:"brow bthead"},h("span",{},"Part"),h("span",{},"Sold"),h("span",{},"Money"),h("span",{},"Returned"),h("span",{},"Price now")),
       rows.slice(0,STATE.allBest?200:12).map(r=>{ const pr=plist.find(x=>x.name===r.name);
