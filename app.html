@@ -5396,7 +5396,7 @@ function viewInvToday(){
     el("div",{class:"sum"},stat(money(took),"Taken in"+(refunds?" (after refunds)":"")),stat(String(issued.length),"Invoices"),stat(issued.length?money(issued.reduce((n,i)=>n+invTotals(i).total,0)/issued.length):money(0),"Average invoice"),stat(money(tax),taxName())),
     el("div",{class:"panel"},el("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},el("h3",{class:"grow",style:"margin:0"},"What sells · "+P.label),
         el("div",{class:"seg stseg",style:"margin:0;max-width:260px"},[["qty","Most sold"],["money","Most money"]].map(([id,l])=>el("button",{type:"button","aria-selected":String(sortBy===id),onclick:()=>{ S.salesSort=id; render(); }},l)))),
-      el("p",{class:"kv",style:"margin:6px 0 10px"},"Busy sellers might be priced too low. Change a price right here and the next invoice uses it."),
+      el("div",{style:"height:10px"}),
       rows.length?el("div",{class:"btable"},el("div",{class:"brow bthead"},el("span",{},"Item"),el("span",{},"Sold"),el("span",{},"Money"),el("span",{},"Price now")),
         rows.slice(0,S.salesAll?200:12).map(r=>{ const it=pl.find(x=>x.n===r.name);
           return el("div",{class:"brow"},el("span",{class:"bname"},el("b",{},r.name+(r.labor?" (labor)":"")),el("i",{class:"bar",style:"width:"+Math.max(4,Math.round((sortBy==="money"?r.money:r.qty)/maxV*100))+"%"})),
