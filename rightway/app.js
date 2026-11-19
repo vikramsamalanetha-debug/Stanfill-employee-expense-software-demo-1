@@ -66,6 +66,7 @@ function seed(){
     ]};
 }
 function load(){ try{ DB=JSON.parse(localStorage.getItem(KEY)); }catch(e){ DB=null; } if(!DB||!DB.invoices) DB=seed();
+  if (DB.prices && !DB.prices.some(x=>/^entry$/i.test(x.name))) DB.prices.unshift({name:"Entry",price:2,core:0,note:"",notax:true});
   DB.invoices.forEach(inv=>{ inv.returns=(inv.returns||[]).map(r=>r.kind?r:{...r,kind:"part",how:r.type==="exchange"?"exchange":"credit",coreQty:0});
     inv.lines.forEach((l,idx)=>{ if(l.coreReturnedAt){ inv.returns.push({idx,name:l.name,kind:"core",qty:0,coreQty:l.qty,how:l.coreRefundHow==="credit"?"credit":"refund",amount:l.coreRefund||0,at:l.coreReturnedAt}); delete l.coreReturnedAt; } }); }); }
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){ toast("Couldn't save on this computer."); } }
@@ -79,9 +80,10 @@ function invTotals(inv){
   const rate=(inv.taxRate??DB.settings.taxRate)/100;
   let parts=0,cores=0;
   let labor=0;
-  inv.lines.forEach(l=>{ if (l.labor){ labor+=l.price*l.qty; return; } parts+=l.price*l.qty; if(l.coreCharged) cores+=l.core*l.qty; });
+  let notax=0;
+  inv.lines.forEach(l=>{ if (l.labor){ labor+=l.price*l.qty; return; } parts+=l.price*l.qty; if (l.notax) notax+=l.price*l.qty; if(l.coreCharged) cores+=l.core*l.qty; });
   parts=r2(parts); cores=r2(cores); labor=r2(labor);
-  const sub=r2(parts+cores+labor), tax=r2((parts+cores)*rate), total=r2(sub+tax), credit=r2(inv.creditUsed||0);
+  const sub=r2(parts+cores+labor), tax=inv.taxExempt?0:r2((parts+cores-notax)*rate), total=r2(sub+tax), credit=r2(inv.creditUsed||0);
   // Paying by credit card adds a card fee (3%) on what goes on the card: total after tax and store credit.
   const before=r2(Math.max(0,total-credit)), feePct=inv.pay==="card"?Number(inv.cardFee)||0:0, fee=r2(before*feePct/100);
   return {parts,cores,labor,sub,tax,total,credit,fee,feePct,due:r2(before+fee),rate};
@@ -91,7 +93,7 @@ const cardFeePct=()=>DB.settings.cardFee??3;
 const coreOwedQty=(inv,idx)=>{ const l=inv.lines[idx]; if(!(l.coreCharged&&l.core>0)) return 0; return Math.max(0,l.qty-(inv.returns||[]).filter(r=>r.idx===idx).reduce((n,r)=>n+(r.coreQty||0),0)); };
 const partBackQty=(inv,idx)=>(inv.returns||[]).filter(r=>r.idx===idx&&r.kind==="part"&&r.how!=="exchange").reduce((n,r)=>n+r.qty,0);
 const coresOwed=inv=>inv.lines.map((l,idx)=>({l,idx,n:coreOwedQty(inv,idx)})).filter(x=>x.n>0);
-const withTax=(amt,inv)=>r2(amt*(1+(inv.taxRate??DB.settings.taxRate)/100));
+const withTax=(amt,inv,l)=>inv.taxExempt||(l&&(l.notax||l.labor))?r2(amt):r2(amt*(1+(inv.taxRate??DB.settings.taxRate)/100));
 const custKey=(name,phone)=>normPhone(phone)||String(name||"").trim().toLowerCase();
 const creditFor=(name,phone)=>{ const k=custKey(name,phone); return k&&DB.credits[k]?r2(DB.credits[k].amount):0; };
 function addCredit(name,phone,amt){ const k=custKey(name,phone); if(!k) return; const c=DB.credits[k]||{name,phone,amount:0}; c.amount=r2(c.amount+amt); c.name=name||c.name; DB.credits[k]=c; }
@@ -100,6 +102,7 @@ function addCredit(name,phone,amt){ const k=custKey(name,phone); if(!k) return; 
 function warranty(inv,line){
   const n=line.name.toLowerCase(), days=DB.settings.warrantyDays, ends=addDays(inv.date.slice(0,10),days), left=daysBetween(today(),ends);
   if (line.labor) return {ok:false,why:"Labor isn't refundable.",ends};
+  if (/^entry$/i.test(line.name)) return {ok:false,why:"Entry fee isn't refundable.",ends};
   if (line.elec||(line.elec==null&&ELEC.test(n))) return {ok:false,why:"Electronic part: not returnable.",ends};
   if (left<0) return {ok:false,why:"Warranty ended "+longDate(ends)+".",ends};
   return {ok:true,left,ends,glass:/glass|windshield/.test(n)};
@@ -175,7 +178,7 @@ function viewSale(v){
       t.cores?trow("Core charges",money(t.cores),"corecharge"):null,
       t.labor?trow("Labor (no tax)",money(t.labor)):null,
       trow("Sub-total",money(t.sub)),
-      trow("Tax ("+DB.settings.taxRate+"%)",money(t.tax)),
+      s.taxExempt?trow("Tax exempt",money(0),"good"):trow("Tax ("+DB.settings.taxRate+"%)",money(t.tax)),
       t.credit?trow("Store credit used","−"+money(t.credit),"good"):null,
       t.fee?trow("Card fee ("+t.feePct+"%)",money(t.fee),"corecharge"):null,
       trow("Total",money(t.due),"big")].filter(Boolean));
@@ -191,7 +194,7 @@ function viewSale(v){
     return h("div",{class:"lrow"},
       h("span",{class:"c-desc"},h("input",{value:l.name,"aria-label":"Description",oninput:e=>{ l.name=e.target.value; }}),
         l.note?h("small",{class:"warn"},l.note):null,
-        l.labor?h("small",{class:"warn"},"Labor: no tax, not refundable"):l.elec?h("small",{class:"warn"},"Electronic: not returnable"):null),
+        l.labor?h("small",{class:"warn"},"Labor: no tax, not refundable"):l.notax?h("small",{class:"muted"},"No tax"):l.elec?h("small",{class:"warn"},"Electronic: not returnable"):null),
       h("span",{class:"c-core"},l.core>0?h("label",{class:"core"+(l.coreCharged?" on":""),title:"Tick when the customer did NOT bring the old part back"},
         h("input",{type:"checkbox",checked:l.coreCharged,onchange:e=>{ l.coreCharged=e.target.checked; e.target.parentNode.classList.toggle("on",l.coreCharged); upd(); }}),
         h("span",{},"Core "+money(l.core))):h("span",{class:"muted"},"—")),
@@ -205,7 +208,7 @@ function viewSale(v){
     const box=h("div",{class:"sugg",hidden:true});
     let items=[],sel=0;
     const pick=p=>{ if(!p) return;
-      s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||"",elec:isElec(p)});
+      s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||"",elec:isElec(p),notax:!!p.notax||/^entry$/i.test(p.name)});
       drawLines(true); };
     const custom=()=>{ const n=inp.value.trim(); if(!n) return; s.lines.push({name:n,price:0,qty:1,core:0,coreCharged:false}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } };
     const draw=()=>{ items=searchParts(inp.value); sel=0; box.replaceChildren();
@@ -224,18 +227,24 @@ function viewSale(v){
     });
     inp.addEventListener("blur",()=>setTimeout(()=>{ box.hidden=true; },150));
     const labor=h("button",{type:"button",class:"btn small ghost addlabor",onclick:()=>{ s.lines.push({name:"Labor: pulling the part",price:0,qty:1,core:0,coreCharged:false,labor:true}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } }},"+ Labor (we pull it)");
-    return h("div",{class:"lrow newrow"},h("span",{class:"c-desc wide"},inp,box),labor);
+    const entry=h("button",{type:"button",class:"btn small ghost addentry",onclick:()=>{ const e=prices().find(x=>/^entry$/i.test(x.name))||{name:"Entry",price:2}; s.lines.push({name:"Entry",price:e.price,qty:1,core:0,coreCharged:false,notax:true}); drawLines(true); }},"+ Entry $"+((prices().find(x=>/^entry$/i.test(x.name))||{price:2}).price));
+    return h("div",{class:"lrow newrow"},h("span",{class:"c-desc wide"},inp,box),h("span",{class:"quick"},entry,labor));
   }
   const pays=h("div",{class:"pays"},["cash","check","card"].map(p=>h("button",{type:"button",class:"pay"+(s.pay===p?" on":""),onclick:e=>{ s.pay=p; pays.querySelectorAll(".pay").forEach(b=>b.classList.toggle("on",b===e.currentTarget)); chk.hidden=p!=="check"; drawTotals(); }},
     p==="card"?["Credit card",h("small",{class:"fee"},"+"+cardFeePct()+"% fee")]:{cash:"Cash",check:"Check"}[p])));
   const chk=h("label",{class:"f chk",hidden:s.pay!=="check"},"Check #",h("input",{value:s.checkNo,inputmode:"numeric",oninput:e=>{ s.checkNo=e.target.value; }}));
 
-  function field(label,key,props){ return h("label",{class:"f"},label,h("input",{value:s[key],...props,oninput:e=>{ if(key==="soldTo") nameCaseInput(e.target); s[key]=e.target.value; if(key==="soldTo"||key==="phone"){ s.creditUsed=0; drawCredit(); drawTotals(); } }})); }
+  function field(label,key,props){ return h("label",{class:"f"},label,h("input",{value:s[key],...props,oninput:e=>{ if(key==="soldTo") nameCaseInput(e.target); s[key]=e.target.value; if(key==="soldTo"||key==="phone"){ s.creditUsed=0; drawCredit(); drawTotals(); if (s._exCheck) s._exCheck(); } }})); }
 
   const acts=h("div",{class:"acts"},
     h("button",{type:"button",class:"btn ghost",onclick:()=>{ if(!s.lines.length||confirm("Clear this invoice and start over?")){ newSale(); render(); } }},"Clear"),
     h("button",{type:"button",class:"btn primary big",onclick:saveSale},"Save & print"));
-  top.append(creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk),totals),acts);
+  const exNo=h("input",{value:s.exemptNo||"",placeholder:"Exemption certificate # (optional)",autocomplete:"off",oninput:e=>{ s.exemptNo=e.target.value; }});
+  const exBox=h("div",{class:"exempt"+(s.taxExempt?" on":"")},
+    h("label",{class:"exsw"},h("input",{type:"checkbox",class:"switch",checked:!!s.taxExempt,onchange:e=>{ s.taxExempt=e.target.checked; exBox.classList.toggle("on",s.taxExempt); drawTotals(); }}),
+      h("span",{},h("b",{},"Tax exempt"),h("small",{},"Business account that doesn't pay sales tax"))),exNo);
+  s._exCheck=()=>{ const k=custKey(s.soldTo,s.phone), m=k&&DB.exempt&&DB.exempt[k]; if (m&&!s.taxExempt&&!s._exAsked){ s._exAsked=true; s.taxExempt=true; s.exemptNo=s.exemptNo||m.no||""; exNo.value=s.exemptNo; exBox.querySelector("input.switch").checked=true; exBox.classList.add("on"); drawTotals(); toast("Tax exempt account"); } };
+  top.append(exBox,creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk),totals),acts);
   v.append(top);
   drawCredit(); drawLines(true);
 }
@@ -246,8 +255,11 @@ function saveSale(){
   if (!s.lines.length) return toast("Add at least one part.");
   if (s.lines.some(l=>!(l.price>0)) && !confirm("Some parts have no price. Save anyway?")) return;
   const inv={no:DB.seq++,date:today(),createdAt:new Date().toISOString(),soldTo:s.soldTo.trim()||"Customer",phone:normPhone(s.phone),address:s.address.trim(),
-    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,taxRate:DB.settings.taxRate,cardFee:s.pay==="card"?cardFeePct():0,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
+    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,taxRate:DB.settings.taxRate,taxExempt:!!s.taxExempt,exemptNo:(s.exemptNo||"").trim(),cardFee:s.pay==="card"?cardFeePct():0,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
   if (inv.creditUsed) addCredit(inv.soldTo,inv.phone,-inv.creditUsed);
+  // Remember tax-exempt business accounts so the switch turns on next time
+  const ek=custKey(inv.soldTo,inv.phone); DB.exempt=DB.exempt||{};
+  if (ek && inv.soldTo!=="Customer"){ if (inv.taxExempt) DB.exempt[ek]={no:inv.exemptNo}; else delete DB.exempt[ek]; }
   DB.invoices.push(inv);
   if (inv.soldBy){ DB.settings.lastSoldBy=inv.soldBy; if(!DB.settings.staff.includes(inv.soldBy)) DB.settings.staff.push(inv.soldBy); }
   save(); newSale();
@@ -279,6 +291,7 @@ function receipt(inv,kind){
       h("div",{},h("span",{class:"rl"},"CUSTOMER TELEPHONE #"),fmtPhone(inv.phone)),
       h("div",{},h("span",{class:"rl"},"ADDRESS"),inv.address||""),
       h("div",{},h("span",{class:"rl"},"SOLD BY"),inv.soldBy||""),
+      inv.taxExempt?h("div",{class:"rpay"},h("b",{},"TAX EXEMPT"+(inv.exemptNo?" · Certificate # "+inv.exemptNo:""))):null,
       h("div",{class:"rpay"},box(inv.pay==="check","CHECK"+(inv.checkNo?" #"+inv.checkNo:"")),box(inv.pay==="cash","CASH"),box(inv.pay==="card","CREDIT CARD"))),
     h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"DESCRIPTION"),h("th",{},"PRICE"),h("th",{},"UNIT"),h("th",{},"AMOUNT"))),h("tbody",{},lines)),
     h("div",{class:"rfoot"},
@@ -290,7 +303,7 @@ function receipt(inv,kind){
         h("div",{class:"sig"},"Signature ",h("span",{}))),
       h("table",{class:"rtot"},h("tbody",{},
         h("tr",{},h("th",{},"SUB-TOTAL"),h("td",{class:"num"},money(t.sub))),
-        h("tr",{},h("th",{},"TAX"),h("td",{class:"num"},money(t.tax))),
+        h("tr",{},h("th",{},inv.taxExempt?"TAX EXEMPT":"TAX"),h("td",{class:"num"},money(t.tax))),
         t.credit?h("tr",{},h("th",{},"STORE CREDIT"),h("td",{class:"num"},"−"+money(t.credit))):null,
         t.fee?h("tr",{},h("th",{},"CARD FEE ("+t.feePct+"%)"),h("td",{class:"num"},money(t.fee))):null,
         h("tr",{class:"big"},h("th",{},"TOTAL"),h("td",{class:"num"},money(t.due)))))));
@@ -351,12 +364,12 @@ function backPanel(inv,big){
     const status=left<=0?h("span",{class:"tag"},"Returned")
       :w.ok?h("span",{class:"tag good"},"Return by "+niceDate(w.ends)+" · "+w.left+" day"+(w.left===1?"":"s")+" left")
       :h("span",{class:"tag bad"},w.why);
-    const coreIn=Math.min(1,owed), wholeAmt=withTax(l.price+(coreIn?l.core:0),inv);
+    const coreIn=Math.min(1,owed), wholeAmt=withTax(l.price,inv,l)+withTax(coreIn?l.core:0,inv);
     const btns=h("div",{class:"bbtns"},
       left>0&&w.ok?h("button",{type:"button",class:"btn primary",onclick:()=>returnDialog(inv,idx,"part")},
-        h("span",{},"Return whole part"),h("small",{},money(l.price)+(coreIn?" + core "+money(l.core):"")+" + tax = "+money(wholeAmt)+(l.qty>1?" each":""))):null,
+        h("span",{},"Return whole part"),h("small",{},money(l.price)+(coreIn?" + core "+money(l.core):"")+(inv.taxExempt?" = ":" + tax = ")+money(wholeAmt)+(l.qty>1?" each":""))):null,
       owed>0?h("button",{type:"button",class:"btn core-btn",onclick:()=>returnDialog(inv,idx,"core")},
-        h("span",{},"Core only"),h("small",{},"core "+money(l.core)+" + tax = "+money(withTax(l.core,inv))+(owed>1?" each · "+owed+" out":""))):null);
+        h("span",{},"Core only"),h("small",{},"core "+money(l.core)+(inv.taxExempt?" = ":" + tax = ")+money(withTax(l.core,inv))+(owed>1?" each · "+owed+" out":""))):null);
     return h("div",{class:"bcard"+(left<=0&&!owed?" off":"")},
       h("div",{class:"bhead"},h("div",{},h("b",{},l.name),h("div",{class:"muted"},money(l.price)+(l.qty>1?" × "+l.qty:"")+(l.coreCharged&&l.core>0?(owed?" · core "+money(l.core)+" still out":" · core back"):"")+(w.glass&&left>0?" · glass: check it isn't broken":""))),status),
       btns.childNodes.length?btns:null);
@@ -370,9 +383,9 @@ function returnDialog(inv,idx,kind){
   let n=1;
   const d=h("dialog",{class:"dlg"});
   const close=()=>{ d.close(); d.remove(); };
-  const calc=()=>{ const coreQ=kind==="core"?n:Math.min(n,owed); const base=kind==="core"?l.core*n:l.price*n+l.core*coreQ; return {coreQ,amt:withTax(base,inv),base}; };
+  const calc=()=>{ const coreQ=kind==="core"?n:Math.min(n,owed); const base=kind==="core"?l.core*n:l.price*n+l.core*coreQ; return {coreQ,amt:kind==="core"?withTax(base,inv):r2(withTax(l.price*n,inv,l)+withTax(l.core*coreQ,inv)),base}; };
   const sum=h("p",{});
-  const draw=()=>{ const c=calc(); sum.replaceChildren(kind==="core"?"Core "+money(l.core)+(n>1?" × "+n:""):money(l.price)+(n>1?" × "+n:"")+(c.coreQ?" + core "+money(l.core*c.coreQ):""), " + tax = ",h("b",{},money(c.amt))); };
+  const draw=()=>{ const c=calc(); sum.replaceChildren(kind==="core"?"Core "+money(l.core)+(n>1?" × "+n:""):money(l.price)+(n>1?" × "+n:"")+(c.coreQ?" + core "+money(l.core*c.coreQ):""), (inv.taxExempt?" = ":" + tax = "),h("b",{},money(c.amt))); };
   const qty=max>1?h("label",{class:"f qtyf"},"How many",h("input",{type:"number",min:"1",max:String(max),value:"1",inputmode:"numeric",oninput:e=>{ n=Math.min(max,Math.max(1,parseInt(e.target.value)||1)); draw(); }})):null;
   const done=how=>{
     const c=calc();
