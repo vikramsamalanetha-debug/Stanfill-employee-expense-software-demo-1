@@ -3,7 +3,7 @@
 "use strict";
 const KEY="rightway-demo-v1";
 const $=s=>document.querySelector(s);
-const money=n=>"$"+(Math.round((Number(n)||0)*100)/100).toFixed(2);
+const money=n=>(Math.round((Number(n)||0)*100)/100).toLocaleString("en-US",{style:"currency",currency:"USD"});
 const r2=n=>Math.round((Number(n)||0)*100)/100;
 const pad=n=>String(n).padStart(2,"0");
 const ymd=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
@@ -30,6 +30,9 @@ function h(tag,attrs,...kids){
 }
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("on"),2600); }
 
+// "john smith" → "John Smith" while typing, without moving the cursor.
+const nameCase=v=>String(v||"").replace(/[A-Za-z][A-Za-z']*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());
+function nameCaseInput(x){ const v=nameCase(x.value); if (v!==x.value){ const a=x.selectionStart,b=x.selectionEnd; x.value=v; try{ x.setSelectionRange(a,b); }catch(e){} } }
 /* ---------- data ---------- */
 const BIZ={name:"Rightway Auto Recycling",addr:"7945 TN-100",city:"Decaturville, TN 38329",phone:"731-549-3179"};
 let DB;
@@ -41,13 +44,25 @@ function seed(){
   const s=P("Starter");
   const c=P("Instrument Cluster"), d=P("Dash Pad"), e=P("Radio Bezel"); e.qty=2;
   const tr=P("Transmission - FWD/AWD");
+  // Sample history: about two months of counter sales, popular parts sell more often.
+  let r=7; const rnd=()=>{ r=(r*16807)%2147483647; return (r-1)/2147483646; };
+  const popular=["Alternator","Starter","Battery","Headlight Assembly","Tail Light Assy","Door Mirror - Power","Wheel - Aluminum","Tires","Radiator","A/C Compressor","Door - Car","Bumper Cover","Window Regulator W/ Motor","Brake Caliper","Fuel Pump (Electric)","Radio W/ BT","Seat Belt - Male W/ Tensioner","Hood","Instrument Cluster","Power Steering Pump"];
+  const names=["Customer","Customer","Customer","Ray Wilson","Kim Tate","Bo Hughes","Lisa Greer","Customer","Dale Moss","Customer"];
+  const hist=[]; let no=800;
+  for (let day=60; day>=1; day--){ const n=Math.floor(rnd()*4)+(day%7===0?0:1);
+    for (let k=0;k<n;k++){ const lines=[]; const cnt=1+Math.floor(rnd()*2.2);
+      for (let j=0;j<cnt;j++){ const nm=popular[Math.floor(Math.pow(rnd(),1.8)*popular.length)]; const x=P(nm); if (rnd()<0.4) x.coreCharged=false; if (/Tires|Wheel/.test(nm)&&rnd()<0.5) x.qty=2+Math.floor(rnd()*3); lines.push(x); }
+      const pay=["cash","cash","card","check"][Math.floor(rnd()*4)];
+      hist.push({...inv(no++,addDays(t,-day),names[Math.floor(rnd()*names.length)],"","Mike",pay,lines),cardFee:pay==="card"?3:0}); } }
+  hist.forEach(i=>i.lines.forEach((l,idx)=>{ if (l.coreCharged&&rnd()<0.7) i.returns.push({idx,name:l.name,kind:"core",qty:0,coreQty:l.qty,how:"refund",amount:r2(l.core*l.qty*1.0975),at:addDays(i.date,2)}); }));
   return {seq:1005, settings:{taxRate:9.75,warrantyDays:30,staff:["Mike","Dana"]},
     prices:null, credits:{},
     invoices:[
       {...inv(1001,addDays(t,-40),"Tommy Ray","7315550142","Mike","cash",[tr]),returns:[{idx:0,name:tr.name,kind:"core",qty:0,coreQty:1,how:"refund",amount:r2(50*1.0975),at:addDays(t,-38)}]},
       inv(1002,addDays(t,-12),"Carla Jones","7315550188","Dana","card",[s]),
       inv(1003,addDays(t,-5),"Customer","","Mike","cash",[c,d,e]),
-      inv(1004,t,"John Carter","7315550101","Dana","cash",[a,b])
+      inv(1004,t,"John Carter","7315550101","Dana","cash",[a,b]),
+      ...hist
     ]};
 }
 function load(){ try{ DB=JSON.parse(localStorage.getItem(KEY)); }catch(e){ DB=null; } if(!DB||!DB.invoices) DB=seed();
@@ -117,7 +132,7 @@ function searchParts(q){
 
 /* ---------- views ---------- */
 let TAB="sale";
-const tabs=[["sale","New Sale"],["find","Find Invoice"],["returns","Returns"],["today","Today"],["prices","Price List"]];
+const tabs=[["sale","New Sale"],["find","Find Invoice"],["returns","Returns"],["today","Sales"],["prices","Price List"]];
 function render(){
   $("#tabs").replaceChildren(...tabs.map(([id,l])=>h("button",{type:"button",class:"tab"+(TAB===id?" on":""),onclick:()=>go(id,{open:null,retInv:null})},l)));
   const v=$("#view"); v.replaceChildren();
@@ -137,7 +152,7 @@ function viewSale(v){
       h("div",{class:"biz"},h("b",{},BIZ.name),h("span",{},BIZ.addr+" | "+BIZ.city),h("span",{},BIZ.phone)),
       h("div",{class:"invno"},h("span",{class:"lbl"},"INVOICE"),h("b",{},"#"+DB.seq),h("span",{},"Date "+niceDate(today())))),
     h("div",{class:"grid2"},
-      field("Sold to","soldTo",{placeholder:"Customer name",autocomplete:"off"}),
+      field("Sold to","soldTo",{placeholder:"Customer name",autocomplete:"off",autocapitalize:"words"}),
       field("Customer phone","phone",{type:"tel",placeholder:"731-555-0100",autocomplete:"off"}),
       field("Address (optional)","address",{placeholder:"Street, city",autocomplete:"off"}),
       h("label",{class:"f"},"Sold by",h("input",{value:s.soldBy,list:"staff",placeholder:"Your name",autocomplete:"off",oninput:e=>{ s.soldBy=e.target.value; }}),
@@ -215,7 +230,7 @@ function viewSale(v){
     p==="card"?["Credit card",h("small",{class:"fee"},"+"+cardFeePct()+"% fee")]:{cash:"Cash",check:"Check"}[p])));
   const chk=h("label",{class:"f chk",hidden:s.pay!=="check"},"Check #",h("input",{value:s.checkNo,inputmode:"numeric",oninput:e=>{ s.checkNo=e.target.value; }}));
 
-  function field(label,key,props){ return h("label",{class:"f"},label,h("input",{value:s[key],...props,oninput:e=>{ s[key]=e.target.value; if(key==="soldTo"||key==="phone"){ s.creditUsed=0; drawCredit(); drawTotals(); } }})); }
+  function field(label,key,props){ return h("label",{class:"f"},label,h("input",{value:s[key],...props,oninput:e=>{ if(key==="soldTo") nameCaseInput(e.target); s[key]=e.target.value; if(key==="soldTo"||key==="phone"){ s.creditUsed=0; drawCredit(); drawTotals(); } }})); }
 
   const acts=h("div",{class:"acts"},
     h("button",{type:"button",class:"btn ghost",onclick:()=>{ if(!s.lines.length||confirm("Clear this invoice and start over?")){ newSale(); render(); } }},"Clear"),
@@ -395,29 +410,72 @@ function returnSlip(inv,r){
 }
 
 /* ===== Today ===== */
+/* ===== Sales: totals for any period, best sellers (to set prices by demand), cores still out ===== */
+function salesPeriod(){
+  const t=today(), P=STATE.per||"today";
+  if (P==="week"){ const d=new Date(t+"T12:00"); d.setDate(d.getDate()-((d.getDay()+6)%7)); return {from:ymd(d),to:t,label:"This week"}; }
+  if (P==="month") return {from:t.slice(0,8)+"01",to:t,label:"This month"};
+  if (P==="30") return {from:addDays(t,-29),to:t,label:"Last 30 days"};
+  if (P==="90") return {from:addDays(t,-89),to:t,label:"Last 90 days"};
+  if (P==="pick") return {from:STATE.pf||addDays(t,-6),to:STATE.pt||t,label:"Picked dates"};
+  return {from:t,to:t,label:"Today"};
+}
 function viewToday(v){
-  const d=STATE.day||today();
-  const list=DB.invoices.filter(i=>i.date===d).sort((a,b)=>b.no-a.no);
+  const P=salesPeriod(), inP=d=>d>=P.from&&d<=P.to;
+  const list=DB.invoices.filter(i=>inP(i.date)).sort((a,b)=>b.no-a.no);
   const sum=k=>r2(list.reduce((n,i)=>n+invTotals(i)[k],0));
   const byPay=p=>r2(list.filter(i=>i.pay===p).reduce((n,i)=>n+invTotals(i).due,0));
+  const refunds=r2(DB.invoices.flatMap(i=>(i.returns||[]).filter(r=>inP(r.at)&&r.how==="refund").map(r=>r.amount)).reduce((a,b)=>a+b,0));
   const owed=DB.invoices.flatMap(i=>coresOwed(i).map(x=>({i,...x}))).sort((a,b)=>a.i.no-b.i.no);
-  const coreBack=r2(DB.invoices.flatMap(i=>(i.returns||[]).filter(r=>r.at===d&&r.how==="refund").map(r=>r.amount)).reduce((a,b)=>a+b,0));
+  const chips=h("div",{class:"chips"},[["today","Today"],["week","This week"],["month","This month"],["30","Last 30 days"],["90","Last 90 days"],["pick","Pick dates"]].map(([id,l])=>
+    h("button",{type:"button",class:"chip"+((STATE.per||"today")===id?" on":""),onclick:()=>{ STATE.per=id; render(); }},l)));
+  const pick=(STATE.per==="pick")?h("div",{class:"row",style:"gap:8px;margin-top:10px"},
+    h("input",{type:"date",value:P.from,max:P.to,onchange:e=>{ STATE.pf=e.target.value; render(); }}),"to",h("input",{type:"date",value:P.to,max:today(),onchange:e=>{ STATE.pt=e.target.value; render(); }})):null;
+  // Best sellers: how many sold, how much money, how often it comes back, and the price now (change it right here)
+  const by={};
+  list.forEach(i=>i.lines.forEach((l,idx)=>{ if (l.labor) return; const k=l.name; const x=by[k]||(by[k]={name:k,qty:0,money:0,sales:0,back:0});
+    x.qty+=l.qty; x.money+=l.price*l.qty; x.sales++;
+    x.back+=(i.returns||[]).filter(r=>r.idx===idx&&r.kind==="part"&&r.how!=="exchange").reduce((n,r)=>n+r.qty,0); }));
+  const sortBy=STATE.sortBy||"qty";
+  const rows=Object.values(by).sort((a,b)=>sortBy==="money"?b.money-a.money:b.qty-a.qty||b.money-a.money);
+  const maxQ=Math.max(1,...rows.map(r=>sortBy==="money"?r.money:r.qty));
+  const plist=prices();
+  const best=h("div",{class:"panel"},
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px"},h("h3",{class:"grow",style:"margin:0"},"Best sellers · "+P.label),
+      h("div",{class:"seg"},[["qty","Most sold"],["money","Most money"]].map(([id,l])=>h("button",{type:"button",class:sortBy===id?"on":"",onclick:()=>{ STATE.sortBy=id; render(); }},l)))),
+    h("p",{class:"muted",style:"margin:6px 0 12px"},"Parts that sell fast may be priced too low; parts that never sell may be too high. Change a price here and new sales use it."),
+    rows.length?h("div",{class:"btable"},
+      h("div",{class:"brow bthead"},h("span",{},"Part"),h("span",{},"Sold"),h("span",{},"Money"),h("span",{},"Returned"),h("span",{},"Price now")),
+      rows.slice(0,STATE.allBest?200:12).map(r=>{ const pr=plist.find(x=>x.name===r.name);
+        return h("div",{class:"brow"},
+          h("span",{class:"bname"},h("b",{},r.name),h("i",{class:"bar",style:"width:"+Math.max(4,Math.round((sortBy==="money"?r.money:r.qty)/maxQ*100))+"%"})),
+          h("span",{class:"num"},String(r.qty)),h("span",{class:"num"},money(r.money)),h("span",{class:"num"+(r.back?" warn":"")},r.back?String(r.back):"—"),
+          pr?h("input",{type:"number",min:"0",step:"0.01",value:pr.price,"aria-label":"Price of "+r.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===r.name); x.price=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(r.name+" now "+money(x.price)); }}):h("span",{class:"muted"},"not on list")); }),
+      rows.length>12?h("button",{type:"button",class:"btn small ghost",onclick:()=>{ STATE.allBest=!STATE.allBest; render(); }},STATE.allBest?"Show fewer":"Show all "+rows.length):null)
+    :h("div",{class:"empty"},"No parts sold in this period."));
+  // A bar per day when looking at more than one day
+  const days=[]; for (let d=P.from; d<=P.to; d=addDays(d,1)) days.push(d);
+  const perDay=days.map(d=>r2(DB.invoices.filter(i=>i.date===d).reduce((n,i)=>n+invTotals(i).due,0)));
+  const maxD=Math.max(1,...perDay);
+  const chart=days.length>1&&days.length<=92?h("div",{class:"panel"},h("h3",{},"Sales by day"),
+    h("div",{class:"dchart"},days.map((d,k)=>h("div",{class:"dcol",title:longDate(d)+": "+money(perDay[k])},h("i",{style:"height:"+Math.round(perDay[k]/maxD*100)+"%"})))),
+    h("div",{class:"row muted",style:"justify-content:space-between;font-size:13px;margin-top:4px"},h("span",{},niceDate(P.from)),h("span",{},"Best day "+money(maxD)),h("span",{},niceDate(P.to)))):null;
   v.append(
-    h("div",{class:"row"},h("h2",{class:"grow"},d===today()?"Today":longDate(d)),
-      h("input",{type:"date",value:d,max:today(),onchange:e=>{ STATE.day=e.target.value||today(); render(); }})),
+    ...[h("div",{class:"row",style:"flex-wrap:wrap;gap:10px"},h("h2",{class:"grow",style:"margin:0"},"Sales"),chips),pick].filter(Boolean),
     h("div",{class:"stats"},
-      stat(String(list.length),"Invoices"),
-      stat(money(sum("due")),"Total taken in"),
-      stat(money(sum("tax")),"Sales tax"),
-      stat(money(sum("cores")),"Core charges"),
-      sum("fee")?stat(money(sum("fee")),"Card fees"):null),
-    h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),
-      coreBack?stat("−"+money(coreBack),"Refunds given"):null),
-    h("div",{class:"panel"},h("h3",{},"Invoices"),list.length?h("div",{class:"ilist"},list.map(i=>invRow(i,()=>go("find",{open:i.no})))):h("div",{class:"empty"},"No sales on this day.")),
+      stat(money(r2(sum("due")-refunds)),"Taken in"+(refunds?" (after "+money(refunds)+" refunds)":"")),
+      stat(String(list.length),"Sales"),
+      stat(list.length?money(sum("due")/list.length):"$0.00","Average sale"),
+      stat(money(sum("tax")),"Sales tax collected")),
+    h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),stat(money(sum("fee")),"Card fees")),
+    chart,best,
     h("div",{class:"panel"},h("h3",{},"Cores still out ("+owed.length+")"),
-      owed.length?owed.map(({i,l,idx,n})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name+(n>1?" ×"+n:"")),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
+      owed.length?owed.slice(0,STATE.allCores?500:8).map(({i,l,idx,n})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name+(n>1?" ×"+n:"")),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
         h("div",{class:"row"},h("b",{class:"num"},money(withTax(l.core*n,i))),h("button",{type:"button",class:"btn small primary",onclick:()=>returnDialog(i,idx,"core")},"Core returned"))))
-      :h("div",{class:"empty"},"Every core is back.")));
+      :h("div",{class:"empty"},"Every core is back."),
+      owed.length>8?h("button",{type:"button",class:"btn small ghost",onclick:()=>{ STATE.allCores=!STATE.allCores; render(); }},STATE.allCores?"Show fewer":"Show all "+owed.length):null),
+    h("details",{class:"panel"},h("summary",{style:"cursor:pointer;font-weight:700"},"Every sale in this period ("+list.length+")"),
+      list.length?h("div",{class:"ilist",style:"margin-top:12px"},list.slice(0,200).map(i=>invRow(i,()=>go("find",{open:i.no})))):h("div",{class:"empty"},"No sales in this period.")));
 }
 const stat=(v,l)=>h("div",{class:"stat"},h("b",{},v),h("span",{},l));
 

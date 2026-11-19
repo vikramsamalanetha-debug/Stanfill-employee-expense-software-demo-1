@@ -803,6 +803,15 @@ dialog:has(.simpleinv){width:min(920px,calc(100vw - 24px));max-width:none}
   .sitop{flex-direction:column}.sino{text-align:left}
 }
 .invseg{max-width:420px}
+.btable{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.brow{display:grid;grid-template-columns:minmax(0,1fr) 64px 100px 110px;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line)}
+.brow:first-child{border-top:0}
+.brow.bthead{background:#F7F8F5;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.brow .num{text-align:right;font-variant-numeric:tabular-nums}
+.brow input{min-height:38px;padding:6px 10px;text-align:right;width:100%}
+.bname{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bname .bar{display:block;height:6px;border-radius:3px;background:var(--primary);opacity:.7}
+@media (max-width:700px){ .brow{grid-template-columns:minmax(0,1fr) 40px 80px 84px} }
 .bigsearch{font-size:18px;min-height:52px;width:100%;margin:6px 0 12px}
 .blist{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .bcard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
@@ -5098,6 +5107,9 @@ function applyCardFee(d){
     if (amt>0) d.lines.push({id:newId(),type:"fee",desc:"Card fee ("+pct+"%)",qty:1,unitPrice:amt,taxable:false});
   }
 }
+// "john smith" → "John Smith" while typing, without moving the cursor.
+const nameCase=v=>String(v||"").replace(/[A-Za-z][A-Za-z']*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());
+function nameCaseInput(x){ const v=nameCase(x.value); if (v!==x.value){ const a=x.selectionStart,b=x.selectionEnd; x.value=v; try{ x.setSelectionRange(a,b); }catch(e){} } }
 function simpleInvoice(d){
   if (needsFullEditor(d)) return invoiceEditor(d);
   const body=invDlg(); body.replaceChildren(); body.classList.add("simpleinv");
@@ -5118,7 +5130,7 @@ function simpleInvoice(d){
     el("div",{class:"sino"},el("b",{},"INVOICE"),el("div",{},num),el("div",{class:"kv"},niceDate(d.issueDate||today()))));
   const clients=[...new Set(S.jobs.map(j=>j.client).concat(S.invoices.map(i=>(i.client||{}).name)).concat(S.customers.map(c=>c.name)).filter(Boolean))].sort();
   const extras=el("div",{});
-  const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",list:"siClients",placeholder:"Customer name",oninput:e=>{ d.client.name=e.target.value; },
+  const nameIn=el("input",{value:d.client.name||"",autocomplete:"off",autocapitalize:"words",list:"siClients",placeholder:"Customer name",oninput:e=>{ nameCaseInput(e.target); d.client.name=e.target.value; },
     onchange:e=>{ if (normName(e.target.value)===extras._for) return; const ci=clientInfo(e.target.value);
       ["email","phone","address"].forEach(k=>{ if(!d.client[k]&&ci[k]){ d.client[k]=ci[k]; const x=body.querySelector("[data-k="+k+"]"); if(x) x.value=ci[k]; } }); drawExtras(); }});
   const fld=(label,k,attrs)=>el("label",{class:"f"},label,el("input",{value:d.client[k]||"",autocomplete:"off","data-k":k,...(attrs||{}),oninput:e=>{ d.client[k]=e.target.value; }}));
@@ -5322,7 +5334,7 @@ function returnDlg(inv0,l0,kind){
 }
 function invSeg(){
   const v=S.invView||"find";
-  return el("div",{class:"seg stseg invseg",role:"tablist"},[["find","Find"],["returns","Returns"],["today","Today"]].map(([id,l])=>
+  return el("div",{class:"seg stseg invseg",role:"tablist"},[["find","Find"],["returns","Returns"],["today","Sales"]].map(([id,l])=>
     el("button",{type:"button",role:"tab","aria-selected":String(v===id),onclick:()=>{ S.invView=id; S.retInv=null; render(); }},l)));
 }
 function viewInvReturns(){
@@ -5358,25 +5370,48 @@ function invRowBtn(i,onclick){
 }
 function viewInvToday(){
   const frag=document.createDocumentFragment(); frag.append(invSeg());
-  const d=S.invDay||today();
-  const issued=S.invoices.filter(i=>i.status==="sent"&&i.issueDate===d);
-  const pays=S.invoices.filter(i=>i.status!=="void").flatMap(i=>(i.payments||[]).filter(p=>p.date===d));
+  const t=today(), per=S.invPer||"today";
+  const P=per==="week"?(()=>{ const d=parseYmd(t); d.setDate(d.getDate()-((d.getDay()+6)%7)); return {from:ymd(d),to:t,label:"This week"}; })()
+    :per==="month"?{from:t.slice(0,8)+"01",to:t,label:"This month"}:per==="30"?{from:addDays(t,-29),to:t,label:"Last 30 days"}:per==="90"?{from:addDays(t,-89),to:t,label:"Last 90 days"}:{from:t,to:t,label:"Today"};
+  const inP=d=>!!d&&d>=P.from&&d<=P.to;
+  const issued=S.invoices.filter(i=>i.status==="sent"&&inP(i.issueDate));
+  const pays=S.invoices.filter(i=>i.status!=="void").flatMap(i=>(i.payments||[]).filter(p=>inP(p.date)));
   const by={}; pays.forEach(p=>{ const k=(p.method||"Other").replace(/^(Credit card|Card)$/i,"Card"); by[k]=r2((by[k]||0)+(Number(p.amount)||0)); });
-  const refunds=S.invoices.flatMap(i=>(i.returns||[]).filter(r=>r.at===d&&r.how==="refund")).reduce((n,r)=>n+r.amount,0);
-  const fees=issued.flatMap(i=>i.lines.filter(l=>l.type==="fee")).reduce((n,l)=>n+invLineAmt(l),0);
-  const tax=issued.reduce((n,i)=>n+invTotals(i).tax,0);
+  const refunds=r2(S.invoices.flatMap(i=>(i.returns||[]).filter(r=>inP(r.at)&&r.how==="refund")).reduce((n,r)=>n+r.amount,0));
+  const fees=r2(issued.flatMap(i=>i.lines.filter(l=>l.type==="fee")).reduce((n,l)=>n+invLineAmt(l),0));
+  const tax=r2(issued.reduce((n,i)=>n+invTotals(i).tax,0));
   const took=r2(pays.reduce((n,p)=>n+(Number(p.amount)||0),0)-refunds);
   const owes=S.invoices.filter(i=>i.status==="sent"&&invTotals(i).balance>0.004).sort((a,b)=>(a.dueDate||"").localeCompare(b.dueDate||""));
   const stat=(v,l)=>el("div",{class:"stat"},el("div",{class:"l"},l),el("div",{class:"v"},v));
-  frag.append(el("div",{class:"row",style:"gap:10px;margin:0 0 12px"},el("h2",{class:"grow",style:"margin:0"},d===today()?"Today":niceDate(d)),
-      el("input",{type:"date",value:d,max:today(),style:"width:auto",onchange:e=>{ S.invDay=e.target.value||today(); render(); }})),
-    el("div",{class:"sum"},stat(money(took),"Taken in"),stat(String(issued.length),"Invoices"),stat(money(tax),taxName()),stat(money(fees),"Card fees")),
+  // What sells: parts and supplies by name, labor by what was done
+  const agg={};
+  issued.forEach(i=>(i.lines||[]).forEach(l=>{ if (!RETURNABLE(l)) return;
+    const name=l.type==="job"?String(l.desc||"").split(" · ")[0]:String(l.desc||"").trim(); if(!name) return;
+    const x=agg[name]||(agg[name]={name,qty:0,money:0,labor:l.type==="labor"||l.type==="job"}); x.qty+=Number(l.qty)||1; x.money+=invLineAmt(l); }));
+  const sortBy=S.salesSort||"qty";
+  const rows=Object.values(agg).sort((a,b)=>sortBy==="money"?b.money-a.money:b.qty-a.qty||b.money-a.money);
+  const maxV=Math.max(1,...rows.map(r=>sortBy==="money"?r.money:r.qty));
+  const pl=priceList();
+  frag.append(el("div",{class:"row",style:"gap:10px;flex-wrap:wrap;margin:0 0 12px"},el("h2",{class:"grow",style:"margin:0"},"Sales"),
+      el("div",{class:"chips"},[["today","Today"],["week","This week"],["month","This month"],["30","Last 30 days"],["90","Last 90 days"]].map(([id,l])=>
+        el("button",{type:"button",class:"chip","aria-pressed":String(per===id),onclick:()=>{ S.invPer=id; render(); }},l)))),
+    el("div",{class:"sum"},stat(money(took),"Taken in"+(refunds?" (after refunds)":"")),stat(String(issued.length),"Invoices"),stat(issued.length?money(issued.reduce((n,i)=>n+invTotals(i).total,0)/issued.length):money(0),"Average invoice"),stat(money(tax),taxName())),
+    el("div",{class:"panel"},el("div",{class:"row",style:"gap:8px;flex-wrap:wrap"},el("h3",{class:"grow",style:"margin:0"},"What sells · "+P.label),
+        el("div",{class:"seg stseg",style:"margin:0;max-width:260px"},[["qty","Most sold"],["money","Most money"]].map(([id,l])=>el("button",{type:"button","aria-selected":String(sortBy===id),onclick:()=>{ S.salesSort=id; render(); }},l)))),
+      el("p",{class:"kv",style:"margin:6px 0 10px"},"Busy sellers might be priced too low. Change a price right here and the next invoice uses it."),
+      rows.length?el("div",{class:"btable"},el("div",{class:"brow bthead"},el("span",{},"Item"),el("span",{},"Sold"),el("span",{},"Money"),el("span",{},"Price now")),
+        rows.slice(0,S.salesAll?200:12).map(r=>{ const it=pl.find(x=>x.n===r.name);
+          return el("div",{class:"brow"},el("span",{class:"bname"},el("b",{},r.name+(r.labor?" (labor)":"")),el("i",{class:"bar",style:"width:"+Math.max(4,Math.round((sortBy==="money"?r.money:r.qty)/maxV*100))+"%"})),
+            el("span",{class:"num"},String(r.qty)),el("span",{class:"num"},money(r.money)),
+            it?el("input",{type:"number",min:"0",step:"0.01",value:String(it.p),"aria-label":"Price of "+r.name,onchange:e=>write(async()=>{ await savePriceList(priceList().map(x=>x.n===it.n?{...x,p:r2(Number(e.target.value)||0)}:x)); },r.name+" now "+money(Number(e.target.value)||0))}):el("span",{class:"kv"},"—")); }),
+        rows.length>12?el("button",{type:"button",class:"btn small ghost",onclick:()=>{ S.salesAll=!S.salesAll; render(); }},S.salesAll?"Show fewer":"Show all "+rows.length):null)
+      :el("div",{class:"empty"},"Nothing sold in this period.")),
     el("div",{class:"panel"},el("h3",{},"By how they paid"),
       Object.keys(by).length?el("div",{class:"rows"},Object.entries(by).map(([k,v])=>el("div",{class:"rowi",style:"cursor:default"},el("span",{class:"rm"},el("b",{},k)),el("span",{class:"rp"},money(v)))))
-        :el("div",{class:"empty"},"No payments on this day."),
-      refunds?el("p",{class:"kv"},"Refunds given: −"+money(refunds)):null),
-    el("div",{class:"panel"},el("h3",{},"Invoices"),issued.length?el("div",{class:"rows"},issued.map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"No invoices on this day.")),
-    el("div",{class:"panel"},el("h3",{},"Still owe you ("+owes.length+")"),owes.length?el("div",{class:"rows"},owes.slice(0,15).map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"Nobody owes you. Nice.")));
+        :el("div",{class:"empty"},"No payments in this period."),
+      refunds?el("p",{class:"kv"},"Refunds given: −"+money(refunds)):null, fees?el("p",{class:"kv"},"Card fees collected: "+money(fees)):null),
+    el("div",{class:"panel"},el("h3",{},"Still owe you ("+owes.length+")"),owes.length?el("div",{class:"rows"},owes.slice(0,15).map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"Nobody owes you. Nice.")),
+    el("details",{class:"panel"},el("summary",{style:"cursor:pointer;font-weight:700"},"Every invoice in this period ("+issued.length+")"),issued.length?el("div",{class:"rows",style:"margin-top:10px"},issued.slice(0,200).map(i=>invRowBtn(i,()=>openInvoice(i)))):el("div",{class:"empty"},"None.")));
   return frag;
 }
 function invoiceDetail(d){

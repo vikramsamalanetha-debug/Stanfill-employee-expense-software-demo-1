@@ -137,6 +137,24 @@ input:focus{outline:3px solid #BFDCCB;border-color:var(--brand)}
 .btn.core-btn{background:var(--core-soft);border-color:#E9C877;color:var(--core)}
 .backpanel{border-left:5px solid var(--brand)}
 .qtyf{max-width:160px;margin:8px 0}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.seg{display:inline-flex;background:#E9ECE8;border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:8px;padding:7px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.btable{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.brow{display:grid;grid-template-columns:minmax(0,1fr) 70px 100px 80px 110px;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line)}
+.brow:first-child{border-top:0}
+.brow.bthead{background:#F7F8F5;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.brow .num{text-align:right}
+.brow .num.warn{color:var(--bad);font-weight:700}
+.brow input{min-height:40px;padding:6px 10px;text-align:right}
+.bname{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bname .bar{display:block;height:6px;border-radius:3px;background:var(--brand);opacity:.75}
+.dchart{display:flex;align-items:flex-end;gap:2px;height:120px;border-bottom:1px solid var(--line)}
+.dcol{flex:1;height:100%;display:flex;align-items:flex-end}
+.dcol i{display:block;width:100%;background:var(--brand);border-radius:3px 3px 0 0;min-height:1px}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0 16px}
 .stats.three{grid-template-columns:repeat(4,minmax(0,1fr))}
 .stat{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column}
@@ -209,6 +227,7 @@ footer a{color:var(--brand);font-weight:600}
   .stats,.stats.three{grid-template-columns:repeat(2,minmax(0,1fr))}
   .addpart{grid-template-columns:1fr 1fr}
   .prow{grid-template-columns:minmax(0,1fr) 76px 70px 56px}
+  .brow{grid-template-columns:minmax(0,1fr) 44px 76px 84px} .brow>span:nth-child(4){display:none}
   .ptop{flex-direction:column}
   .invno{text-align:left}
 }
