@@ -135,7 +135,7 @@ function searchParts(q){
 
 /* ---------- views ---------- */
 let TAB="sale";
-const tabs=[["sale","New Sale"],["find","Find Invoice"],["returns","Returns"],["today","Sales"],["prices","Price List"]];
+const tabs=[["sale","New Sale"],["find","Find Invoice"],["today","Sales"],["prices","Price List"]];
 function render(){
   $("#tabs").replaceChildren(...tabs.map(([id,l])=>h("button",{type:"button",class:"tab"+(TAB===id?" on":""),onclick:()=>go(id,{open:null,retInv:null})},l)));
   const v=$("#view"); v.replaceChildren();
@@ -194,7 +194,7 @@ function viewSale(v){
     return h("div",{class:"lrow"},
       h("span",{class:"c-desc"},h("input",{value:l.name,"aria-label":"Description",oninput:e=>{ l.name=e.target.value; }}),
         l.note?h("small",{class:"warn"},l.note):null,
-        l.labor?h("small",{class:"warn"},"Labor: no tax, not refundable"):l.notax?h("small",{class:"muted"},"No tax"):l.elec?h("small",{class:"warn"},"Electronic: not returnable"):null),
+        l.labor?h("small",{class:"muted"},"Labor: no tax"):l.notax?h("small",{class:"muted"},"No tax"):null),
       h("span",{class:"c-core"},l.core>0?h("label",{class:"core"+(l.coreCharged?" on":""),title:"Tick when the customer did NOT bring the old part back"},
         h("input",{type:"checkbox",checked:l.coreCharged,onchange:e=>{ l.coreCharged=e.target.checked; e.target.parentNode.classList.toggle("on",l.coreCharged); upd(); }}),
         h("span",{},"Core "+money(l.core))):h("span",{class:"muted"},"—")),
@@ -272,7 +272,7 @@ function receipt(inv,kind){
   const t=invTotals(inv);
   const lines=[];
   inv.lines.forEach(l=>{
-    lines.push(h("tr",{},h("td",{},l.name+(l.labor||l.elec||(l.elec==null&&ELEC.test(l.name))?"  *":"")),h("td",{class:"num"},money(l.price)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.price*l.qty))));
+    lines.push(h("tr",{},h("td",{},l.name),h("td",{class:"num"},money(l.price)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.price*l.qty))));
     if (l.coreCharged&&l.core>0) lines.push(h("tr",{class:"coreline"},h("td",{},"   Core charge, "+l.name+(coreOwedQty(inv,inv.lines.indexOf(l))?" (refunded when core is returned)":" (core returned)")),
       h("td",{class:"num"},money(l.core)),h("td",{class:"num"},String(l.qty)),h("td",{class:"num"},money(l.core*l.qty))));
   });
@@ -296,9 +296,8 @@ function receipt(inv,kind){
     h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"DESCRIPTION"),h("th",{},"PRICE"),h("th",{},"UNIT"),h("th",{},"AMOUNT"))),h("tbody",{},lines)),
     h("div",{class:"rfoot"},
       h("div",{class:"rnote"},
-        h("p",{},h("b",{},"30-day warranty: exchange or store credit. No refunds."),
-          " Receipt required and parts must be marked. Glass is void if returned broken."),
-        h("p",{},h("b",{},"* Not returnable: "),"electronic parts (computers and modules like ECM, BCM, TCM, PCM, radios, clusters, sensors) and any labor, such as pulling a part for you."),
+        h("p",{},h("b",{},"All sales are final. No returns or exchanges."),
+          " Core charges are refunded when the core is brought back with this invoice."),
         after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null,
         h("div",{class:"sig"},"Signature ",h("span",{}))),
       h("table",{class:"rtot"},h("tbody",{},
@@ -359,6 +358,15 @@ function viewReturns(v){
 }
 // One card per part on the invoice: "Return whole part" and, when a core is still out, "Core only".
 function backPanel(inv,big){
+  const out=coresOwed(inv);
+  if (!out.length) return null;
+  return h("div",{class:"panel backpanel"},h("h3",{},"Cores still out"),
+    h("div",{class:"blist"},out.map(({l,idx,n})=>h("div",{class:"bcard"},
+      h("div",{class:"bhead"},h("div",{},h("b",{},l.name),h("div",{class:"muted"},"Core "+money(l.core)+(n>1?" × "+n:"")))),
+      h("div",{class:"bbtns"},h("button",{type:"button",class:"btn core-btn",onclick:()=>returnDialog(inv,idx,"core")},
+        h("span",{},"Core returned"),h("small",{},"give back "+money(withTax(l.core,inv))+(n>1?" each":""))))))));
+}
+function backPanelOld(inv,big){
   const cards=inv.lines.map((l,idx)=>{
     const w=warranty(inv,l), back=partBackQty(inv,idx), left=l.qty-back, owed=coreOwedQty(inv,idx);
     const status=left<=0?h("span",{class:"tag"},"Returned")
@@ -458,11 +466,11 @@ function viewToday(v){
       h("div",{class:"seg"},[["qty","Most sold"],["money","Most money"]].map(([id,l])=>h("button",{type:"button",class:sortBy===id?"on":"",onclick:()=>{ STATE.sortBy=id; render(); }},l)))),
     h("div",{style:"height:12px"}),
     rows.length?h("div",{class:"btable"},
-      h("div",{class:"brow bthead"},h("span",{},"Part"),h("span",{},"Sold"),h("span",{},"Money"),h("span",{},"Returned"),h("span",{},"Price now")),
+      h("div",{class:"brow bthead"},h("span",{},"Part"),h("span",{},"Sold"),h("span",{},"Money"),h("span",{},"Price now")),
       rows.slice(0,STATE.allBest?200:12).map(r=>{ const pr=plist.find(x=>x.name===r.name);
         return h("div",{class:"brow"},
           h("span",{class:"bname"},h("b",{},r.name),h("i",{class:"bar",style:"width:"+Math.max(4,Math.round((sortBy==="money"?r.money:r.qty)/maxQ*100))+"%"})),
-          h("span",{class:"num"},String(r.qty)),h("span",{class:"num"},money(r.money)),h("span",{class:"num"+(r.back?" warn":"")},r.back?String(r.back):"—"),
+          h("span",{class:"num"},String(r.qty)),h("span",{class:"num"},money(r.money)),
           pr?h("input",{type:"number",min:"0",step:"0.01",value:pr.price,"aria-label":"Price of "+r.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===r.name); x.price=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(r.name+" now "+money(x.price)); }}):h("span",{class:"muted"},"not on list")); }),
       rows.length>12?h("button",{type:"button",class:"btn small ghost",onclick:()=>{ STATE.allBest=!STATE.allBest; render(); }},STATE.allBest?"Show fewer":"Show all "+rows.length):null)
     :h("div",{class:"empty"},"No parts sold in this period."));
@@ -476,7 +484,7 @@ function viewToday(v){
   v.append(
     ...[h("div",{class:"row",style:"flex-wrap:wrap;gap:10px"},h("h2",{class:"grow",style:"margin:0"},"Sales"),chips),pick].filter(Boolean),
     h("div",{class:"stats"},
-      stat(money(r2(sum("due")-refunds)),"Taken in"+(refunds?" (after "+money(refunds)+" refunds)":"")),
+      stat(money(r2(sum("due")-refunds)),"Taken in"+(refunds?" (after "+money(refunds)+" core refunds)":"")),
       stat(String(list.length),"Sales"),
       stat(list.length?money(sum("due")/list.length):"$0.00","Average sale"),
       stat(money(sum("tax")),"Sales tax collected")),
@@ -499,11 +507,10 @@ function viewPrices(v){
   const draw=()=>{
     const all=prices(); const ql=q.toLowerCase().trim();
     const shown=ql?searchParts(q).length?all.filter(p=>searchParts(q).includes(p)||p.name.toLowerCase().includes(ql)):all.filter(p=>p.name.toLowerCase().includes(ql)):all;
-    list.replaceChildren(h("div",{class:"prow phead"},h("span",{},"Part"),h("span",{},"Price"),h("span",{},"Core"),h("span",{title:"Electronic: not returnable"},"No returns")),
+    list.replaceChildren(h("div",{class:"prow phead"},h("span",{},"Part"),h("span",{},"Price"),h("span",{},"Core")),
       ...shown.slice(0,ql?80:600).map(p=>h("div",{class:"prow"},h("span",{},p.name,p.note?h("small",{class:"muted"}," · "+p.note):null),
         h("input",{type:"number",min:"0",step:"0.01",value:p.price,"aria-label":"Price of "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.price=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" now "+money(x.price)); }}),
-        h("input",{type:"number",min:"0",step:"0.01",value:p.core,"aria-label":"Core charge for "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.core=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" core now "+money(x.core)); }}),
-        h("label",{class:"nr"},h("input",{type:"checkbox",checked:isElec(p),"aria-label":p.name+" is not returnable",onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.elec=e.target.checked; setPrices(l); toast(p.name+(x.elec?" can't be returned":" can be returned")); }})))));
+        h("input",{type:"number",min:"0",step:"0.01",value:p.core,"aria-label":"Core charge for "+p.name,onchange:e=>{ const l=prices(); const x=l.find(y=>y.name===p.name); x.core=Number(e.target.value)||0; setPrices(l); buildIndex(); toast(p.name+" core now "+money(x.core)); }}))));
   };
   const add=h("form",{class:"addpart",onsubmit:e=>{ e.preventDefault(); const f=new FormData(e.target); const n=String(f.get("n")||"").trim(); if(!n) return;
     const l=prices(); if(l.some(x=>x.name.toLowerCase()===n.toLowerCase())) return toast("That part is already on the list.");
