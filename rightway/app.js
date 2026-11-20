@@ -430,6 +430,21 @@ function returnSlip(inv,r){
 }
 
 /* ===== Today ===== */
+// Taxable vs non-taxable sales (before tax). Entry fees are left out; they have their own report.
+function taxReport(list,P){
+  let taxable=0, exempt=0, labor=0, other=0, tax=0, nEx=0;
+  list.forEach(i=>{ let any=false;
+    i.lines.forEach(l=>{ if (/^entry$/i.test(l.name)) return;
+      const amt=l.price*l.qty+(l.coreCharged?l.core*l.qty:0);
+      if (l.labor) labor+=amt; else if (i.taxExempt){ exempt+=amt; any=true; } else if (l.notax) other+=amt; else taxable+=amt; });
+    if (any) nEx++;
+    tax+=invTotals(i).tax; });
+  const non=r2(exempt+labor+other);
+  return h("div",{class:"panel"},h("h3",{},"Taxable vs non-taxable · "+P.label),
+    h("div",{class:"stats",style:"margin:6px 0 10px"},
+      stat(money(taxable),"Taxable sales"),stat(money(tax),"Sales tax on them"),stat(money(non),"Non-taxable sales"),stat(String(nEx),"Tax-exempt invoices")),
+    non?h("div",{class:"muted",style:"font-size:15px"},[exempt?"Tax-exempt accounts "+money(exempt):"",labor?"Labor "+money(labor):"",other?"Other no-tax items "+money(other):""].filter(Boolean).join(" · ")):null);
+}
 // Entry: how many people paid to come in, and on which days
 function entryReport(list,days,P){
   const isE=l=>/^entry$/i.test(l.name);
@@ -504,7 +519,7 @@ function viewToday(v){
       stat(list.length?money(sum("due")/list.length):"$0.00","Average sale"),
       stat(money(sum("tax")),"Sales tax collected")),
     h("div",{class:"stats three"},stat(money(byPay("cash")),"Cash"),stat(money(byPay("check")),"Check"),stat(money(byPay("card")),"Card"),stat(money(sum("fee")),"Card fees")),
-    chart,entryReport(list,days,P),best,
+    chart,taxReport(list,P),entryReport(list,days,P),best,
     h("div",{class:"panel"},h("h3",{},"Cores still out ("+owed.length+")"),
       owed.length?owed.slice(0,STATE.allCores?500:8).map(({i,l,idx,n})=>h("div",{class:"crow"},h("div",{},h("b",{},l.name+(n>1?" ×"+n:"")),h("span",{class:"muted"}," · #"+i.no+" · "+(i.soldTo||"Customer")+(i.phone?" · "+fmtPhone(i.phone):"")+" · sold "+niceDate(i.date))),
         h("div",{class:"row"},h("b",{class:"num"},money(withTax(l.core*n,i))),h("button",{type:"button",class:"btn small primary",onclick:()=>returnDialog(i,idx,"core")},"Core returned"))))
