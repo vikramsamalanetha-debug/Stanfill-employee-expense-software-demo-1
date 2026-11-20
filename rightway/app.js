@@ -213,7 +213,6 @@ function viewSale(v){
     const box=h("div",{class:"sugg",hidden:true});
     let items=[],sel=0;
     const pick=p=>{ if(!p) return;
-      if (!s.noteKind && MOD_RE.test(p.name)){ s.noteKind="modules"; const r=document.querySelector('input[name=invnote][value=modules]'); if(r) r.checked=true; }
       s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||"",elec:isElec(p),notax:!!p.notax||/^entry$/i.test(p.name)});
       drawLines(true); };
     const custom=()=>{ const n=inp.value.trim(); if(!n) return; s.lines.push({name:n,price:0,qty:1,core:0,coreCharged:false}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } };
@@ -250,9 +249,7 @@ function viewSale(v){
     h("label",{class:"exsw"},h("input",{type:"checkbox",class:"switch",checked:!!s.taxExempt,onchange:e=>{ s.taxExempt=e.target.checked; exBox.classList.toggle("on",s.taxExempt); drawTotals(); }}),
       h("span",{},h("b",{},"Tax exempt"),h("small",{},"Business account that doesn't pay sales tax"))),exNo);
   s._exCheck=()=>{ const k=custKey(s.soldTo,s.phone), m=k&&DB.exempt&&DB.exempt[k]; if (m&&!s.taxExempt&&!s._exAsked){ s._exAsked=true; s.taxExempt=true; s.exemptNo=s.exemptNo||m.no||""; exNo.value=s.exemptNo; exBox.querySelector("input.switch").checked=true; exBox.classList.add("on"); drawTotals(); toast("Tax exempt account"); } };
-  const noteBox=h("div",{class:"notepick"},h("div",{class:"lbl2"},"Note on the invoice"),
-    ...Object.entries(NOTES).map(([k,t])=>h("label",{class:"radio"},h("input",{type:"radio",name:"invnote",value:k,checked:noteFor(s)===k,onchange:()=>{ s.noteKind=k; }}),h("span",{},t))));
-  top.append(exBox,creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk,noteBox),totals),acts);
+  top.append(exBox,creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk),totals),acts);
   v.append(top);
   drawCredit(); drawLines(true);
 }
@@ -304,8 +301,9 @@ function receipt(inv,kind){
     h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"DESCRIPTION"),h("th",{},"PRICE"),h("th",{},"UNIT"),h("th",{},"AMOUNT"))),h("tbody",{},lines)),
     h("div",{class:"rfoot"},
       h("div",{class:"rnote"},
-        h("p",{},h("b",{},"Notes: "),NOTES[noteFor(inv)],
-          inv.lines.some(l=>l.coreCharged&&l.core>0)?" Core charges are refunded when the core is brought back with this invoice.":""),
+        h("p",{},h("b",{},"Notes:")),
+        h("p",{},"ECM, PCM and TCM modules are non-returnable."),
+        h("p",{},"Returns and exchanges are accepted within 30 days with this invoice."),
         after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null),
       h("table",{class:"rtot"},h("tbody",{},
         h("tr",{},h("th",{},"SUB-TOTAL"),h("td",{class:"num"},money(t.sub))),
