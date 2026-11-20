@@ -33,6 +33,10 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on
 // "john smith" → "John Smith" while typing, without moving the cursor.
 const nameCase=v=>String(v||"").replace(/[A-Za-z][A-Za-z']*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());
 function nameCaseInput(x){ const v=nameCase(x.value); if (v!==x.value){ const a=x.selectionStart,b=x.selectionEnd; x.value=v; try{ x.setSelectionRange(a,b); }catch(e){} } }
+// The note printed at the bottom of an invoice: one of two, picked on the sale screen.
+const NOTES={modules:"ECM, PCM and TCM modules are non-returnable.",days30:"Returns and exchanges are accepted within 30 days with this invoice."};
+const MOD_RE=/\b(ecm|pcm|tcm)\b|control module|computer|brain box/i;
+const noteFor=inv=>inv.noteKind||(inv.lines.some(l=>MOD_RE.test(l.name))?"modules":"days30");
 /* ---------- data ---------- */
 const BIZ={name:"Rightway Auto Recycling",addr:"7945 TN-100",city:"Decaturville, TN 38329",phone:"731-549-3179"};
 let DB;
@@ -209,6 +213,7 @@ function viewSale(v){
     const box=h("div",{class:"sugg",hidden:true});
     let items=[],sel=0;
     const pick=p=>{ if(!p) return;
+      if (!s.noteKind && MOD_RE.test(p.name)){ s.noteKind="modules"; const r=document.querySelector('input[name=invnote][value=modules]'); if(r) r.checked=true; }
       s.lines.push({name:p.name,price:p.price,qty:1,core:p.core||0,coreCharged:(p.core||0)>0,note:p.note||"",elec:isElec(p),notax:!!p.notax||/^entry$/i.test(p.name)});
       drawLines(true); };
     const custom=()=>{ const n=inp.value.trim(); if(!n) return; s.lines.push({name:n,price:0,qty:1,core:0,coreCharged:false}); drawLines(); const pr=body.querySelectorAll(".lrow:not(.lhead):not(.newrow) .c-price input"); const last=pr[pr.length-1]; if(last){ last.focus(); last.select(); } };
@@ -245,7 +250,9 @@ function viewSale(v){
     h("label",{class:"exsw"},h("input",{type:"checkbox",class:"switch",checked:!!s.taxExempt,onchange:e=>{ s.taxExempt=e.target.checked; exBox.classList.toggle("on",s.taxExempt); drawTotals(); }}),
       h("span",{},h("b",{},"Tax exempt"),h("small",{},"Business account that doesn't pay sales tax"))),exNo);
   s._exCheck=()=>{ const k=custKey(s.soldTo,s.phone), m=k&&DB.exempt&&DB.exempt[k]; if (m&&!s.taxExempt&&!s._exAsked){ s._exAsked=true; s.taxExempt=true; s.exemptNo=s.exemptNo||m.no||""; exNo.value=s.exemptNo; exBox.querySelector("input.switch").checked=true; exBox.classList.add("on"); drawTotals(); toast("Tax exempt account"); } };
-  top.append(exBox,creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk),totals),acts);
+  const noteBox=h("div",{class:"notepick"},h("div",{class:"lbl2"},"Note on the invoice"),
+    ...Object.entries(NOTES).map(([k,t])=>h("label",{class:"radio"},h("input",{type:"radio",name:"invnote",value:k,checked:noteFor(s)===k,onchange:()=>{ s.noteKind=k; }}),h("span",{},t))));
+  top.append(exBox,creditBox,body,h("div",{class:"bottom"},h("div",{},h("div",{class:"lbl2"},"Paid by"),pays,chk,noteBox),totals),acts);
   v.append(top);
   drawCredit(); drawLines(true);
 }
@@ -256,7 +263,7 @@ function saveSale(){
   if (!s.lines.length) return toast("Add at least one part.");
   if (s.lines.some(l=>!(l.price>0)) && !confirm("Some parts have no price. Save anyway?")) return;
   const inv={no:DB.seq++,date:today(),createdAt:new Date().toISOString(),soldTo:s.soldTo.trim()||"Customer",phone:normPhone(s.phone),address:s.address.trim(),
-    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,taxRate:DB.settings.taxRate,taxExempt:!!s.taxExempt,exemptNo:(s.exemptNo||"").trim(),cardFee:s.pay==="card"?cardFeePct():0,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
+    soldBy:s.soldBy.trim(),pay:s.pay,checkNo:s.checkNo,noteKind:noteFor(s),taxRate:DB.settings.taxRate,taxExempt:!!s.taxExempt,exemptNo:(s.exemptNo||"").trim(),cardFee:s.pay==="card"?cardFeePct():0,lines:s.lines.map(l=>({...l})),returns:[],creditUsed:r2(s.creditUsed||0)};
   if (inv.creditUsed) addCredit(inv.soldTo,inv.phone,-inv.creditUsed);
   // Remember tax-exempt business accounts so the switch turns on next time
   const ek=custKey(inv.soldTo,inv.phone); DB.exempt=DB.exempt||{};
@@ -297,8 +304,8 @@ function receipt(inv,kind){
     h("table",{class:"rtable"},h("thead",{},h("tr",{},h("th",{},"DESCRIPTION"),h("th",{},"PRICE"),h("th",{},"UNIT"),h("th",{},"AMOUNT"))),h("tbody",{},lines)),
     h("div",{class:"rfoot"},
       h("div",{class:"rnote"},
-        h("p",{},h("b",{},"All sales are final. No returns or exchanges."),
-          " Core charges are refunded when the core is brought back with this invoice."),
+        h("p",{},h("b",{},"Notes: "),NOTES[noteFor(inv)],
+          inv.lines.some(l=>l.coreCharged&&l.core>0)?" Core charges are refunded when the core is brought back with this invoice.":""),
         after.length?h("div",{class:"rafter"},after.map(x=>h("div",{},x))):null),
       h("table",{class:"rtot"},h("tbody",{},
         h("tr",{},h("th",{},"SUB-TOTAL"),h("td",{class:"num"},money(t.sub))),
